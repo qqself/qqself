@@ -1,7 +1,15 @@
+use std::fmt::{Display, Formatter};
+
 #[derive(Debug, PartialEq)]
 pub struct Entry {
     tags: Vec<Tag>,
     comment: Option<String>,
+}
+
+impl Display for Entry {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:#?}", self)
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -22,6 +30,12 @@ pub enum ParseError {
     NoTags,
     // Duplicate tag or property at position
     Duplicate(String, usize),
+}
+
+impl Display for ParseError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:#?}", self)
+    }
 }
 
 /*

@@ -1,0 +1,26 @@
+<html lang="en">
+<head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
+    <title>QQSelf</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+<script type="module">
+    import init, {parse} from './pkg/client_pwa.js';
+    window.parse = sender => {
+        const result = document.getElementById('result')
+        result.innerText = parse(sender.value)
+    }
+    async function run() {
+        await init();
+    }
+    run();
+</script>
+<h1>QQSelf - Self knowledge through numbers</h1>
+
+<input type="text" oninput="parse(this)" placeholder="tag1 prop1 val1. tag2 prop2 val2" />
+<br>
+<div id="result"></div>
+
+</body>
+</html>

@@ -19,6 +19,6 @@ impl Storage {
             .append(true)
             .open(&self.path)
             .unwrap();
-        file.write(entry.to_string(time_now()).as_bytes()).unwrap();
+        file.write(entry.to_string().as_bytes()).unwrap();
     }
 }
