@@ -11,6 +11,7 @@
     "vite-plugin-rsw": "1.9.3"
   },
   "dependencies": {
+    "@google-web-components/google-chart": "^4.0.2",
     "lit": "2.0.0-rc.3"
   }
 }
