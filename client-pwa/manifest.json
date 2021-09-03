@@ -1,0 +1,12 @@
+{
+  "name": "QQSelf",
+  "short_name": "qqself",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#fff",
+  "description": "Self knowledge through numbers",
+  "icons": [
+    {"src": "icons/icon-512.png", "sizes": "512x512"},
+    {"src": "icons/icon-192.png", "sizes": "192x192"}
+  ]
+}

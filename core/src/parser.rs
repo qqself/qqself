@@ -327,7 +327,8 @@ mod tests {
         #[rustfmt::skip]
         let cases = vec![
             // Spaces trimmed and collapsed
-            ("  tag1  ", "tag1"), (" tag1  prop1   ", "tag1 prop1"),
+            ("  tag1  ", "tag1"),
+            (" tag1  prop1   ", "tag1 prop1"),
             // Comments are trimmed but comment content is not touched
             (" tag1  prop1  . Comment >>  |  <<  ", "tag1 prop1. Comment >>  |  <<"),
             // Properties values has equal sign before

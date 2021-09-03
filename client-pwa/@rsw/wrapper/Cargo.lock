@@ -19,16 +19,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
-name = "client-pwa"
-version = "0.0.0"
-dependencies = [
- "console_error_panic_hook",
- "core",
- "wasm-bindgen",
- "wasm-bindgen-test",
-]
-
-[[package]]
 name = "console_error_panic_hook"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -205,4 +195,14 @@ checksum = "224b2f6b67919060055ef1a67807367c2066ed520c3862cc013d26cf893a783c"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "wrapper"
+version = "0.0.0"
+dependencies = [
+ "console_error_panic_hook",
+ "core",
+ "wasm-bindgen",
+ "wasm-bindgen-test",
 ]

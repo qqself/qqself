@@ -1,3 +1,3 @@
 # Client-PWA
 
-PWA based client. IndexedDB as a storage
+PWA based client. LocalStorage as a storage

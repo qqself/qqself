@@ -1,5 +1,5 @@
 [package]
-name = "client-pwa"
+name = "wrapper"
 version = "0.0.0"
 
 [lib]
@@ -10,7 +10,7 @@ default = ["console_error_panic_hook"]
 
 [dependencies]
 console_error_panic_hook = { version = "0.1.6", optional = true }
-core = {path = "../core" }
+core = {path = "../../../core" }
 wasm-bindgen = "0.2.76"
 
 [dev-dependencies]
