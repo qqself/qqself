@@ -43,6 +43,12 @@ lint() {
       log "Processing $dir"
       (cd $dir && cargo fmt)
   done
+  log "Formatting all TS projects"
+    for file in */package.json; do
+        dir=$(dirname $file)
+        log "Processing $dir"
+        (cd $dir && prettier --write --no-semi --arrow-parens=avoid --no-bracket-spacing --print-width=100 "**/*.ts" )
+    done
 }
 
 deploy() {

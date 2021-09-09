@@ -314,6 +314,7 @@ mod tests {
             "tag1 Prop1=Val1 Prop2",
             "tag1 Prop1=Val1 Prop2",
             "tag1 Prop1=Val1. Comment And More Text",
+            "tag1 tagref=#tag2",
         ];
         for input in cases {
             let entry = Entry::from_string(input).unwrap();
