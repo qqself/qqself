@@ -8,7 +8,32 @@ pub struct Entry {
 
 impl Display for Entry {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:#?}", self)
+        let tags: Vec<String> = self
+            .tags
+            .iter()
+            .map(|tag| {
+                let mut s = String::new();
+                s.push_str(&tag.name);
+                for prop in &tag.val {
+                    s.push_str(" ");
+                    s.push_str(&prop.name);
+                    if prop.val.is_some() {
+                        s.push_str("=");
+                        s.push_str(prop.val.as_ref().unwrap().as_str());
+                    }
+                }
+                s
+            })
+            .collect();
+        let mut s: String = tags.join(". ");
+        if self.comment.is_some() {
+            s.push_str(". ");
+            // Escape line breaks in the comment
+            let comment = self.comment.as_ref().unwrap();
+            let escaped = comment.replace('\n', "\\n");
+            s.push_str(&escaped);
+        }
+        write!(f, "{}", s)
     }
 }
 
@@ -101,11 +126,11 @@ impl<'a> Parser<'a> {
     }
 
     // PROP -> PROPNAME (' ' PROPVALUE)?
-    fn parse_prop(&mut self) -> Result<Option<Prop>, ParseError> {
+    fn parse_prop(&mut self) -> Option<Prop> {
         let (read, name) = self.read_string();
         self.pos += read;
         if name.is_empty() {
-            return Ok(None);
+            return None;
         }
         self.consume('='); // Optional = sign
         let (read, val) = self.read_string();
@@ -115,50 +140,43 @@ impl<'a> Parser<'a> {
         } else {
             Some(val.to_string())
         };
-        Ok(Some(Prop {
+        Some(Prop {
             name: name.to_string(),
             val,
-        }))
+        })
     }
 
     // TAGNAME -> \w+
-    fn tagname(&mut self) -> Result<Option<String>, ParseError> {
+    fn tagname(&mut self) -> Option<String> {
         let (read, name) = self.read_string();
         self.pos += read;
         if name.is_empty() {
-            return Ok(None);
+            return None;
         }
         return if name.to_lowercase() == name {
-            Ok(Some(name.to_string()))
+            Some(name.to_string())
         } else {
             // Read ahead until the comment, step back
             self.pos -= read;
-            Ok(None)
+            None
         };
     }
 
     // TAG -> TAGNAME (TAGPROP)*
     fn parse_tag(&mut self) -> Result<Option<Tag>, ParseError> {
-        let name = self.tagname()?;
+        let name = self.tagname();
         if name.is_none() {
             return Ok(None);
         }
         let mut props: Vec<Prop> = Vec::new();
-        loop {
-            match self.parse_prop()? {
-                Some(prop) => {
-                    if props.iter().any(|t| t.name == prop.name) {
-                        return Err(ParseError::Duplicate(
-                            format!("Duplicate prop: {}", prop.name),
-                            self.pos,
-                        ));
-                    }
-                    props.push(prop)
-                }
-                None => {
-                    break;
-                }
+        while let Some(prop) = self.parse_prop() {
+            if props.iter().any(|t| t.name == prop.name) {
+                return Err(ParseError::Duplicate(
+                    format!("Duplicate prop: {}", prop.name),
+                    self.pos,
+                ));
             }
+            props.push(prop)
         }
         Ok(Some(Tag {
             name: name.unwrap(),
@@ -195,27 +213,27 @@ impl<'a> Parser<'a> {
     }
 
     // COMMENT -> \W \w*
-    fn parse_comment(&mut self) -> Result<Option<String>, ParseError> {
+    fn parse_comment(&mut self) -> Option<String> {
         let comment: String = self.input.chars().skip(self.pos).collect();
         let comment = comment.trim();
         if comment.len() == 0 {
-            return Ok(None);
+            return None;
         }
         return match comment.chars().next() {
             Some(first) => {
                 if !first.is_uppercase() {
                     unreachable!("it's not a comment but a tag")
                 }
-                Ok(Some(String::from(comment)))
+                Some(String::from(comment))
             }
-            None => Ok(None),
+            None => None,
         };
     }
 
     // ENTRY -> TAGS COMMENT?
     fn parse(&mut self) -> Result<Entry, ParseError> {
         let tags = self.parse_tags()?;
-        let comment = self.parse_comment()?;
+        let comment = self.parse_comment();
         return Ok(Entry { tags, comment });
     }
 }
@@ -224,32 +242,6 @@ impl Entry {
     pub fn from_string(input: &str) -> Result<Entry, ParseError> {
         let mut parser = Parser::new(input);
         parser.parse()
-    }
-
-    pub fn to_string(&self) -> String {
-        let tags: Vec<String> = self
-            .tags
-            .iter()
-            .map(|tag| {
-                let mut s = String::new();
-                s.push_str(&tag.name);
-                for prop in &tag.val {
-                    s.push_str(" ");
-                    s.push_str(&prop.name);
-                    if prop.val.is_some() {
-                        s.push_str("=");
-                        s.push_str(prop.val.as_ref().unwrap().as_str());
-                    }
-                }
-                s
-            })
-            .collect();
-        let mut s: String = tags.join(". ");
-        if self.comment.is_some() {
-            s.push_str(". ");
-            s.push_str(self.comment.as_ref().unwrap());
-        }
-        s
     }
 }
 
@@ -261,35 +253,36 @@ mod tests {
     fn parsing() {
         #[rustfmt::skip]
         let cases = vec![
-            ("tag1", Entry{comment: None, tags: vec![
-                Tag{name: "tag1".to_string(), val: vec![]},
+            ("tag1", Entry { comment: None, tags: vec![Tag { name: "tag1".to_string(), val: vec![] }]}),
+            ("tag1 prop1", Entry { comment: None, tags: vec![
+                Tag { name: "tag1".to_string(), val: vec![Prop { name: "prop1".to_string(), val: None }] },
             ]}),
-            ("tag1 prop1", Entry{comment: None, tags: vec![
-                Tag{name: "tag1".to_string(), val: vec![Prop{name: "prop1".to_string(), val: None}]},
+            ("tag1 prop1 val1", Entry { comment: None, tags: vec![
+                Tag { name: "tag1".to_string(), val: vec![Prop { name: "prop1".to_string(), val: Some("val1".to_string()) }] },
             ]}),
-            ("tag1 prop1 val1", Entry{comment: None, tags: vec![
-                Tag{name: "tag1".to_string(), val: vec![Prop{name: "prop1".to_string(), val: Some("val1".to_string())}]},
+            ("tag1 prop1. tag2", Entry { comment: None, tags: vec![
+                Tag { name: "tag1".to_string(), val: vec![Prop { name: "prop1".to_string(), val: None }] },
+                Tag { name: "tag2".to_string(), val: vec![] },
             ]}),
-            ("tag1 prop1. tag2", Entry{comment: None, tags: vec![
-                Tag{name: "tag1".to_string(), val: vec![Prop{name: "prop1".to_string(), val: None}]},
-                Tag{name: "tag2".to_string(), val: vec![]},
+            ("tag1 prop1. tag2 prop2=val2", Entry { comment: None, tags: vec![
+                Tag { name: "tag1".to_string(), val: vec![Prop { name: "prop1".to_string(), val: None }] },
+                Tag { name: "tag2".to_string(), val: vec![Prop { name: "prop2".to_string(), val: Some("val2".to_string()) }] },
             ]}),
-            ("tag1 prop1. tag2 prop2=val2", Entry{comment: None, tags: vec![
-                Tag{name: "tag1".to_string(), val: vec![Prop{name: "prop1".to_string(), val: None}]},
-                Tag{name: "tag2".to_string(), val: vec![Prop{name: "prop2".to_string(), val: Some("val2".to_string())}]},
+            ("tag1 prop1. tag2 prop2=val2. tag3", Entry { comment: None, tags: vec![
+                Tag { name: "tag1".to_string(), val: vec![Prop { name: "prop1".to_string(), val: None }] },
+                Tag { name: "tag2".to_string(), val: vec![Prop { name: "prop2".to_string(), val: Some("val2".to_string()) }] },
+                Tag { name: "tag3".to_string(), val: vec![] },
             ]}),
-            ("tag1 prop1. tag2 prop2=val2. tag3", Entry{comment: None, tags: vec![
-                Tag{name: "tag1".to_string(), val: vec![Prop{name: "prop1".to_string(), val: None}]},
-                Tag{name: "tag2".to_string(), val: vec![Prop{name: "prop2".to_string(), val: Some("val2".to_string())}]},
-                Tag{name: "tag3".to_string(), val: vec![]},
+            ("tag1 prop1. tag2 prop2=val2. Comment here we are", Entry { comment: Some("Comment here we are".to_string()), tags: vec![
+                Tag { name: "tag1".to_string(), val: vec![Prop { name: "prop1".to_string(), val: None }] },
+                Tag { name: "tag2".to_string(), val: vec![Prop { name: "prop2".to_string(), val: Some("val2".to_string()) }] },
             ]}),
-            ("tag1 prop1. tag2 prop2=val2. Comment here we are", Entry{comment: Some("Comment here we are".to_string()), tags: vec![
-                Tag{name: "tag1".to_string(), val: vec![Prop{name: "prop1".to_string(), val: None}]},
-                Tag{name: "tag2".to_string(), val: vec![Prop{name: "prop2".to_string(), val: Some("val2".to_string())}]},
+            (" tag1  prop1.  tag2  prop2= val2.   Comment here we are  ", Entry { comment: Some("Comment here we are".to_string()), tags: vec![
+                Tag { name: "tag1".to_string(), val: vec![Prop { name: "prop1".to_string(), val: None }] },
+                Tag { name: "tag2".to_string(), val: vec![Prop { name: "prop2".to_string(), val: Some("val2".to_string()) }] },
             ]}),
-            (" tag1  prop1.  tag2  prop2= val2.   Comment here we are  ", Entry{comment: Some("Comment here we are".to_string()), tags: vec![
-                Tag{name: "tag1".to_string(), val: vec![Prop{name: "prop1".to_string(), val: None}]},
-                Tag{name: "tag2".to_string(), val: vec![Prop{name: "prop2".to_string(), val: Some("val2".to_string())}]},
+            (" tag1. Multiline\n- Something\n-Something else  ", Entry { comment: Some("Multiline\n- Something\n-Something else".to_string()), tags: vec![
+                Tag { name: "tag1".to_string(), val: vec![] },
             ]}),
         ];
         for (input, want) in cases {
@@ -334,6 +327,8 @@ mod tests {
             (" tag1  prop1  . Comment >>  |  <<  ", "tag1 prop1. Comment >>  |  <<"),
             // Properties values has equal sign before
             (" tag1 prop1 val1 prop2 val2 prop3", "tag1 prop1=val1 prop2=val2 prop3"),
+            // Multiline strings
+            ("tag1. Multiline\n- Some1\n\n-Some2 ", "tag1. Multiline\\n- Some1\\n\\n-Some2"),
         ];
         for (input, normalised) in cases {
             let got = Entry::from_string(input).unwrap();

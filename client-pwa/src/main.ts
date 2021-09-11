@@ -42,6 +42,9 @@ export class Main extends LitElement {
     super()
     ;(async () => {
       log("Initializing...")
+      if ("serviceWorker" in navigator) {
+        await navigator.serviceWorker.register("sw.js")
+      }
       await init()
       const entries = await new MemoryStorage().read()
       this.initialized = true

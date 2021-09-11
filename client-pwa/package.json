@@ -2,7 +2,7 @@
   "private": true,
   "scripts": {
     "start": "vite",
-    "build": "vite build",
+    "build": "vite build && cp sw.js dist",
     "rsw:build": "rsw && npm run build"
   },
   "devDependencies": {
