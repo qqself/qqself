@@ -78,21 +78,35 @@ impl Query {
                 }
             }
         }
+        let mut total = (0, Duration::from_secs(0));
+        let duration_human = |d: Duration| {
+            let hours = d.as_secs() / 60 / 60;
+            let minutes = (d.as_secs() - hours * 60 * 60) / 60;
+            (hours, minutes)
+        };
+        println!("Name          Count    Duration");
+        println!("===============================");
         for (name, tags) in tags.iter() {
             let mut duration = Duration::from_secs(0);
             for (_, range) in tags {
                 duration += range.duration();
+                total.1 += range.duration();
+                total.0 += 1;
             }
-            let duration_hours = duration.as_secs() / 60 / 60;
-            let duration_minutes = (duration.as_secs() - duration_hours * 60 * 60) / 60;
             println!(
-                "{:<10} \t Count {:?} \t Duration {:0>2}:{:0>2}",
+                "{:<10}        {:?}       {:0>2}:{:0>2}",
                 name,
                 tags.len(),
-                duration_hours,
-                duration_minutes,
+                duration_human(duration).0,
+                duration_human(duration).1,
             );
         }
+        println!(
+            "                  {}       {:0>2}:{:0>2}",
+            total.0,
+            duration_human(total.1).0,
+            duration_human(total.1).1
+        );
     }
 }
 

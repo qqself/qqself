@@ -1,7 +1,7 @@
 use chrono::prelude::*;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use structopt::clap::arg_enum;
 use structopt::StructOpt;
 
@@ -81,7 +81,7 @@ fn query(opts: QueryOpts) {
     query.render_stats();
 }
 
-fn enumerate_folder_after(path: &PathBuf, after: u32) -> Vec<String> {
+fn enumerate_folder_after(path: &Path, after: u32) -> Vec<String> {
     let mut entries: Vec<String> = std::fs::read_dir(path)
         .unwrap()
         .map(|v| {
