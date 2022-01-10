@@ -3,6 +3,8 @@
 Local first personal tracking system. Idea inspired by [Qantified Self](https://quantifiedself.com/) movement, while implementation idea came from paper [Local-First Software:
 You Own Your Data, in spite of the Cloud](https://martin.kleppmann.com/papers/local-first.pdf)
 
+Very much work in progress - MVP quality, probably it compiles.
+
 ## Features
 
 **Privacy first** 
@@ -38,7 +40,3 @@ Currently, we have console and PWA clients. We have tools to support more custom
 **No lock in**
 
 It's open source, language is simple to parse, sync server is easy to replicate. Maybe just use the language and keep the data in plain text files.
-
-## Status
-
-Proof of concept. While language and parser is defined most of the work happening right now around sync server and PWA functionality

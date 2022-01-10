@@ -1,17 +1,15 @@
 use chrono::prelude::*;
-use std::borrow::Borrow;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 use structopt::clap::arg_enum;
 use structopt::StructOpt;
 
-use crate::core::parser::Entry;
-use core;
+use core::parser::{Query, Record};
 
 // Query data files
 #[derive(StructOpt, Debug)]
-struct Query {
+struct QueryOpts {
     // Input folder with data
     #[structopt(short, long, parse(from_os_str))]
     input: PathBuf,
@@ -29,7 +27,7 @@ struct Query {
 #[derive(StructOpt, Debug)]
 #[structopt(name = "development", version = "0.0.1")]
 enum Opt {
-    Query(Query),
+    Query(QueryOpts),
 }
 
 arg_enum! {
@@ -50,9 +48,13 @@ fn main() {
     }
 }
 
-fn query(opts: Query) {
+fn query(opts: QueryOpts) {
+    let mut query = match Query::new(&opts.query.join(" ")) {
+        Ok(query) => query,
+        Err(err) => panic!("Query parsing error: {:?}", err),
+    };
+
     let min_date = date_filter(opts.time, chrono::Local::today());
-    let mut results = Vec::new();
     for year in enumerate_folder_after(&opts.input, min_date.year() as u32) {
         let path = opts.input.join(&year);
         for month in enumerate_folder_after(&path, min_date.month()) {
@@ -63,18 +65,20 @@ fn query(opts: Query) {
                 let mut prev = String::new();
                 for line in BufReader::new(file).lines() {
                     let prefix = format!("{}-{}-{}", year, month, day);
-                    if let Ok(entry) = Entry::from_string(&line.unwrap(), &prefix, &prev) {
-                        prev = entry.date_range.to.clone();
-                        println!("Entry {:?}", entry);
+                    if let Ok(record) = Record::from_string(&line.unwrap(), &prefix, &prev) {
+                        match record {
+                            Record::Entry(entry) => {
+                                prev = entry.date_range.to.clone();
+                                query.add(entry);
+                            }
+                            Record::Goal(_) => {}
+                        }
                     }
                 }
             }
         }
     }
-
-    // TODO Parse query - string join/parse
-    // TODO Parse content and store only relevant to query
-    // TODO Render results
+    query.render_stats();
 }
 
 fn enumerate_folder_after(path: &PathBuf, after: u32) -> Vec<String> {
