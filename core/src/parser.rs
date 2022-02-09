@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
 use datetime::{Date, DatePeriod, DateTime, DateTimeRange, Time};
-use record::{Aggregate, Count, Entry, Goal, Prop, PropOperator, Record, Tag};
+use record::{Aggregate, Count, Entry, Goal, Prop, PropOperator, PropVal, Record, Tag};
 
 /*
     Grammar:
@@ -126,10 +126,9 @@ impl<'a> Parser<'a> {
             val = format!("{}.{}", val, val_more);
             self.pos += read_more;
         }
-        let val = if val.is_empty() { None } else { Some(val) };
         Some(Prop {
             name,
-            val,
+            val: PropVal::parse(&val),
             operator,
             start_pos,
         })
@@ -457,52 +456,56 @@ impl Goal {
     }
 
     fn parse_count(prop: Prop) -> Result<usize, ParseError> {
-        let err = "goal min/max value should be an integer";
-        if prop.val.is_none() {
-            return Err(ParseError::BadValue(err.to_string(), prop.start_pos));
-        }
-        return match prop.val.as_ref().unwrap().parse::<usize>() {
-            Ok(index) => Ok(index),
-            Err(_) => Err(ParseError::BadValue(err.to_string(), prop.start_pos)),
-        };
+        unimplemented!()
+        // let err = "goal min/max value should be an integer";
+        // if prop.val == PropVal::None {
+        //     return Err(ParseError::BadValue(err.to_string(), prop.start_pos));
+        // }
+        // return match prop.val.as_ref().unwrap().parse::<usize>() {
+        //     Ok(index) => Ok(index),
+        //     Err(_) => Err(ParseError::BadValue(err.to_string(), prop.start_pos)),
+        // };
     }
 
     fn parse_aggregate(prop: Prop) -> Result<Aggregate, ParseError> {
-        if prop.val.is_none() {
-            return Ok(Aggregate::Sum);
-        }
-        match prop
-            .val
-            .as_ref()
-            .unwrap()
-            .to_lowercase()
-            .parse::<Aggregate>()
-        {
-            Ok(aggregate) => Ok(aggregate),
-            Err(err) => Err(ParseError::BadValue(err, prop.start_pos)),
-        }
+        unimplemented!()
+        // if prop.val.is_none() {
+        //     return Ok(Aggregate::Sum);
+        // }
+        // match prop
+        //     .val
+        //     .as_ref()
+        //     .unwrap()
+        //     .to_lowercase()
+        //     .parse::<Aggregate>()
+        // {
+        //     Ok(aggregate) => Ok(aggregate),
+        //     Err(err) => Err(ParseError::BadValue(err, prop.start_pos)),
+        // }
     }
 
     fn parse_duration(prop: Prop) -> Result<Option<Time>, ParseError> {
-        match prop.val.map(|v| v.parse::<Time>()) {
-            None => Ok(None),
-            Some(Ok(time)) => Ok(Some(time)),
-            Some(Err(err)) => Err(ParseError::BadQuery(err, prop.start_pos)),
-        }
+        unimplemented!()
+        // match prop.val.map(|v| v.parse::<Time>()) {
+        //     None => Ok(None),
+        //     Some(Ok(time)) => Ok(Some(time)),
+        //     Some(Err(err)) => Err(ParseError::BadQuery(err, prop.start_pos)),
+        // }
     }
 
     fn parse_period(prop: Prop) -> Result<DatePeriod, ParseError> {
-        match prop.val.map(|v| v.parse::<DatePeriod>()) {
-            None => {
-                let err = "`of` property is required for `goal` tag".to_string();
-                Err(ParseError::MissingProperty(err, prop.start_pos))
-            }
-            Some(Ok(date_period)) => Ok(date_period),
-            Some(Err(_)) => {
-                let err = "`of` property value can be either week, month or year".to_string();
-                Err(ParseError::BadValue(err, prop.start_pos))
-            }
-        }
+        unimplemented!()
+        // match prop.val.map(|v| v.parse::<DatePeriod>()) {
+        //     None => {
+        //         let err = "`of` property is required for `goal` tag".to_string();
+        //         Err(ParseError::MissingProperty(err, prop.start_pos))
+        //     }
+        //     Some(Ok(date_period)) => Ok(date_period),
+        //     Some(Err(_)) => {
+        //         let err = "`of` property value can be either week, month or year".to_string();
+        //         Err(ParseError::BadValue(err, prop.start_pos))
+        //     }
+        // }
     }
 }
 
@@ -518,9 +521,9 @@ mod tests {
             start: BASE_DATE.clone(),
             end: DateTime::new(BASE_DATE.date.clone(), Time::new(hours, minutes)),
         };
-        let prop = |name: &str, val: Option<&str>| Prop {
+        let prop = |name: &str, val: PropVal| Prop {
             name: name.to_string(),
-            val: val.map(|v| v.to_string()),
+            val,
             operator: PropOperator::Eq,
             start_pos: 0,
         };
@@ -535,7 +538,11 @@ mod tests {
             (
                 // Simple tag, simple prop
                 "01:01 tag1 prop1",
-                Entry::new(dr(1, 1), None, vec![tag("tag1", vec![prop("prop1", None)])]),
+                Entry::new(
+                    dr(1, 1),
+                    None,
+                    vec![tag("tag1", vec![prop("prop1", PropVal::None)])],
+                ),
             ),
             (
                 // Simple tag, simple prop and val
@@ -543,7 +550,10 @@ mod tests {
                 Entry::new(
                     dr(1, 1),
                     None,
-                    vec![tag("tag1", vec![prop("prop1", Some("val1"))])],
+                    vec![tag(
+                        "tag1",
+                        vec![prop("prop1", PropVal::String("val1".to_string()))],
+                    )],
                 ),
             ),
             (
@@ -552,7 +562,10 @@ mod tests {
                 Entry::new(
                     dr(1, 1),
                     None,
-                    vec![tag("tag1", vec![prop("prop1", None)]), tag("tag2", vec![])],
+                    vec![
+                        tag("tag1", vec![prop("prop1", PropVal::None)]),
+                        tag("tag2", vec![]),
+                    ],
                 ),
             ),
             (
@@ -562,8 +575,11 @@ mod tests {
                     dr(1, 1),
                     None,
                     vec![
-                        tag("tag1", vec![prop("prop1", None)]),
-                        tag("tag2", vec![prop("prop2", Some("val2"))]),
+                        tag("tag1", vec![prop("prop1", PropVal::None)]),
+                        tag(
+                            "tag2",
+                            vec![prop("prop2", PropVal::String("val2".to_string()))],
+                        ),
                     ],
                 ),
             ),
@@ -574,7 +590,10 @@ mod tests {
                     dr(1, 1),
                     Some("Comment".to_string()),
                     vec![
-                        tag("tag1", vec![prop("prop1", Some("val2"))]),
+                        tag(
+                            "tag1",
+                            vec![prop("prop1", PropVal::String("val2".to_string()))],
+                        ),
                         tag("tag2", vec![]),
                     ],
                 ),
@@ -588,7 +607,10 @@ mod tests {
                     vec![
                         tag(
                             "tag1",
-                            vec![prop("prop1", Some("9.5")), prop("prop2", Some("6.33"))],
+                            vec![
+                                prop("prop1", PropVal::Number(9.5f32)),
+                                prop("prop2", PropVal::Number(6.33f32)),
+                            ],
                         ),
                         tag("tag2", vec![]),
                     ],
@@ -600,7 +622,7 @@ mod tests {
                 Entry::new(
                     dr(1, 1),
                     Some("Comment".to_string()),
-                    vec![tag("tag1", vec![prop("prop1", None)])],
+                    vec![tag("tag1", vec![prop("prop1", PropVal::None)])],
                 ),
             ),
             (
@@ -609,7 +631,16 @@ mod tests {
                 Entry::new(
                     dr(1, 1),
                     Some("Line1\nLine2".to_string()),
-                    vec![tag("tag1", vec![prop("prop1", None)])],
+                    vec![tag("tag1", vec![prop("prop1", PropVal::None)])],
+                ),
+            ),
+            (
+                // Prop value duration
+                "01:01 tag1 prop1=12:22",
+                Entry::new(
+                    dr(1, 1),
+                    None,
+                    vec![tag("tag1", vec![prop("prop1", PropVal::Time(12, 22))])],
                 ),
             ),
         ];

@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::fmt::{Debug, Display, Formatter, Write};
 use std::str::FromStr;
 
@@ -80,6 +81,22 @@ impl Tag {
             start_pos,
         }
     }
+    pub fn matches(&self, query: &Tag) -> bool {
+        if self.name != query.name {
+            return false;
+        }
+        if query.val.is_empty() {
+            return true;
+        }
+        for query_prop in &query.val {
+            for tag_prop in &self.val {
+                if tag_prop.matches(query_prop) {
+                    return true;
+                }
+            }
+        }
+        false
+    }
 }
 
 impl Display for Tag {
@@ -93,22 +110,47 @@ impl Display for Tag {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+impl Debug for Tag {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.to_string())
+    }
+}
+
+#[derive(PartialEq, Clone)]
 pub struct Prop {
     pub name: String,
-    pub val: Option<String>,
+    pub val: PropVal,
     pub operator: PropOperator,
     pub start_pos: usize,
+}
+
+impl Prop {
+    pub fn matches(&self, query: &Prop) -> bool {
+        if self.name != query.name {
+            return false;
+        }
+        match query.operator {
+            PropOperator::Eq => self.val == query.val,
+            PropOperator::Less => self.val < query.val,
+            PropOperator::More => self.val > query.val,
+        }
+    }
 }
 
 impl Display for Prop {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.name)?;
-        if self.val.is_some() {
+        if self.val != PropVal::None {
             f.write_str(&self.operator.to_string())?;
-            f.write_str(self.val.as_ref().unwrap().as_str())?;
+            f.write_str(&self.val.to_string())?;
         }
         std::fmt::Result::Ok(())
+    }
+}
+
+impl Debug for Prop {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.to_string())
     }
 }
 
@@ -126,6 +168,64 @@ impl Display for PropOperator {
             PropOperator::Less => '<',
             PropOperator::More => '>',
         })
+    }
+}
+
+#[derive(PartialEq, Clone)]
+pub enum PropVal {
+    None,           // No value for property
+    Number(f32),    // For simplicity we use f32 for both floats and integers
+    Time(u8, u8),   // Time in \d\d:\d\d format. Hours or minutes scale is not known
+    String(String), // Anything else
+}
+
+impl PropVal {
+    pub(crate) fn parse(s: &str) -> PropVal {
+        if s.is_empty() {
+            return PropVal::None;
+        }
+        if let Ok(v) = s.parse::<f32>() {
+            return PropVal::Number(v);
+        }
+        if let Ok(time) = s.parse::<Time>() {
+            return PropVal::Time(time.hours, time.minutes);
+        }
+        PropVal::String(s.to_string())
+    }
+}
+
+impl Display for PropVal {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PropVal::None => std::fmt::Result::Ok(()),
+            PropVal::Number(n) => f.write_str(&n.to_string()),
+            PropVal::Time(n, m) => f.write_fmt(format_args!("{}:{}", n.to_string(), m.to_string())),
+            PropVal::String(s) => f.write_str(s),
+        }
+    }
+}
+
+impl Debug for PropVal {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.to_string())
+    }
+}
+
+impl PartialOrd for PropVal {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        match (self, other) {
+            (PropVal::None, PropVal::None) => Some(Ordering::Equal),
+            (PropVal::String(s1), PropVal::String(s2)) => s1.partial_cmp(s2),
+            (PropVal::Number(n1), PropVal::Number(n2)) => n1.partial_cmp(n2),
+            (PropVal::Time(n1, m1), PropVal::Time(n2, m2)) => {
+                let cmp1 = n1.cmp(n2);
+                if cmp1 != Ordering::Equal {
+                    return Some(cmp1);
+                }
+                m1.partial_cmp(m2)
+            }
+            (_, _) => None,
+        }
     }
 }
 
@@ -173,7 +273,7 @@ impl Display for Goal {
         let mut s = String::new();
         s.push_str(&self.str);
         if self.comment.is_some() {
-            s.push_str(" ");
+            s.push(' ');
             // Escape line breaks in the comment
             let comment = self.comment.as_ref().unwrap();
             let escaped = comment.replace('\n', "\\n");
