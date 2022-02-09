@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use std::fmt::{Debug, Display, Formatter, Write};
+use std::fmt::{Debug, Display, Formatter};
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -14,7 +14,7 @@ pub struct Date {
 }
 
 impl Date {
-    pub fn new(year: u16, month: u8, day: u8) -> Self {
+    pub const fn new(year: u16, month: u8, day: u8) -> Self {
         Date { year, month, day }
     }
 }
@@ -81,7 +81,7 @@ pub struct Time {
 }
 
 impl Time {
-    pub fn new(hours: u8, minutes: u8) -> Self {
+    pub const fn new(hours: u8, minutes: u8) -> Self {
         Time { hours, minutes }
     }
     pub fn as_minutes(&self) -> u64 {
@@ -146,7 +146,7 @@ pub struct DateTime {
 }
 
 impl DateTime {
-    fn new(date: Date, time: Time) -> Self {
+    pub(crate) const fn new(date: Date, time: Time) -> Self {
         DateTime { date, time }
     }
 }
