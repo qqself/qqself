@@ -1,7 +1,10 @@
 use std::cmp::Ordering;
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::{Debug, Display, Formatter, Write};
+use std::ops::AddAssign;
 use std::str::FromStr;
 use std::time::Duration;
+
+use record::PropVal::Time;
 
 // I'm still not sure about adding chrono as core has to be as light as possible to
 // be able to use anywhere. Let's have our own Date and Time wrappers and see how
@@ -75,14 +78,14 @@ impl Ord for Date {
 }
 
 #[derive(PartialEq, Clone)]
-pub struct Time {
+pub struct DayTime {
     pub hours: u8,
     pub minutes: u8,
 }
 
-impl Time {
+impl DayTime {
     pub const fn new(hours: u8, minutes: u8) -> Self {
-        Time { hours, minutes }
+        DayTime { hours, minutes }
     }
     pub fn as_minutes(&self) -> u64 {
         (self.hours as u64) * 60 + self.minutes as u64
@@ -92,19 +95,19 @@ impl Time {
     }
 }
 
-impl Display for Time {
+impl Display for DayTime {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!("{:0>2}:{:0>2}", self.hours, self.minutes))
     }
 }
 
-impl Debug for Time {
+impl Debug for DayTime {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.to_string())
     }
 }
 
-impl FromStr for Time {
+impl FromStr for DayTime {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -113,19 +116,19 @@ impl FromStr for Time {
         }
         let hours = parse_number(&s[0..2], 0, 23)?;
         let minutes = parse_number(&s[3..5], 0, 59)?;
-        Ok(Time { hours, minutes })
+        Ok(DayTime { hours, minutes })
     }
 }
 
-impl Eq for Time {}
+impl Eq for DayTime {}
 
-impl PartialOrd<Self> for Time {
+impl PartialOrd<Self> for DayTime {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl Ord for Time {
+impl Ord for DayTime {
     fn cmp(&self, other: &Self) -> Ordering {
         let hours = self.hours.cmp(&other.hours);
         if hours != Ordering::Equal {
@@ -140,13 +143,87 @@ impl Ord for Time {
 }
 
 #[derive(PartialEq, Clone)]
+pub struct TimeDuration {
+    pub measure1: usize,
+    pub measure2: usize,
+}
+
+impl TimeDuration {
+    pub const fn new(measure1: usize, measure2: usize) -> Self {
+        TimeDuration { measure1, measure2 }
+    }
+}
+
+impl Default for TimeDuration {
+    fn default() -> Self {
+        TimeDuration::new(0, 0)
+    }
+}
+
+impl Display for TimeDuration {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("{:0>2}:{:0>2}", self.measure1, self.measure2))
+    }
+}
+
+impl Debug for TimeDuration {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.to_string())
+    }
+}
+
+impl FromStr for TimeDuration {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // We assume that time duration is anything that looks time: From 0:01 to 99:99
+        let sep = match s.find(':') {
+            Some(idx) => idx,
+            None => return Err("Time duration has to be digits separated by :".to_string()),
+        };
+        let measure1 = parse_number(&s[0..sep], 0, 99)?;
+        let measure2 = parse_number(&s[sep + 1..s.len()], 0, 99)?;
+        Ok(TimeDuration { measure1, measure2 })
+    }
+}
+
+impl Eq for TimeDuration {}
+
+impl PartialOrd<Self> for TimeDuration {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for TimeDuration {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let measure1 = self.measure1.cmp(&other.measure1);
+        if measure1 != Ordering::Equal {
+            return measure1;
+        }
+        let measure2 = self.measure2.cmp(&other.measure2);
+        if measure2 != Ordering::Equal {
+            return measure2;
+        }
+        Ordering::Equal
+    }
+}
+
+impl AddAssign for TimeDuration {
+    fn add_assign(&mut self, rhs: Self) {
+        self.measure1 += rhs.measure1;
+        self.measure2 += rhs.measure2;
+    }
+}
+
+#[derive(PartialEq, Clone)]
 pub struct DateTime {
     pub date: Date,
-    pub time: Time,
+    pub time: DayTime,
 }
 
 impl DateTime {
-    pub(crate) const fn new(date: Date, time: Time) -> Self {
+    pub(crate) const fn new(date: Date, time: DayTime) -> Self {
         DateTime { date, time }
     }
 }
@@ -185,6 +262,24 @@ impl Ord for DateTime {
     }
 }
 
+impl FromStr for DateTime {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.len() != 16 {
+            return Err(format!(
+                "Expected datetime string of length {}, got {} for value {}",
+                16,
+                s.len(),
+                s
+            ));
+        }
+        let date = (&s[0..10]).parse::<Date>()?;
+        let time = (&s[11..16]).parse::<DayTime>()?;
+        Ok(DateTime { date, time })
+    }
+}
+
 #[derive(PartialEq, Clone)]
 pub struct DateTimeRange {
     pub start: DateTime,
@@ -195,6 +290,14 @@ impl DateTimeRange {
     fn new(start: DateTime, end: DateTime) -> Self {
         DateTimeRange { start, end }
     }
+    pub fn duration(&self) -> TimeDuration {
+        if self.start.date != self.end.date {
+            unimplemented!("Duration can only be calculated for same days ranges");
+        }
+        let minutes = (self.end.time.as_minutes() - self.start.time.as_minutes()) as usize;
+        let hours = minutes / 60;
+        TimeDuration::new(hours, minutes - hours * 60)
+    }
 }
 
 impl Display for DateTimeRange {
@@ -203,14 +306,9 @@ impl Display for DateTimeRange {
     }
 }
 
-impl DateTimeRange {
-    pub fn duration(&self) -> Duration {
-        if self.start.date != self.end.date {
-            unimplemented!("Duration can only be calculated for same days ranges");
-        }
-        let start = Duration::from_secs(self.start.time.as_seconds());
-        let end = Duration::from_secs(self.end.time.as_seconds());
-        end - start
+impl Debug for DateTimeRange {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.to_string())
     }
 }
 
@@ -329,59 +427,66 @@ mod tests {
 
     #[test]
     fn time_conversion() {
-        assert_eq!(Time::new(1, 12).as_minutes(), 72);
-        assert_eq!(Time::new(1, 12).as_seconds(), 72 * 60);
+        assert_eq!(DayTime::new(1, 12).as_minutes(), 72);
+        assert_eq!(DayTime::new(1, 12).as_seconds(), 72 * 60);
     }
 
     #[test]
     fn time_display() {
-        assert_eq!(Time::new(1, 1).to_string(), "01:01");
+        assert_eq!(DayTime::new(1, 1).to_string(), "01:01");
     }
 
     #[test]
     fn time_parse() {
-        assert_eq!("01:01".parse::<Time>().unwrap(), Time::new(1, 1));
-        assert_eq!("23:59".parse::<Time>().unwrap(), Time::new(23, 59));
-        assert!("24:00".parse::<Time>().is_err());
-        assert!("00:60".parse::<Time>().is_err());
+        assert_eq!("01:01".parse::<DayTime>().unwrap(), DayTime::new(1, 1));
+        assert_eq!("23:59".parse::<DayTime>().unwrap(), DayTime::new(23, 59));
+        assert!("24:00".parse::<DayTime>().is_err());
+        assert!("00:60".parse::<DayTime>().is_err());
     }
 
     #[test]
     fn time_compare() {
-        let time = Time::new(10, 10);
-        assert!(time < Time::new(10, 11));
-        assert!(time < Time::new(20, 0));
+        let time = DayTime::new(10, 10);
+        assert!(time < DayTime::new(10, 11));
+        assert!(time < DayTime::new(20, 0));
     }
 
     #[test]
     fn datetime_format() {
-        let datetime = DateTime::new(Date::new(2022, 11, 23), Time::new(12, 49));
+        let datetime = DateTime::new(Date::new(2022, 11, 23), DayTime::new(12, 49));
         assert_eq!(datetime.to_string(), "2022-11-23 12:49")
     }
 
     #[test]
+    fn datetime_parse() {
+        let want = DateTime::new(Date::new(2020, 1, 30), DayTime::new(00, 00));
+        let got = "2020-01-30 00:00".parse::<DateTime>().unwrap();
+        assert_eq!(got, want);
+    }
+
+    #[test]
     fn datetime_compare() {
-        let datetime = DateTime::new(Date::new(2022, 11, 23), Time::new(12, 49));
-        let datetime_time = DateTime::new(Date::new(2022, 11, 23), Time::new(12, 50));
+        let datetime = DateTime::new(Date::new(2022, 11, 23), DayTime::new(12, 49));
+        let datetime_time = DateTime::new(Date::new(2022, 11, 23), DayTime::new(12, 50));
         assert!(datetime < datetime_time);
-        let datetime_date = DateTime::new(Date::new(2022, 12, 23), Time::new(12, 49));
+        let datetime_date = DateTime::new(Date::new(2022, 12, 23), DayTime::new(12, 49));
         assert!(datetime < datetime_date);
     }
 
     #[test]
     fn datetimerange_format() {
-        let start = DateTime::new(Date::new(2022, 11, 23), Time::new(12, 49));
-        let end = DateTime::new(Date::new(2022, 11, 23), Time::new(12, 55));
+        let start = DateTime::new(Date::new(2022, 11, 23), DayTime::new(12, 49));
+        let end = DateTime::new(Date::new(2022, 11, 23), DayTime::new(12, 55));
         let range = DateTimeRange::new(start, end);
         assert_eq!(range.to_string(), "2022-11-23 12:49 2022-11-23 12:55");
     }
 
     #[test]
     fn datetimerange_duration() {
-        let from = DateTime::new(Date::new(2022, 11, 23), Time::new(12, 49));
-        let to = DateTime::new(Date::new(2022, 11, 23), Time::new(12, 55));
+        let from = DateTime::new(Date::new(2022, 11, 23), DayTime::new(12, 49));
+        let to = DateTime::new(Date::new(2022, 11, 23), DayTime::new(12, 55));
         let range = DateTimeRange::new(from, to);
-        assert_eq!(range.duration(), Duration::from_secs(360));
+        assert_eq!(range.duration(), TimeDuration::new(0, 6));
     }
 
     #[test]
