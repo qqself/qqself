@@ -1,11 +1,14 @@
-use chrono::prelude::*;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
+
+use chrono::{Datelike, Local, TimeZone};
 use structopt::clap::arg_enum;
 use structopt::StructOpt;
 
-use core::parser::{Query, Record};
+use core::datetime::{Date, DateTime, DateTimeRange, DayTime};
+use core::db::{Query, DB};
+use core::record::Record;
 
 // Query data files
 #[derive(StructOpt, Debug)]
@@ -17,6 +20,14 @@ struct QueryOpts {
     // Time filter for the query. Only entries that fits into last specified period will be read
     #[structopt(long, possible_values = &TimeRange::variants(), case_insensitive = true, default_value = "All")]
     time: TimeRange,
+
+    // Time filter minimum date in YYYY-MM-DD format
+    #[structopt(long)]
+    from: Option<Date>,
+
+    // Time filter maximum date in YYYY-MM-DD format
+    #[structopt(long)]
+    to: Option<Date>,
 
     // Query filter - use the same syntax as for creating new entries and matched entries will
     // be returned
@@ -31,7 +42,7 @@ enum Opt {
 }
 
 arg_enum! {
-    #[derive(Debug)]
+    #[derive(Debug, PartialEq)]
     enum TimeRange {
         Day,
         Week,
@@ -41,6 +52,9 @@ arg_enum! {
     }
 }
 
+// TODO We assume that every day log has entries belonging to that day, but in
+//      reality it may shift to the next one as entries could be after midnight
+//      as well
 fn main() {
     let opt: Opt = Opt::from_args();
     match opt {
@@ -49,39 +63,58 @@ fn main() {
 }
 
 fn query(opts: QueryOpts) {
-    let mut query = match Query::new(&opts.query.join(" ")) {
-        Ok(query) => query,
-        Err(err) => panic!("Query parsing error: {:?}", err),
-    };
+    let db = fill_db(&opts);
+    if opts.query.is_empty() {
+        // TODO Render goals
+    } else {
+        let query_str = opts.query.join(" ");
+        let date_filter = date_filter(opts.time, opts.from, opts.to, chrono::Local::today());
+        for stats in db
+            .query(Query::new(&query_str, Some(date_filter)).unwrap())
+            .unwrap()
+        {
+            for entry in &stats.entries {
+                println!("{}", entry);
+            }
+            println!("----------");
+            print!("Duration {}, Count {}", stats.duration(), stats.count());
+            for (tag, total) in &stats.prop_totals() {
+                print!(", {} {}", tag, total);
+            }
+            println!("\n")
+        }
+    }
+}
 
-    let min_date = date_filter(opts.time, chrono::Local::today());
-    for year in enumerate_folder_after(&opts.input, min_date.year() as u32) {
+fn fill_db(opts: &QueryOpts) -> DB {
+    let mut db = DB::new();
+    for year in enumerate_folder(&opts.input) {
         let path = opts.input.join(&year);
-        for month in enumerate_folder_after(&path, min_date.month()) {
+        for month in enumerate_folder(&path) {
             let path = path.join(&month);
-            for day in enumerate_folder_after(&path, min_date.day()) {
+            for day in enumerate_folder(&path) {
+                let mut prev_record_end = None;
+                let prefix = format!("{}-{}-{}", year, month, day);
+                let date = prefix.parse::<Date>().unwrap();
                 // TODO Remove hardcoded file extension
                 let file = File::open(path.join(format!("{}.md", day))).unwrap();
-                let mut prev = String::new();
                 for line in BufReader::new(file).lines() {
-                    let prefix = format!("{}-{}-{}", year, month, day);
-                    if let Ok(record) = Record::from_string(&line.unwrap(), &prefix, &prev) {
-                        match record {
-                            Record::Entry(entry) => {
-                                prev = entry.date_range.to.clone();
-                                query.add(entry);
-                            }
-                            Record::Goal(_) => {}
+                    if let Ok(record) =
+                        Record::from_string(&line.unwrap(), date.clone(), prev_record_end.clone())
+                    {
+                        if let Record::Entry(entry) = &record {
+                            prev_record_end = Some(entry.date_range.end.time.clone());
                         }
+                        db.add(record);
                     }
                 }
             }
         }
     }
-    query.render_stats();
+    db
 }
 
-fn enumerate_folder_after(path: &Path, after: u32) -> Vec<String> {
+fn enumerate_folder(path: &Path) -> Vec<String> {
     let mut entries: Vec<String> = std::fs::read_dir(path)
         .unwrap()
         .map(|v| {
@@ -92,25 +125,60 @@ fn enumerate_folder_after(path: &Path, after: u32) -> Vec<String> {
                 .to_string_lossy()
                 .to_string()
         })
-        .filter(|v| match v.parse::<u32>() {
-            Ok(v) => v >= after,
-            _ => false,
-        })
+        .filter(|v| v.parse::<usize>().is_ok())
         .collect();
     entries.sort();
     entries
 }
 
-fn date_filter(range: TimeRange, now: chrono::Date<Local>) -> Date<Local> {
-    match range {
-        TimeRange::Day => now,
-        TimeRange::Week => {
-            now - chrono::Duration::days(now.weekday().num_days_from_monday() as i64)
-        }
-        TimeRange::Month => chrono::Local.ymd(now.year(), now.month(), 1),
-        TimeRange::Year => chrono::Local.ymd(now.year(), 1, 1),
-        TimeRange::All => chrono::Local.ymd(1, 1, 1),
+fn date_filter(
+    range: TimeRange,
+    from: Option<Date>,
+    to: Option<Date>,
+    now: chrono::Date<Local>,
+) -> DateTimeRange {
+    let date_from_chrono =
+        |d: chrono::Date<Local>| Date::new(d.year() as u16, d.month() as u8, d.day() as u8);
+    let mut out = DateTimeRange::new(
+        DateTime::new(Date::new(1, 1, 1), DayTime::new(0, 0)),
+        DateTime::new(Date::new(3000, 1, 1), DayTime::new(23, 59)),
+    );
+    if let Some(from) = from {
+        out.start.date = from;
     }
+    if let Some(to) = to {
+        out.end.date = to;
+    }
+    if range != TimeRange::All {
+        match range {
+            TimeRange::Day => {
+                out.start.date = date_from_chrono(now);
+                out.end.date = date_from_chrono(now);
+            }
+            TimeRange::Week => {
+                let from =
+                    now - chrono::Duration::days(now.weekday().num_days_from_monday() as i64);
+                out.start.date = date_from_chrono(from);
+                out.end.date = date_from_chrono(from + chrono::Duration::days(7))
+            }
+            TimeRange::Month => {
+                let from = chrono::Local.ymd(now.year(), now.month(), 1);
+                // TODO Take last day of then month
+                let to = from + chrono::Duration::days(30);
+                out.start.date = date_from_chrono(from);
+                out.end.date = date_from_chrono(to);
+            }
+            TimeRange::Year => {
+                let from = chrono::Local.ymd(now.year(), 1, 1);
+                // TODO Take last day of the year
+                let to = from + chrono::Duration::days(365);
+                out.start.date = date_from_chrono(from);
+                out.end.date = date_from_chrono(to);
+            }
+            TimeRange::All => unreachable!(),
+        };
+    }
+    out
 }
 
 #[cfg(test)]

@@ -221,7 +221,7 @@ pub struct DateTime {
 }
 
 impl DateTime {
-    pub(crate) const fn new(date: Date, time: DayTime) -> Self {
+    pub const fn new(date: Date, time: DayTime) -> Self {
         DateTime { date, time }
     }
 }
@@ -285,7 +285,7 @@ pub struct DateTimeRange {
 }
 
 impl DateTimeRange {
-    fn new(start: DateTime, end: DateTime) -> Self {
+    pub fn new(start: DateTime, end: DateTime) -> Self {
         DateTimeRange { start, end }
     }
     pub fn duration(&self) -> TimeDuration {

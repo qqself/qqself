@@ -215,7 +215,7 @@ impl Display for PropVal {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             PropVal::None => std::fmt::Result::Ok(()),
-            PropVal::Number(n) => f.write_str(&n.to_string()),
+            PropVal::Number(n) => f.write_fmt(format_args!("{:.1}", n)),
             PropVal::Time(time) => f.write_str(&time.to_string()),
             PropVal::String(s) => f.write_str(s),
         }

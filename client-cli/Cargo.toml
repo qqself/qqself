@@ -4,6 +4,6 @@ version = "0.0.1"
 edition = "2021"
 
 [dependencies]
-chrono = "0.4.19"
 core = {path = "../core" }
+chrono = "0.4.19"
 structopt = "0.3.25"
