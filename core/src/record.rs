@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use std::fmt::{Debug, Display, Formatter, Write};
 use std::ops::AddAssign;
 
-use datetime::{DateTime, DateTimeRange, TimeDuration};
+use datetime::{Date, DateTime, DateTimeRange, DayTime, TimeDuration};
 use goal::Goal;
 use parser::{ParseError, Parser};
 
@@ -17,9 +17,13 @@ pub enum Record {
 }
 
 impl Record {
-    pub fn from_string(input: &str, relevant_to: DateTime) -> Result<Record, ParseError> {
+    pub fn from_string(
+        input: &str,
+        date: Date,
+        start_time: Option<DayTime>,
+    ) -> Result<Record, ParseError> {
         let mut parser = Parser::new(input);
-        parser.parse_record(relevant_to)
+        parser.parse_record(date, start_time)
     }
 }
 

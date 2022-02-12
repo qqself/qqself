@@ -175,8 +175,12 @@ impl<'a> Parser<'a> {
     }
 
     // DATETIMES -> DATETIME '-'? DATETIME?
-    fn parse_date_range(&mut self, base_time: DateTime) -> Result<DateTimeRange, ParseError> {
-        let parsed_date = match self.parse_date_time(&base_time.date)? {
+    fn parse_date_range(
+        &mut self,
+        base_date: Date,
+        prev_time: Option<DayTime>,
+    ) -> Result<DateTimeRange, ParseError> {
+        let parsed_date = match self.parse_date_time(&base_date)? {
             Some(parsed) => parsed,
             None => {
                 return Err(ParseError::BadDateTime(
@@ -188,15 +192,27 @@ impl<'a> Parser<'a> {
         // Separators in case of two date/time specified
         self.consume_char('-');
         self.consume_char(' ');
-        match self.parse_date_time(&base_time.date)? {
+        match self.parse_date_time(&base_date)? {
             Some(date_to) => Ok(DateTimeRange {
                 start: parsed_date,
                 end: date_to,
             }),
-            None => Ok(DateTimeRange {
-                start: base_time,
-                end: parsed_date,
-            }),
+            None => {
+                // No second date found. If we know time when previous record has ended via
+                // prev_time use that as a start of a new record. If not known we assume it's
+                // a first record of the day with same start and end
+                if let Some(prev_time) = prev_time {
+                    Ok(DateTimeRange {
+                        start: DateTime::new(base_date, prev_time),
+                        end: parsed_date,
+                    })
+                } else {
+                    Ok(DateTimeRange {
+                        start: parsed_date.clone(),
+                        end: parsed_date,
+                    })
+                }
+            }
         }
     }
 
@@ -288,8 +304,12 @@ impl<'a> Parser<'a> {
     }
 
     // ENTRY -> TAGS COMMENT?
-    pub fn parse_record(&mut self, relevant_to: DateTime) -> Result<Record, ParseError> {
-        let date_range = self.parse_date_range(relevant_to)?;
+    pub fn parse_record(
+        &mut self,
+        date: Date,
+        time: Option<DayTime>,
+    ) -> Result<Record, ParseError> {
+        let date_range = self.parse_date_range(date, time)?;
         let tags = self.parse_tags()?;
         let comment = self.parse_comment();
         self.create_record(date_range, tags, comment)
@@ -333,13 +353,13 @@ mod tests {
 
     use super::*;
 
-    const BASE_DATE: DateTime = DateTime::new(Date::new(2000, 1, 1), DayTime::new(0, 0));
+    const BASE_DATE: Date = Date::new(2000, 1, 1);
 
     #[test]
     fn entry_parsing() {
         let dr = |hours: u8, minutes: u8| DateTimeRange {
-            start: BASE_DATE.clone(),
-            end: DateTime::new(BASE_DATE.date.clone(), DayTime::new(hours, minutes)),
+            start: DateTime::new(BASE_DATE.clone(), DayTime::new(hours, minutes)),
+            end: DateTime::new(BASE_DATE.clone(), DayTime::new(hours, minutes)),
         };
         let prop = |name: &str, val: PropVal| Prop {
             name: name.to_string(),
@@ -471,7 +491,7 @@ mod tests {
             ),
         ];
         for (input, want) in cases {
-            match Record::from_string(input, BASE_DATE.clone()) {
+            match Record::from_string(input, BASE_DATE.clone(), None) {
                 Ok(Record::Entry(entry)) => {
                     assert_eq!(entry, want);
                 }
@@ -499,8 +519,8 @@ mod tests {
             "tag1 tagref=#tag2",
         ];
         for input in cases {
-            let input = format!("{} - {} 01:01 {}", BASE_DATE, BASE_DATE.date, input);
-            if let Record::Entry(entry) = Record::from_string(&input, BASE_DATE.clone()).unwrap() {
+            let input = format!("{} 02:02 - {} 02:02 {}", BASE_DATE, BASE_DATE, input);
+            if let Record::Entry(entry) = Record::from_string(&input, BASE_DATE, None).unwrap() {
                 let decoded = entry.to_string();
                 assert_eq!(decoded, input);
             } else {
@@ -513,29 +533,29 @@ mod tests {
     fn normalising() {
         let cases = vec![
             // Spaces trimmed and collapsed
-            ("01:01  tag1  ", "2000-01-01 00:00 - 2000-01-01 01:01 tag1"),
+            ("01:01  tag1  ", "2000-01-01 01:01 - 2000-01-01 01:01 tag1"),
             (
                 "01:01 tag1  prop1   ",
-                "2000-01-01 00:00 - 2000-01-01 01:01 tag1 prop1",
+                "2000-01-01 01:01 - 2000-01-01 01:01 tag1 prop1",
             ),
             // Comments are trimmed but comment content is not touched
             (
                 "01:01 tag1  prop1  . Comment >>  |  <<  ",
-                "2000-01-01 00:00 - 2000-01-01 01:01 tag1 prop1. Comment >>  |  <<",
+                "2000-01-01 01:01 - 2000-01-01 01:01 tag1 prop1. Comment >>  |  <<",
             ),
             // Properties values has equal signs
             (
                 "01:01 tag1 prop1 val1 prop2 val2 prop3",
-                "2000-01-01 00:00 - 2000-01-01 01:01 tag1 prop1=val1 prop2=val2 prop3",
+                "2000-01-01 01:01 - 2000-01-01 01:01 tag1 prop1=val1 prop2=val2 prop3",
             ),
             // Multiline strings
             (
                 "01:01 tag1. Multiline\n- Some1\n\n-Some2 ",
-                "2000-01-01 00:00 - 2000-01-01 01:01 tag1. Multiline\\n- Some1\\n\\n-Some2",
+                "2000-01-01 01:01 - 2000-01-01 01:01 tag1. Multiline\\n- Some1\\n\\n-Some2",
             ),
         ];
         for (input, normalised) in cases {
-            if let Record::Entry(got) = Record::from_string(input, BASE_DATE.clone()).unwrap() {
+            if let Record::Entry(got) = Record::from_string(input, BASE_DATE, None).unwrap() {
                 assert_eq!(got.to_string(), normalised);
             } else {
                 unreachable!();
@@ -561,8 +581,26 @@ mod tests {
             ),
         ];
         for (input, expected) in cases {
-            let got = Record::from_string(input, BASE_DATE.clone()).err().unwrap();
+            let got = Record::from_string(input, BASE_DATE, None).err().unwrap();
             assert_eq!(got, expected);
+        }
+    }
+
+    #[test]
+    fn parse_datetime_relevance() {
+        // First record of the day, no prev time known, record will be of zero duration
+        if let Ok(Record::Entry(entry)) = Record::from_string("07:00 foo", BASE_DATE, None) {
+            assert_eq!(entry.date_range.duration(), TimeDuration::new(0, 0));
+        } else {
+            unreachable!();
+        }
+        // Following records duration calculated relevant to previous record end time
+        if let Ok(Record::Entry(entry)) =
+            Record::from_string("07:00 foo", BASE_DATE, Some(DayTime::new(6, 30)))
+        {
+            assert_eq!(entry.date_range.duration(), TimeDuration::new(0, 30));
+        } else {
+            unreachable!();
         }
     }
 }

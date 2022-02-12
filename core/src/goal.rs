@@ -182,10 +182,10 @@ mod tests {
 
     use super::*;
 
-    const BASE_DATE: DateTime = DateTime::new(Date::new(2000, 1, 1), DayTime::new(0, 0));
+    const BASE_DATE: Date = Date::new(2000, 1, 1);
 
     fn parse(s: &str) -> Goal {
-        if let Ok(Record::Goal(goal)) = Record::from_string(&s, BASE_DATE) {
+        if let Ok(Record::Goal(goal)) = Record::from_string(&s, BASE_DATE, None) {
             return goal;
         }
         unreachable!()

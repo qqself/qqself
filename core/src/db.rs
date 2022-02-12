@@ -211,13 +211,17 @@ mod tests {
 
     use super::*;
 
-    const BASE_DATE: DateTime = DateTime::new(Date::new(2000, 1, 1), DayTime::new(0, 0));
+    const BASE_DATE: Date = Date::new(2000, 1, 1);
     const BASE_TIME: &str = "00:01"; // Hardcode time for easier testing
 
     fn db_from_strings(records: Vec<&str>) -> DB {
         let mut db = DB::default();
         for record in records {
-            match Record::from_string(&format!("{} {}", BASE_TIME, record), BASE_DATE.clone()) {
+            match Record::from_string(
+                &format!("{} 00:00 {} {} {}", BASE_DATE, BASE_DATE, BASE_TIME, record),
+                BASE_DATE,
+                None,
+            ) {
                 Ok(record) => db.add(record),
                 _ => unreachable!(),
             }
@@ -229,7 +233,11 @@ mod tests {
         entries
             .iter()
             .map(|(name, entry)| {
-                match Record::from_string(&format!("{} {}", BASE_TIME, entry), BASE_DATE.clone()) {
+                match Record::from_string(
+                    &format!("{} 00:00 {} {} {}", BASE_DATE, BASE_DATE, BASE_TIME, entry),
+                    BASE_DATE.clone(),
+                    None,
+                ) {
                     Ok(Record::Entry(entry)) => TagStats {
                         name: name.to_string(),
                         entries: vec![entry],
