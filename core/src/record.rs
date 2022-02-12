@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use std::fmt::{Debug, Display, Formatter, Write};
 use std::ops::AddAssign;
 
-use datetime::{Date, DateTime, DateTimeRange, DayTime, TimeDuration};
+use datetime::{Date, DateTimeRange, DayTime, TimeDuration};
 use goal::Goal;
 use parser::{ParseError, Parser};
 

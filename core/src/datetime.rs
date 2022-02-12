@@ -1,10 +1,7 @@
 use std::cmp::Ordering;
-use std::fmt::{Debug, Display, Formatter, Write};
+use std::fmt::{Debug, Display, Formatter};
 use std::ops::AddAssign;
 use std::str::FromStr;
-use std::time::Duration;
-
-use record::PropVal::Time;
 
 // I'm still not sure about adding chrono as core has to be as light as possible to
 // be able to use anywhere. Let's have our own Date and Time wrappers and see how
@@ -211,8 +208,9 @@ impl Ord for TimeDuration {
 
 impl AddAssign for TimeDuration {
     fn add_assign(&mut self, rhs: Self) {
-        self.measure1 += rhs.measure1;
-        self.measure2 += rhs.measure2;
+        let total = self.measure1 * 60 + self.measure2 + rhs.measure1 * 60 + rhs.measure2;
+        self.measure1 = total / 60;
+        self.measure2 = total - self.measure1 * 60;
     }
 }
 
@@ -487,6 +485,13 @@ mod tests {
         let to = DateTime::new(Date::new(2022, 11, 23), DayTime::new(12, 55));
         let range = DateTimeRange::new(from, to);
         assert_eq!(range.duration(), TimeDuration::new(0, 6));
+    }
+
+    #[test]
+    fn timeduration_add() {
+        let mut v = TimeDuration::new(9, 49);
+        v += TimeDuration::new(2, 15);
+        assert_eq!(v, TimeDuration::new(12, 4));
     }
 
     #[test]

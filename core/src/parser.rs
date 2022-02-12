@@ -1,4 +1,3 @@
-use std::cmp::min;
 use std::fmt::{Display, Formatter};
 
 use datetime::{Date, DateTime, DateTimeRange, DayTime};

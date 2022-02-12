@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
-use std::time::Duration;
 
 use datetime::{DateTimeRange, TimeDuration};
 use goal::{Goal, GoalProgress};
