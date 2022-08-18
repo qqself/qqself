@@ -1,5 +1,11 @@
 [package]
 name = "core"
 version = "0.0.0"
+edition = "2021"
 
 [dependencies]
+# aes-gcm is using getrandom which by default is not supported in WebAssembly and turning on "js" feature is required
+getrandom = { version = "0.2.7", features = ["js"] }
+aes-gcm = "0.10.1"
+rsa = "0.6.1"
+base64 = "0.13.0"
