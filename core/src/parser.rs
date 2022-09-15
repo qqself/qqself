@@ -1,8 +1,11 @@
 use std::fmt::{Display, Formatter};
 
-use datetime::{Date, DateTime, DateTimeRange, DayTime};
+use crate::datetime::{Date, DateTime, DateTimeRange, DayTime};
+use crate::{
+    goal,
+    record::{Entry, Prop, PropOperator, PropVal, Record, Tag},
+};
 use goal::Goal;
-use record::{Entry, Prop, PropOperator, PropVal, Record, Tag};
 
 /*
     Grammar:
@@ -191,7 +194,7 @@ impl<'a> Parser<'a> {
         // Separators in case of two date/time specified
         self.consume_char('-');
         self.consume_char(' ');
-        match self.parse_date_time(&base_date)? {
+        match self.parse_date_time(&parsed_date.date)? {
             Some(date_to) => Ok(DateTimeRange {
                 start: parsed_date,
                 end: date_to,
@@ -303,7 +306,7 @@ impl<'a> Parser<'a> {
     }
 
     // ENTRY -> TAGS COMMENT?
-    pub fn parse_record(
+    pub fn parse_date_record(
         &mut self,
         date: Date,
         time: Option<DayTime>,
@@ -314,8 +317,11 @@ impl<'a> Parser<'a> {
         self.create_record(date_range, tags, comment)
     }
 
-    pub fn parse_query(&mut self) -> Result<Vec<Tag>, ParseError> {
-        self.parse_tags()
+    // Parse record without a date prefix
+    pub fn parse_record(&mut self) -> Result<(Vec<Tag>, Option<String>), ParseError> {
+        let tags = self.parse_tags()?;
+        let comment = self.parse_comment();
+        Ok((tags, comment))
     }
 
     fn create_record(
@@ -348,7 +354,7 @@ impl<'a> Parser<'a> {
 
 #[cfg(test)]
 mod tests {
-    use datetime::TimeDuration;
+    use crate::datetime::TimeDuration;
 
     use super::*;
 
@@ -598,6 +604,15 @@ mod tests {
             Record::from_string("07:00 foo", BASE_DATE, Some(DayTime::new(6, 30)))
         {
             assert_eq!(entry.date_range.duration(), TimeDuration::new(0, 30));
+        } else {
+            unreachable!();
+        }
+        // Short daterange notation: Date Time Time
+        if let Ok(Record::Entry(entry)) =
+            Record::from_string("2011-11-21 07:00 08:10 foo", BASE_DATE, None)
+        {
+            assert_eq!(entry.date_range.start.date, Date::new(2011, 11, 21));
+            assert_eq!(entry.date_range.duration(), TimeDuration::new(1, 10));
         } else {
             unreachable!();
         }

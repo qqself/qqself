@@ -2,9 +2,9 @@ use std::cmp::Ordering;
 use std::fmt::{Debug, Display, Formatter, Write};
 use std::ops::AddAssign;
 
-use datetime::{Date, DateTimeRange, DayTime, TimeDuration};
-use goal::Goal;
-use parser::{ParseError, Parser};
+use crate::datetime::{Date, DateTimeRange, DayTime, TimeDuration};
+use crate::goal::Goal;
+use crate::parser::{ParseError, Parser};
 
 // Record represent parsed text line
 #[derive(PartialEq)]
@@ -23,7 +23,7 @@ impl Record {
         start_time: Option<DayTime>,
     ) -> Result<Record, ParseError> {
         let mut parser = Parser::new(input);
-        parser.parse_record(date, start_time)
+        parser.parse_date_record(date, start_time)
     }
 }
 
@@ -190,10 +190,13 @@ impl Display for PropOperator {
 
 #[derive(PartialEq, Clone)]
 pub enum PropVal {
-    None,               // No value for property
-    Number(f32),        // For simplicity we use f32 for both floats and integers
-    Time(TimeDuration), // Time duration with unknown hours or minutes scale
-    String(String),     // Anything else
+    None,
+    // No value for property
+    Number(f32),
+    // For simplicity we use f32 for both floats and integers
+    Time(TimeDuration),
+    // Time duration with unknown hours or minutes scale
+    String(String), // Anything else
 }
 
 impl PropVal {

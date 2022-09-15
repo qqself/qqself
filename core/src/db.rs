@@ -1,15 +1,15 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
-use datetime::{DateTimeRange, TimeDuration};
-use goal::{Goal, GoalProgress};
-use parser::{ParseError, Parser};
-use record::{Entry, PropVal, Record, Tag};
+use crate::datetime::{DateTimeRange, TimeDuration};
+use crate::goal::{Goal, GoalProgress};
+use crate::parser::{ParseError, Parser};
+use crate::record::{Entry, PropVal, Record, Tag};
 
 // Parsed collection of all active entries and goals
 pub struct DB {
-    entries: Vec<Entry>,
-    goals: Vec<Goal>,
+    pub entries: Vec<Entry>,
+    pub goals: Vec<Goal>,
 }
 
 // To query entries filtered by certain conditions
@@ -44,11 +44,11 @@ impl Default for Query {
 impl Query {
     pub fn new(query: &str, date_filter: Option<DateTimeRange>) -> Result<Query, ParseError> {
         let mut parser = Parser::new(query);
-        let query = parser.parse_query()?;
+        let (query, _) = parser.parse_record()?;
         Ok(Query { query, date_filter })
     }
 
-    fn matched_tags(&self, entry: &Entry) -> Vec<Tag> {
+    pub fn matched_tags(&self, entry: &Entry) -> Vec<Tag> {
         // Check first for date limits
         if let Some(filter) = &self.date_filter {
             if entry.date_range.start < filter.start || entry.date_range.end > filter.end {
@@ -171,7 +171,7 @@ impl DB {
                 continue; // TODO Probably DB shouldn't even have cancelled goals
             }
             progress.push(goal.goal_progress(self.query(Query {
-                query: goal.query.query.clone(),
+                query: goal.query.as_ref().unwrap().query.clone(),
                 date_filter: Some(date_filter.clone()),
             })?));
         }
@@ -206,7 +206,7 @@ impl Default for DB {
 
 #[cfg(test)]
 mod tests {
-    use datetime::{Date, DateTime, DayTime, TimeDuration};
+    use crate::datetime::{Date, TimeDuration};
 
     use super::*;
 

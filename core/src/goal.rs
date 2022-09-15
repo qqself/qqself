@@ -1,10 +1,10 @@
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-use datetime::{DatePeriod, TimeDuration};
-use db::{Query, TagStats};
-use parser::ParseError;
-use record::{Prop, PropOperator, PropVal, Tag};
+use crate::datetime::{DatePeriod, TimeDuration};
+use crate::db::{Query, TagStats};
+use crate::parser::ParseError;
+use crate::record::{Prop, PropOperator, PropVal, Tag};
 
 #[derive(PartialEq)]
 pub struct Goal {
@@ -15,13 +15,22 @@ pub struct Goal {
     pub duration: Option<TimeDuration>,
     pub period: DatePeriod,
     pub properties: Vec<Prop>,
-    pub query: Query,
-    str: String,
+    pub query: Option<Query>,
+    pub level: usize,
 }
 
 impl Goal {
-    pub fn goal_progress(&self, tags: Vec<TagStats>) -> GoalProgress {
-        todo!()
+    pub fn is_meta(&self) -> bool {
+        self.query.is_none() || self.query.as_ref().map(|v| v.query.is_empty()) == Some(true)
+    }
+
+    pub fn goal_progress(&self, _: Vec<TagStats>) -> GoalProgress {
+        GoalProgress {
+            name: "ok".to_string(),
+            completion: 5,
+            minutes_actual: 24,
+            minutes_planned: 45,
+        }
     }
     // pub fn target_in_days(&self, days_count: usize) -> (usize, Option<usize>) {
     //     let mut target = (0, None);
@@ -54,11 +63,14 @@ impl Goal {
     // }
 
     pub fn create(tags: Vec<Tag>, comment: Option<String>) -> Result<Goal, ParseError> {
-        let str: Vec<String> = tags.iter().map(|t| format!("{}", t)).collect();
-        let mut str = str.join(" ");
-        if comment.is_some() {
-            str = format!("{}. {}", str, comment.clone().unwrap());
-        }
+        Goal::create_with_level(tags, comment, 0)
+    }
+
+    pub fn create_with_level(
+        tags: Vec<Tag>,
+        comment: Option<String>,
+        level: usize,
+    ) -> Result<Goal, ParseError> {
         let mut goal = Goal {
             aggregate: Aggregate::Sum,
             canceled: false,
@@ -68,9 +80,10 @@ impl Goal {
             // TODO Goal without period is invalid, but here we init it with default day
             period: DatePeriod::Day,
             properties: vec![],
-            query: Default::default(),
-            str,
+            query: None,
+            level,
         };
+        let mut query: Query = Default::default();
         for tag in tags {
             if tag.name == "goal" {
                 for prop in tag.props {
@@ -84,15 +97,10 @@ impl Goal {
                     }
                 }
             } else {
-                goal.query.query.push(tag);
+                query.query.push(tag);
             }
         }
-        if goal.query.query.is_empty() {
-            return Err(ParseError::BadQuery(
-                "Query is required for the goal".to_string(),
-                0,
-            ));
-        }
+        goal.query = Some(query);
         Ok(goal)
     }
 
@@ -145,7 +153,34 @@ impl Goal {
 
 impl Display for Goal {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.str)
+        let mut str = String::new();
+        if let Some(q) = &self.query {
+            if !q.query.is_empty() {
+                let tags: Vec<String> = q.query.iter().map(|t| format!("{}", t)).collect();
+                str.push_str(&tags.join(". "));
+                str.push_str(". ");
+            }
+        }
+        str.push_str("goal");
+        str.push_str(" for ");
+        str.push_str(&self.period.to_string());
+        if let Some(v) = &self.count {
+            str.push_str(" count");
+            str.push_str(&v.0.to_string());
+            str.push_str(&v.1.to_string());
+        }
+        if let Some(v) = &self.duration {
+            str.push_str(" duration=");
+            str.push_str(&v.to_string());
+        }
+        str.push_str(" level=");
+        str.push_str(&self.level.to_string());
+
+        if self.comment.is_some() {
+            str.push_str(". ");
+            str.push_str(&self.comment.as_ref().unwrap());
+        }
+        f.write_str(&str)
     }
 }
 
@@ -168,6 +203,7 @@ impl FromStr for Aggregate {
 }
 
 // Goal progress stats
+#[derive(Debug)]
 pub struct GoalProgress {
     pub name: String,
     pub completion: usize,
@@ -177,31 +213,32 @@ pub struct GoalProgress {
 
 #[cfg(test)]
 mod tests {
-    use datetime::{Date, DateTime, DayTime};
-    use record::Record;
+    use crate::parser::Parser;
 
     use super::*;
 
-    const BASE_DATE: Date = Date::new(2000, 1, 1);
-
     fn parse(s: &str) -> Goal {
-        if let Ok(Record::Goal(goal)) = Record::from_string(&s, BASE_DATE, None) {
-            return goal;
+        let mut parser = Parser::new(s);
+        match parser.parse_record() {
+            Ok((tags, comment)) => Goal::create(tags, comment).unwrap(),
+            Err(err) => unreachable!("{}", err.to_string()),
         }
-        unreachable!()
     }
 
     #[test]
     fn parse_simple() {
-        let goal = parse("00:01 run distance>50. goal for week duration=5:00");
+        let goal = parse("run distance>50. goal for week duration=5:00");
         assert_eq!(goal.duration, Some(TimeDuration::new(5, 0)));
         assert_eq!(goal.period, DatePeriod::Week);
-        assert_eq!(goal.query, Query::new("run distance>50", None).unwrap());
+        assert_eq!(
+            goal.query,
+            Some(Query::new("run distance>50", None).unwrap())
+        );
     }
 
     #[test]
     fn parse_min_and_custom() {
-        let goal = parse("00:01 foo. goal for month duration=10:30 count=3 distance=50");
+        let goal = parse("foo. goal for month duration=10:30 count=3 distance=50");
         assert_eq!(goal.duration, Some(TimeDuration::new(10, 30)));
         assert_eq!(goal.period, DatePeriod::Month);
         assert_eq!(goal.count, Some((PropOperator::Eq, 3)));
@@ -218,7 +255,7 @@ mod tests {
 
     #[test]
     fn parse_just_count() {
-        let goal = parse("00:01 foo. goal for year count>10");
+        let goal = parse("foo. goal for year count>10");
         assert_eq!(goal.period, DatePeriod::Year);
         assert_eq!(goal.duration, None);
         assert_eq!(goal.count, Some((PropOperator::More, 10)));
@@ -226,19 +263,36 @@ mod tests {
 
     #[test]
     fn parse_aggregate() {
-        let goal = parse("01:01 foo. goal for year income=1000 aggregate=last");
+        let goal = parse("foo. goal for year income=1000 aggregate=last");
         assert_eq!(goal.aggregate, Aggregate::Last);
     }
 
     #[test]
     fn parse_cancelled() {
-        let goal = parse("01:01 foo. goal for year cancelled");
+        let goal = parse("foo. goal for year cancelled");
         assert!(goal.canceled);
     }
 
     #[test]
     fn parse_comment() {
-        let goal = parse("01:01 foo. goal for week. New goal");
+        let goal = parse("foo. goal for week. New goal");
         assert_eq!(goal.comment, Some("New goal".to_string()));
+    }
+
+    #[test]
+    fn parse_selector() {
+        let goal = parse("goal for week. Meta goal");
+        assert_eq!(goal.comment, Some("Meta goal".to_string()));
+        assert_eq!(goal.is_meta(), true);
+    }
+
+    #[test]
+    fn parse_duration() {
+        let goal = parse("goal for day duration=5:00");
+        assert_eq!(goal.duration, Some(TimeDuration::new(5, 0)));
+        let goal = parse("goal for day duration=51:24");
+        assert_eq!(goal.duration, Some(TimeDuration::new(51, 24)));
+        let goal = parse("goal for week duration=999:00");
+        assert_eq!(goal.duration, Some(TimeDuration::new(999, 0)));
     }
 }

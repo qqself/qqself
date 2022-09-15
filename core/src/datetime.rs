@@ -1,7 +1,8 @@
 use std::cmp::Ordering;
 use std::fmt::{Debug, Display, Formatter};
-use std::ops::AddAssign;
+use std::ops::{Add, AddAssign, Sub};
 use std::str::FromStr;
+use std::time::Duration;
 
 // I'm still not sure about adding chrono as core has to be as light as possible to
 // be able to use anywhere. Let's have our own Date and Time wrappers and see how
@@ -178,8 +179,8 @@ impl FromStr for TimeDuration {
             Some(idx) => idx,
             None => return Err("Time duration has to be digits separated by :".to_string()),
         };
-        let measure1 = parse_number(&s[0..sep], 0, 99)?;
-        let measure2 = parse_number(&s[sep + 1..s.len()], 0, 99)?;
+        let measure1 = parse_number(&s[0..sep], 0, 999)?;
+        let measure2 = parse_number(&s[sep + 1..s.len()], 0, 59)?;
         Ok(TimeDuration { measure1, measure2 })
     }
 }
@@ -223,6 +224,29 @@ pub struct DateTime {
 impl DateTime {
     pub const fn new(date: Date, time: DayTime) -> Self {
         DateTime { date, time }
+    }
+
+    pub fn day_start(&self) -> DateTime {
+        DateTime::new(self.date.clone(), DayTime::new(0, 0))
+    }
+
+    pub fn day_end(&self) -> DateTime {
+        DateTime::new(self.date.clone(), DayTime::new(23, 59))
+    }
+
+    pub fn year_before(&self) -> DateTime {
+        DateTime::new(
+            Date::new(self.date.year - 1, self.date.month, self.date.day),
+            self.time.clone(),
+        )
+    }
+
+    pub fn month_before(&self) -> DateTime {
+        let (year, month) = match self.date.month {
+            1 => (self.date.year - 1, 12),
+            month => (self.date.year, month - 1),
+        };
+        DateTime::new(Date::new(year, month, self.date.day), self.time.clone())
     }
 }
 
@@ -391,6 +415,97 @@ fn check_format(s: &str, format: Vec<char>) -> Result<(), String> {
     Ok(())
 }
 
+// Timestamp that supports sorting in lexicographic order when converted to string
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct Timestamp(u64); // u32::MAX will be reached in January 19, 2038, so use u64. Alternative could be using [u8; 40] or smth
+
+impl Timestamp {
+    pub const SIZE: usize = 8;
+    // SystemTime not available in WebAssembly context so we use specialized constructor
+    // for such environment
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn now() -> Self {
+        Timestamp(
+            std::time::SystemTime::now()
+                .duration_since(std::time::SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_secs(),
+        )
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn now() -> Self {
+        let now = date_now();
+        Timestamp(now)
+    }
+
+    pub fn new(timestamp: u64) -> Self {
+        Self(timestamp)
+    }
+
+    pub fn zero() -> Self {
+        Self(0)
+    }
+
+    pub fn new_from_bytes(data: [u8; Timestamp::SIZE]) -> Self {
+        Self(u64::from_le_bytes(data))
+    }
+
+    pub fn new_from_string(s: &str) -> Option<Self> {
+        s.parse::<u64>().map(|v| Timestamp(v)).ok()
+    }
+
+    pub fn elapsed(&self) -> u64 {
+        let now = Timestamp::now();
+        now.0 - self.0
+    }
+
+    pub fn as_bytes(&self) -> [u8; Timestamp::SIZE] {
+        self.0.to_le_bytes()
+    }
+
+    pub fn as_u64(&self) -> u64 {
+        self.0
+    }
+}
+
+impl Display for Timestamp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("{:0>20}", &self.0.to_string()))
+    }
+}
+
+impl Sub<Duration> for Timestamp {
+    type Output = Self;
+
+    fn sub(self, other: Duration) -> Self::Output {
+        // To avoid panic we can fallback to Timestamp::zero in case of overflow
+        // but not sure if hiding this error is worth it
+        Self(self.as_u64() - other.as_secs())
+    }
+}
+
+impl Add<Duration> for Timestamp {
+    type Output = Self;
+
+    fn add(self, other: Duration) -> Self::Output {
+        Self(self.as_u64() + other.as_secs())
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::prelude::wasm_bindgen;
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen(inline_js = r#"
+export function date_now() {
+  return Date.now();
+}"#)]
+extern "C" {
+    fn date_now() -> u64;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -504,5 +619,37 @@ mod tests {
     fn dateperiod_parse() {
         assert_eq!("day".parse::<DatePeriod>().unwrap(), DatePeriod::Day);
         assert_eq!("Year".parse::<DatePeriod>().unwrap(), DatePeriod::Year);
+    }
+
+    #[test]
+    #[cfg(feature = "cargo")]
+    fn timestamp_serde() {
+        // Just check that Timestamp can be serialized
+        #[derive(serde::Serialize)]
+        struct Foo {
+            t: Timestamp,
+        }
+    }
+
+    #[test]
+    fn timestamp_string_lexicographic_order() {
+        let max = Timestamp::new_from_string(&u64::MAX.to_string())
+            .unwrap()
+            .to_string();
+        assert_eq!(max, "18446744073709551615");
+        let min = Timestamp::zero().to_string();
+        assert_eq!(min, "00000000000000000000");
+        let value = Timestamp::now().to_string();
+        assert_eq!(value.len(), max.len());
+        assert!(value < max);
+        assert!(value > min);
+    }
+
+    #[test]
+    fn timestamp_to_from_string() {
+        let v = Timestamp::now();
+        let s = v.to_string();
+        let parsed = Timestamp::new_from_string(&s).unwrap();
+        assert_eq!(v, parsed);
     }
 }
