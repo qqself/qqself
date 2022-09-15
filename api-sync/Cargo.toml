@@ -1,0 +1,16 @@
+[package]
+name = "api-sync"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+actix-web = "4.1.0"
+async-trait = "0.1.57"
+env_logger = "0.9.0"
+futures = "0.3.24"
+lazy_static = "1.4.0"
+log = "0.4.17"
+qqself-core = { path = "../core", features = ["serde"] }
+serde = { version="1.0.144", features = ["derive"] }
+tempdir = "0.3.7"
+tokio = { version = "1.20.1", features = ["rt", "macros", "time"] }
