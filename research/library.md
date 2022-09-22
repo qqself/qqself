@@ -4,6 +4,24 @@ Set of sources about long-term skill development with small notes about ideas we
 
 ## Books
 
+[Peak](https://www.amazon.com/Peak-Secrets-New-Science-Expertise-ebook/dp/B011H56MKS)
+
+- Once we reach an "acceptable" performance and automaticity level, the additional years of "practice" don't lead to improvement. Playing the same song for 10'000 hours would bring stagnation, not improvement
+- Just doing it doesn't improve the skill. Purposeful practice is:
+	- Has a well-defined, specific goal
+	- Is focused
+	- Involves feedback
+	- Getting out of comfort zone
+- Positive, meaningful feedback is crucial for maintaining motivation. Internal like satisfaction from improvement, or externally provided by others
+- The best way to learn is to be guided by the teacher. If not available, the next would be to study the work of experts and try to reproduce it
+- Encountering plateau is typical in many skills. When we hit it, we think we've reached some limit, and we stop trying to move forward and stop improving
+- To find your weakest point that limits you and creates a plateau, push things a little and make it harder than usual. See where mistakes are coming from and what breaks down first. Then design a practice technique aiming an improving that particular weakness
+- Maintaining motivation to keep practicing has two parts: Reasons to keep going and reasons to stop. When we quit, it means the reasons to stop outweigh the reasons to continue. To continue either strengthen reason to keep going or weaken reasons to quit
+- Reasons to continue: Fixed time to practice; Good planning; Desire to become better; Get pride from your identity change. Believe that you can succeed. Find what interferes with training and find a way to minimize it. 
+- Surround yourself with people who will encourage, support, and challenge you in your endeavors. Who appreciate your passion and understand it
+- Arbitrary levels of achievements - split big goals into much smaller ones to keep you motivated. Count the number of errors, successes, kilometers, seconds, hits, etc.
+- Once you reach an advanced level in one domain, you understand what it takes to reach such levels in other domains.
+
 [Expert In A Year](https://www.amazon.com/Expert-Year-Ultimate-Tennis-Challenge-ebook/dp/B0142TUYE6)
 
 - 2000-3000 hours are needed to get to the top 1% of the field

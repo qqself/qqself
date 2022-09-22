@@ -1,7 +1,7 @@
 # Long-Term Skill Development
 Long-term skill development - how to master something that requires 10-20 years of learning and practicing?
 
-## Why is it hard to become a master?
+## It's hard to become a master
 Talking about skill development that takes tens of years to master, the main problem is not to give up. With such a long way to the top, we would face a lot of perfect opportunities to abandon the whole idea. Some skills require hundreds of hours to invest before you can see any results. To make things harder - those results would not be impressive at all. With almost every skill, you spend the most time on a plateau without feeling progress. With other skills, we may give up even before we've tried them because we assume it will be impossible for us to learn them.
 
 How can we become the person that we would like to become?
@@ -34,6 +34,8 @@ Often, we see others only when they perform, their showcase what they have learn
 
 ## Giving up because it's boooooring
 Things we can do - we don't want to do. 
+
 Things we want to do - we can't do. 
 
-Learning skills could be defined by what we can do with them - The better we become, the more capabilities we have. We open new possibilities, something that wasn't possible before suddenly becomes open for us. It is a reward that keeps us motivated to continue practicing and investing in the skill. If we structure our training wrong, if we are not becoming better, we will be stuck and eventually give up.
+Learning skills could be defined by what we can do with them - The better we become, the more capabilities we have. We open new possibilities, something that wasn't possible before suddenly becomes open for us. It is a reward that keeps us motivated to continue practicing and investing in the skill. If we structure our training wrong, if we are not becoming better, we will be stuck and may eventually give up.
+
