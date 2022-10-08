@@ -44,6 +44,12 @@ Set of sources about long-term skill development with small notes about ideas we
 - Public commitment - promise to reach the goal to someone, promise to report on this specific date whether you've achieved it or not
 - The key is getting started - we need to make it as easy as possible, 1 minute, 1 second, open the book, read the title, open the file, go outside. Starting is the blocker - get rid of it
 
+[Atomic Habits](https://www.amazon.com/Atomic-Habits-Proven-Build-Break-ebook/dp/B01N5AX61W)
+- Goals are excellent, but systems are better: concentrate on how we practice, learn, and progress rather than on a single result, on a single goal that we may fail to achieve
+- Bad habits, no matter how small, accumulates over time
+- Building habits focusing on what we want to achieve often fails.  Focus on who you want to become instead
+- The behavior change is identity change: It's not about learning an instrument; the goal is to become a musician
+
 ## Papers
 
 [Deliberate Practice and Performance in Music, Games, Sports, Education, and Professions: A Meta-Analysis](https://scholarship.rice.edu/handle/1911/76260)

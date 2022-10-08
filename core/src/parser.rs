@@ -1,11 +1,7 @@
 use std::fmt::{Display, Formatter};
 
 use crate::datetime::{Date, DateTime, DateTimeRange, DayTime};
-use crate::{
-    goal,
-    record::{Entry, Prop, PropOperator, PropVal, Record, Tag},
-};
-use goal::Goal;
+use crate::record::{Entry, Prop, PropOperator, PropVal, Tag};
 
 /*
     Grammar:
@@ -310,31 +306,10 @@ impl<'a> Parser<'a> {
         &mut self,
         date: Date,
         time: Option<DayTime>,
-    ) -> Result<Record, ParseError> {
+    ) -> Result<Entry, ParseError> {
         let date_range = self.parse_date_range(date, time)?;
         let tags = self.parse_tags()?;
         let comment = self.parse_comment();
-        self.create_record(date_range, tags, comment)
-    }
-
-    // Parse record without a date prefix
-    pub fn parse_record(&mut self) -> Result<(Vec<Tag>, Option<String>), ParseError> {
-        let tags = self.parse_tags()?;
-        let comment = self.parse_comment();
-        Ok((tags, comment))
-    }
-
-    fn create_record(
-        &self,
-        date_range: DateTimeRange,
-        tags: Vec<Tag>,
-        comment: Option<String>,
-    ) -> Result<Record, ParseError> {
-        // Check if record is a goal
-        if tags.iter().any(|v| v.name == "goal") {
-            return Ok(Record::Goal(Goal::create(tags, comment)?));
-        }
-        // Just a regular entry - validate and return
         for tag in &tags {
             for prop in &tag.props {
                 if prop.operator != PropOperator::Eq {
@@ -344,11 +319,18 @@ impl<'a> Parser<'a> {
                 }
             }
         }
-        Ok(Record::Entry(Entry {
+        Ok(Entry {
             date_range,
             tags,
             comment,
-        }))
+        })
+    }
+
+    // Parse record without a date prefix
+    pub fn parse_record(&mut self) -> Result<(Vec<Tag>, Option<String>), ParseError> {
+        let tags = self.parse_tags()?;
+        let comment = self.parse_comment();
+        Ok((tags, comment))
     }
 }
 
@@ -496,8 +478,8 @@ mod tests {
             ),
         ];
         for (input, want) in cases {
-            match Record::from_string(input, BASE_DATE.clone(), None) {
-                Ok(Record::Entry(entry)) => {
+            match Entry::parse(input, BASE_DATE.clone(), None) {
+                Ok(entry) => {
                     assert_eq!(entry, want);
                 }
                 _ => unreachable!(),
@@ -525,17 +507,14 @@ mod tests {
         ];
         for input in cases {
             let input = format!("{} 02:02 - {} 02:02 {}", BASE_DATE, BASE_DATE, input);
-            if let Record::Entry(entry) = Record::from_string(&input, BASE_DATE, None).unwrap() {
-                let decoded = entry.to_string();
-                assert_eq!(decoded, input);
-            } else {
-                unreachable!();
-            };
+            let entry = Entry::parse(&input, BASE_DATE, None).unwrap();
+            let decoded = entry.to_string();
+            assert_eq!(decoded, input);
         }
     }
 
     #[test]
-    fn normalising() {
+    fn normalizing() {
         let cases = vec![
             // Spaces trimmed and collapsed
             ("01:01  tag1  ", "2000-01-01 01:01 - 2000-01-01 01:01 tag1"),
@@ -559,12 +538,9 @@ mod tests {
                 "2000-01-01 01:01 - 2000-01-01 01:01 tag1. Multiline\\n- Some1\\n\\n-Some2",
             ),
         ];
-        for (input, normalised) in cases {
-            if let Record::Entry(got) = Record::from_string(input, BASE_DATE, None).unwrap() {
-                assert_eq!(got.to_string(), normalised);
-            } else {
-                unreachable!();
-            }
+        for (input, normalized) in cases {
+            let entry = Entry::parse(input, BASE_DATE, None).unwrap();
+            assert_eq!(entry.to_string(), normalized);
         }
     }
 
@@ -586,7 +562,7 @@ mod tests {
             ),
         ];
         for (input, expected) in cases {
-            let got = Record::from_string(input, BASE_DATE, None).err().unwrap();
+            let got = Entry::parse(input, BASE_DATE, None).err().unwrap();
             assert_eq!(got, expected);
         }
     }
@@ -594,27 +570,14 @@ mod tests {
     #[test]
     fn parse_datetime_relevance() {
         // First record of the day, no prev time known, record will be of zero duration
-        if let Ok(Record::Entry(entry)) = Record::from_string("07:00 foo", BASE_DATE, None) {
-            assert_eq!(entry.date_range.duration(), TimeDuration::new(0, 0));
-        } else {
-            unreachable!();
-        }
+        let entry = Entry::parse("07:00 foo", BASE_DATE, None).unwrap();
+        assert_eq!(entry.date_range.duration(), TimeDuration::new(0, 0));
         // Following records duration calculated relevant to previous record end time
-        if let Ok(Record::Entry(entry)) =
-            Record::from_string("07:00 foo", BASE_DATE, Some(DayTime::new(6, 30)))
-        {
-            assert_eq!(entry.date_range.duration(), TimeDuration::new(0, 30));
-        } else {
-            unreachable!();
-        }
+        let entry = Entry::parse("07:00 foo", BASE_DATE, Some(DayTime::new(6, 30))).unwrap();
+        assert_eq!(entry.date_range.duration(), TimeDuration::new(0, 30));
         // Short daterange notation: Date Time Time
-        if let Ok(Record::Entry(entry)) =
-            Record::from_string("2011-11-21 07:00 08:10 foo", BASE_DATE, None)
-        {
-            assert_eq!(entry.date_range.start.date, Date::new(2011, 11, 21));
-            assert_eq!(entry.date_range.duration(), TimeDuration::new(1, 10));
-        } else {
-            unreachable!();
-        }
+        let entry = Entry::parse("2011-11-21 07:00 08:10 foo", BASE_DATE, None).unwrap();
+        assert_eq!(entry.date_range.start.date, Date::new(2011, 11, 21));
+        assert_eq!(entry.date_range.duration(), TimeDuration::new(1, 10));
     }
 }

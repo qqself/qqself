@@ -302,7 +302,7 @@ impl FromStr for DateTime {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Eq, PartialOrd)]
 pub struct DateTimeRange {
     pub start: DateTime,
     pub end: DateTime,
@@ -331,6 +331,14 @@ impl Display for DateTimeRange {
 impl Debug for DateTimeRange {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.to_string())
+    }
+}
+
+impl Ord for DateTimeRange {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.start
+            .cmp(&other.start)
+            .then_with(|| self.end.cmp(&other.end))
     }
 }
 

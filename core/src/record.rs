@@ -3,35 +3,30 @@ use std::fmt::{Debug, Display, Formatter, Write};
 use std::ops::AddAssign;
 
 use crate::datetime::{Date, DateTimeRange, DayTime, TimeDuration};
-use crate::goal::Goal;
 use crate::parser::{ParseError, Parser};
 
-// Record represent parsed text line
-#[derive(PartialEq)]
-pub enum Record {
-    // Entry record - new data input
-    Entry(Entry),
-
-    // Goal record - new goal set or canceled
-    Goal(Goal),
+#[derive(Clone, Eq, PartialEq)]
+pub struct Entry {
+    // TODO Remove public
+    pub(crate) tags: Vec<Tag>,
+    pub(crate) comment: Option<String>,
+    pub(crate) date_range: DateTimeRange,
 }
 
-impl Record {
-    pub fn from_string(
-        input: &str,
-        date: Date,
-        start_time: Option<DayTime>,
-    ) -> Result<Record, ParseError> {
-        let mut parser = Parser::new(input);
-        parser.parse_date_record(date, start_time)
+impl Ord for Entry {
+    fn cmp(&self, other: &Self) -> Ordering {
+        return self
+            .date_range
+            .cmp(&other.date_range)
+            // TODO Hack for now, implement proper ordering for all intermediate objects
+            .then_with(|| self.to_string().cmp(&other.to_string()));
     }
 }
 
-#[derive(PartialEq, Clone)]
-pub struct Entry {
-    pub tags: Vec<Tag>,
-    pub comment: Option<String>,
-    pub date_range: DateTimeRange,
+impl PartialOrd for Entry {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 impl Entry {
@@ -41,6 +36,15 @@ impl Entry {
             comment,
             tags,
         }
+    }
+
+    pub(crate) fn parse(
+        input: &str,
+        date: Date,
+        start_time: Option<DayTime>,
+    ) -> Result<Entry, ParseError> {
+        let mut parser = Parser::new(input);
+        parser.parse_date_record(date, start_time)
     }
 }
 
@@ -70,7 +74,7 @@ impl Debug for Entry {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Eq)]
 pub struct Tag {
     pub name: String,
     pub props: Vec<Prop>,
@@ -127,7 +131,7 @@ impl Debug for Tag {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Eq)]
 pub struct Prop {
     pub name: String,
     pub val: PropVal,
@@ -171,7 +175,7 @@ impl Debug for Prop {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Eq, PartialOrd, Ord)]
 pub enum PropOperator {
     Eq,
     Less,
@@ -190,13 +194,10 @@ impl Display for PropOperator {
 
 #[derive(PartialEq, Clone)]
 pub enum PropVal {
-    None,
-    // No value for property
-    Number(f32),
-    // For simplicity we use f32 for both floats and integers
-    Time(TimeDuration),
-    // Time duration with unknown hours or minutes scale
-    String(String), // Anything else
+    None,               // No value for property
+    Number(f32),        // For simplicity we use f32 for both floats and integers
+    Time(TimeDuration), // Time duration with unknown hours or minutes scale
+    String(String),     // Anything else
 }
 
 impl PropVal {
@@ -242,6 +243,8 @@ impl PartialOrd for PropVal {
         }
     }
 }
+
+impl Eq for PropVal {}
 
 impl AddAssign for PropVal {
     fn add_assign(&mut self, rhs: Self) {
