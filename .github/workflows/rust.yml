@@ -1,13 +1,13 @@
 name: ci
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "main" ]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - run: cargo build
+    - run: cargo build --frozen
     - run: cargo test
