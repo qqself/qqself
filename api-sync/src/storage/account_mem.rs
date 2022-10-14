@@ -20,7 +20,10 @@ impl MemoryAccountStorage {
 #[async_trait]
 impl AccountStorage for MemoryAccountStorage {
     async fn set(&self, acc: Account) -> Result<(), AccountStorageErr> {
-        self.data.lock().unwrap().insert(acc.public_key.to_string(), acc);
+        self.data
+            .lock()
+            .unwrap()
+            .insert(acc.public_key.to_string(), acc);
         Ok(())
     }
 

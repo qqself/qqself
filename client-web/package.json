@@ -1,0 +1,15 @@
+{
+  "private": true,
+  "scripts": {
+    "start": "vite",
+    "build": "rsw && vite build"
+  },
+  "devDependencies": {
+    "typescript": "^4.7.4",
+    "vite": "^3.0.3",
+    "vite-plugin-rsw": "^2.0.8"
+  },
+  "dependencies": {
+    "lit": "^2.2.8"
+  }
+}

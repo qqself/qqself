@@ -1,9 +1,9 @@
 [package]
-name = "client-cli"
+name = "qqself-client-cli"
 version = "0.0.1"
 edition = "2021"
 
 [dependencies]
-core = {path = "../core" }
+qqself-core = {path = "../core" }
 chrono = "0.4.19"
 structopt = "0.3.25"

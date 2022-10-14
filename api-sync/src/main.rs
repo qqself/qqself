@@ -1,5 +1,5 @@
 use actix_web::{middleware::Logger, web::Data, HttpServer};
-use api_sync::{
+use qqself_api_sync::{
     http::routes::http_config,
     storage::{
         account::AccountStorage, account_mem::MemoryAccountStorage, payload::PayloadStorage,

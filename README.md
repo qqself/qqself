@@ -29,7 +29,7 @@ Have a look what we have in [library.md](research/library.md) and create PR with
     - [x] Store/retrieve encrypted data
     - [x] End-to-end encryption with RSA+AES
     - [ ] Deploy to AWS
-- `client-game`
+- `client-web`
     - [x] Working prototype with Web-Assembly, web components, lit-element
     - [ ] Rewrite prototype with more flexible widgets support
     - [ ] UI/UX, design, mobile-friendly

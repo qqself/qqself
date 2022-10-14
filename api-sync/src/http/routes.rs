@@ -1,9 +1,6 @@
 use std::time::Duration;
 
-use crate::storage::{
-    account::{AccountStorage},
-    payload::PayloadStorage,
-};
+use crate::storage::{account::AccountStorage, payload::PayloadStorage};
 
 use super::{HttpErrorType, Timestamp};
 
@@ -387,7 +384,8 @@ mod tests {
 
         // Return all
         let body = FindReq {
-            token: SearchToken::encode(&public_key, &private_key, time_start.clone(), None).unwrap(),
+            token: SearchToken::encode(&public_key, &private_key, time_start.clone(), None)
+                .unwrap(),
         };
         let resp = test::call_and_read_body(&app, req_find(body).to_request()).await;
         assert_eq!(extract_plaintext(resp), vec!["1", "2", "3"]);
