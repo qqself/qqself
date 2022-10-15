@@ -1,0 +1,24 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ecr-public:InitiateLayerUpload",
+                "ecr-public:UploadLayerPart",
+                "ecr-public:PutImage",
+                "ecr-public:CompleteLayerUpload",
+                "ecr-public:BatchCheckLayerAvailability"
+            ],
+            "Resource": "arn:aws:ecr-public::731165421230:repository/qqself-api-sync"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ecr-public:GetAuthorizationToken",
+                "sts:GetServiceBearerToken"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
