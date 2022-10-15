@@ -19,7 +19,7 @@ impl RSA {
     const MAX_PAYLOAD_SIZE: usize = RSA::KEY_SIZE / 8 - 11; // Formula from https://pkg.go.dev/crypto/rsa#EncryptPKCS1v15
     pub(crate) const SIGNATURE_SIZE: usize = 256;
 
-    fn generate_keys() -> (PublicKey, PrivateKey) {
+    pub(crate) fn generate_keys() -> (PublicKey, PrivateKey) {
         let private = RsaPrivateKey::new(&mut OsRng, RSA::KEY_SIZE).expect("generate rsa keys");
         let public = private.to_public_key();
         let private = private

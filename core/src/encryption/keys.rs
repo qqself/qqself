@@ -2,6 +2,8 @@ use std::fmt::Display;
 
 use crate::binary_text::BinaryToText;
 
+use super::rsa::RSA;
+
 #[derive(Debug)]
 pub enum InputError {
     TooBig(String),
@@ -43,4 +45,8 @@ impl<const S: usize> Display for Key<S> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.0.encoded())
     }
+}
+
+pub fn generate_keys() -> (PublicKey, PrivateKey) {
+    RSA::generate_keys()
 }

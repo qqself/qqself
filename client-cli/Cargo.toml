@@ -5,5 +5,8 @@ edition = "2021"
 
 [dependencies]
 qqself-core = {path = "../core" }
-chrono = "0.4.19"
 structopt = "0.3.25"
+toml="0.5.9"
+serde = { version = "1.0", features = ["derive"] }
+log = "0.4.17"
+env_logger = "0.9.1"
