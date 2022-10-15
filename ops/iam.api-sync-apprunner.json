@@ -1,0 +1,15 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "apprunner:UpdateService",
+            "Resource": "arn:aws:apprunner:us-east-1:731165421230:service/qqself-api-sync/4d297e943deb49aeae3d7b4ca077df34"
+        },
+        {
+            "Effect": "Allow",
+            "Action": "apprunner:ListServices",
+            "Resource": "*"
+        }
+    ]
+}
