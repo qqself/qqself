@@ -30,12 +30,12 @@ test() {
 }
 
 deploy() {
-    # TODO Deploy from CI. For local deployment following command is needed before the deploy:
-    #      aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/z9w5n5h3
-    log "Deploying api-sync"
+    log "Deploying api-sync"    
     repo="public.ecr.aws/z9w5n5h3"
+    region="us-east-1"
     tag="$repo/qqself-api-sync:$VERSION"
     docker build . --file api-sync/Dockerfile --tag $tag
+    aws ecr-public get-login-password --region "$region" | docker login --username AWS --password-stdin "$repo"
     docker push $tag
 }
 
