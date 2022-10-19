@@ -173,12 +173,13 @@ impl<'a> Parser<'a> {
     }
 
     // DATETIMES -> DATETIME '-'? DATETIME?
+    // TODO Simplify it, and before think if we actually need all this functionality
     fn parse_date_range(
         &mut self,
-        base_date: Date,
+        base_date: Option<Date>,
         prev_time: Option<DayTime>,
     ) -> Result<DateTimeRange, ParseError> {
-        let parsed_date = match self.parse_date_time(&base_date)? {
+        let parsed_date = match self.parse_date_time(base_date.clone())? {
             Some(parsed) => parsed,
             None => {
                 return Err(ParseError::BadDateTime(
@@ -190,7 +191,7 @@ impl<'a> Parser<'a> {
         // Separators in case of two date/time specified
         self.consume_char('-');
         self.consume_char(' ');
-        match self.parse_date_time(&parsed_date.date)? {
+        match self.parse_date_time(Some(parsed_date.clone().date))? {
             Some(date_to) => Ok(DateTimeRange {
                 start: parsed_date,
                 end: date_to,
@@ -201,7 +202,8 @@ impl<'a> Parser<'a> {
                 // a first record of the day with same start and end
                 if let Some(prev_time) = prev_time {
                     Ok(DateTimeRange {
-                        start: DateTime::new(base_date, prev_time),
+                        // TODO Looks like all this logic of handling records without datetime ranges is too complex
+                        start: DateTime::new(base_date.unwrap(), prev_time),
                         end: parsed_date,
                     })
                 } else {
@@ -215,8 +217,18 @@ impl<'a> Parser<'a> {
     }
 
     // DATETIME -> (DATE' ')? TIME
-    fn parse_date_time(&mut self, base_date: &Date) -> Result<Option<DateTime>, ParseError> {
-        let date = self.parse_date().unwrap_or_else(|| base_date.clone());
+    fn parse_date_time(&mut self, base_date: Option<Date>) -> Result<Option<DateTime>, ParseError> {
+        let date = match (self.parse_date(), base_date) {
+            (None, None) => {
+                return Err(ParseError::BadDateTime(
+                    "Failed to parse the date".to_string(),
+                    self.pos,
+                ))
+            }
+            (None, Some(v)) => v,
+            (Some(v), None) => v,
+            (Some(v), Some(_)) => v,
+        };
         self.consume_char(' '); // Date and Time separator
         let time = match self.parse_time() {
             None => return Ok(None),
@@ -304,7 +316,7 @@ impl<'a> Parser<'a> {
     // ENTRY -> TAGS COMMENT?
     pub fn parse_date_record(
         &mut self,
-        date: Date,
+        date: Option<Date>,
         time: Option<DayTime>,
     ) -> Result<Entry, ParseError> {
         let date_range = self.parse_date_range(date, time)?;

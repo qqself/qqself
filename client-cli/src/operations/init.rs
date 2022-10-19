@@ -1,10 +1,9 @@
 use std::{path::Path, process::exit};
 
 use crate::config::Config;
-use log::{error, info};
-use qqself_core::encryption::keys::generate_keys;
-use std::fs;
+use qqself_core::encryption::keys::{generate_keys, PrivateKey, PublicKey};
 use structopt::StructOpt;
+use tracing::{error, info, span, Level};
 
 #[derive(StructOpt, Debug)]
 #[structopt(about = "Creates new keys and saves it in the config.toml")]
@@ -18,6 +17,7 @@ pub struct InitOpts {
     overwrite: bool,
 }
 
+#[tracing::instrument(level = "trace", skip_all)]
 pub fn init(opts: InitOpts) {
     let config_path = Path::new(&opts.config_path);
     if config_path.exists() && !opts.overwrite {
@@ -28,8 +28,12 @@ pub fn init(opts: InitOpts) {
         "Initializing. Generating new keys and storing config file at {:?}",
         config_path
     );
-    let (public_key, private_key) = generate_keys();
-    let config = Config::new(public_key.to_string(), private_key.to_string());
-    let toml = toml::to_string(&config).unwrap();
-    fs::write(config_path, toml).unwrap();
+    let (public_key, private_key) = generate_new_keys();
+    let config = Config::new(public_key, private_key);
+    config.save(config_path);
+}
+
+#[tracing::instrument(level = "trace", skip_all)]
+fn generate_new_keys() -> (PublicKey, PrivateKey) {
+    generate_keys()
 }

@@ -44,7 +44,7 @@ impl Entry {
         start_time: Option<DayTime>,
     ) -> Result<Entry, ParseError> {
         let mut parser = Parser::new(input);
-        parser.parse_date_record(date, start_time)
+        parser.parse_date_record(Some(date), start_time)
     }
 }
 
