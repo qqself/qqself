@@ -4,9 +4,12 @@ version = "0.0.1"
 edition = "2021"
 
 [dependencies]
-qqself-core = {path = "../core" }
-structopt = "0.3.25"
-toml="0.5.9"
+qqself-core = {path = "../core", features = ["serde"] }
+reqwest = "0.11.12"
 serde = { version = "1.0", features = ["derive"] }
-log = "0.4.17"
-env_logger = "0.9.1"
+structopt = "0.3.25"
+tokio = { version = "1.20.1", features = ["full"] }
+toml="0.5.9"
+tracing = "0.1.37"
+tracing-subscriber = { version = "0.3.16", features = ["local-time", "env-filter"] }
+rayon = "1.5.3"
