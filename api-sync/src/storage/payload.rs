@@ -59,7 +59,7 @@ mod tests {
         s: &S,
         after_timestamp: Option<u64>,
     ) -> Vec<Payload> {
-        s.find(&keys.public, after_timestamp.map(|v| Timestamp::new(v)))
+        s.find(&keys.public, after_timestamp.map(Timestamp::new))
             .map(|v| v.unwrap())
             .map(|v| v.validated(None).unwrap())
             .collect::<Vec<_>>()

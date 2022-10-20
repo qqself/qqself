@@ -12,7 +12,7 @@ use structopt::StructOpt;
 use tokio::sync::mpsc;
 use tracing::{error, info};
 
-use crate::{api::API, config::Config};
+use crate::{api::Api, config::Config};
 
 #[derive(StructOpt, Debug)]
 #[structopt(about = "Exports all the records from journal file to the cloud")]
@@ -57,10 +57,10 @@ fn export_journal(journal_path: &Path, config: Config) {
         .par_bridge()
         .for_each(|(idx, line)| {
             let line = line.expect("Cannot read journal line");
-            if line.trim().starts_with("#") {
+            if line.trim().starts_with('#') {
                 return; // Skip the comments
             }
-            if line.trim().len() == 0 {
+            if line.trim().is_empty() {
                 return; // Skip empty lines
             }
             // Parse the record to see if it's a valid one
@@ -69,7 +69,7 @@ fn export_journal(journal_path: &Path, config: Config) {
                 .unwrap();
             let (public_key, private_key) = config.keys();
             let enc_bytes =
-                PayloadBytes::encrypt(&public_key, &private_key, Timestamp::now(), &line, None)
+                PayloadBytes::encrypt(public_key, private_key, Timestamp::now(), &line, None)
                     .unwrap();
             let tx = &send_channels[idx % send_channels.len()];
             tx.blocking_send(enc_bytes).unwrap();
@@ -99,7 +99,7 @@ fn start_sender() -> (JoinHandle<()>, Vec<mpsc::Sender<PayloadBytes>>) {
                 let mut join_handles = Vec::new();
                 for mut rx in receivers {
                     join_handles.push(tokio::spawn(async move {
-                        let api = API::new();
+                        let api = Api::new();
                         while let Some(v) = rx.recv().await {
                             let resp = api.set(v).await.unwrap();
                             if resp.status() != 200 {

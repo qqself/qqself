@@ -39,7 +39,7 @@ impl RecordValue {
     }
 }
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub struct RecordConflict {
     revision: usize,
     entries: BTreeSet<RecordValue>,
@@ -52,11 +52,11 @@ impl RecordConflict {
             .iter()
             .next()
             .expect("Conflict should always have an entry");
-        entry.date_range().clone()
+        entry.date_range()
     }
 }
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Record {
     Value(RecordValue),
     Conflict(RecordConflict),
@@ -77,7 +77,7 @@ impl Record {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ChangeEvent {
     Added(Record),
     Replaced {
@@ -122,7 +122,7 @@ impl DB {
                 }
             }
             if cleanup {
-                self.subscribers.retain(|ref s| s.upgrade().is_some());
+                self.subscribers.retain(|s| s.upgrade().is_some());
             }
             self.sync_queue.push_back(event);
         }
@@ -173,10 +173,10 @@ impl DB {
                 // Existing and new are conflicts - merge it's entries
                 conflict_old.entries.append(&mut conflict_new.entries);
                 conflict_old.revision += 1;
-                return Some(ChangeEvent::ConflictUpdated {
+                Some(ChangeEvent::ConflictUpdated {
                     from: conflict_before,
                     to: conflict_old.clone(),
-                });
+                })
             }
             (Record::Value(value_old), Record::Value(value_new)) => {
                 // Two conflicting values - replace existing record with Conflict value and append new entry there
@@ -185,20 +185,20 @@ impl DB {
                     revision: value_new.revision(),
                     entries: BTreeSet::from([value_old.clone(), value_new.to_owned()]),
                 });
-                return Some(ChangeEvent::Replaced {
+                Some(ChangeEvent::Replaced {
                     from: Record::Value(value_before),
                     to: record_old.clone(),
-                });
+                })
             }
             (Record::Conflict(conflict_old), Record::Value(value_new)) => {
                 let conflict_before = conflict_old.clone();
                 // Existing conflict - append new entry
                 conflict_old.entries.insert(value_new.to_owned());
                 conflict_old.revision += 1;
-                return Some(ChangeEvent::ConflictUpdated {
+                Some(ChangeEvent::ConflictUpdated {
                     from: conflict_before,
                     to: conflict_old.clone(),
-                });
+                })
             }
             (Record::Value(value_old), Record::Conflict(conflict_new)) => {
                 // Existing value, but new conflict, merge to conflict
@@ -209,15 +209,15 @@ impl DB {
                     revision: value_old.revision(),
                     entries,
                 });
-                return Some(ChangeEvent::Replaced {
+                Some(ChangeEvent::Replaced {
                     from: Record::Value(value_before),
                     to: record_old.clone(),
-                });
+                })
             }
         }
     }
 
-    pub fn query(&self, query: Query) -> Result<Vec<Entry>, QueryError> {
+    pub fn query(&self, _: Query) -> Result<Vec<Entry>, QueryError> {
         Ok(vec![])
     }
 
@@ -226,8 +226,14 @@ impl DB {
     }
 }
 
+impl Default for DB {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 // To query entries filtered by certain conditions
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub struct Query {
     pub query: Vec<Tag>,
     pub date_filter: Option<DateTimeRange>,
@@ -348,10 +354,8 @@ mod tests {
                 .iter()
                 .map(|(date_range, record)| (date_range.clone(), record))
                 .collect();
-            let want: Vec<(DateTimeRange, &Record)> = want
-                .into_iter()
-                .map(|v| (v.daterange().clone(), v))
-                .collect();
+            let want: Vec<(DateTimeRange, &Record)> =
+                want.into_iter().map(|v| (v.daterange(), v)).collect();
             assert_eq!(got, want);
         }
     }
@@ -397,7 +401,7 @@ mod tests {
         let rec2 = parse_entry("00:01 a", 1);
         let mut db = TestDB::new();
         db.add(rec1.clone());
-        db.add(rec2.clone());
+        db.add(rec2);
         db.assert_events(vec![ChangeEvent::Added(rec1.clone())]);
         db.assert_record(vec![&rec1]);
         // Adding entry with lower revision is ignored
@@ -418,7 +422,7 @@ mod tests {
         db.assert_events(vec![
             ChangeEvent::Added(rec1.clone()),
             ChangeEvent::Replaced {
-                from: rec1.clone(),
+                from: rec1,
                 to: rec2.clone(),
             },
         ]);
@@ -449,7 +453,7 @@ mod tests {
         db.assert_events(vec![
             ChangeEvent::Added(rec1.clone()),
             ChangeEvent::Replaced {
-                from: rec1.clone(),
+                from: rec1,
                 to: Record::Conflict(conflict1.clone()),
             },
             ChangeEvent::ConflictUpdated {
@@ -457,7 +461,7 @@ mod tests {
                 to: conflict2.clone(),
             },
         ]);
-        db.assert_record(vec![&Record::Conflict(conflict2.clone())]);
+        db.assert_record(vec![&Record::Conflict(conflict2)]);
     }
 
     #[test]
@@ -476,15 +480,15 @@ mod tests {
         db.assert_events(vec![
             ChangeEvent::Added(rec1.clone()),
             ChangeEvent::Replaced {
-                from: rec1.clone(),
+                from: rec1,
                 to: Record::Conflict(conflict1.clone()),
             },
             ChangeEvent::ConflictUpdated {
-                from: conflict1.clone(),
+                from: conflict1,
                 to: conflict2.clone(),
             },
         ]);
-        db.assert_record(vec![&Record::Conflict(conflict2.clone())]);
+        db.assert_record(vec![&Record::Conflict(conflict2)]);
     }
 
     #[test]
@@ -500,10 +504,10 @@ mod tests {
         db.assert_events(vec![
             ChangeEvent::Added(rec1.clone()),
             ChangeEvent::Replaced {
-                from: rec1.clone(),
+                from: rec1,
                 to: Record::Conflict(conflict.clone()),
             },
         ]);
-        db.assert_record(vec![&Record::Conflict(conflict.clone())]);
+        db.assert_record(vec![&Record::Conflict(conflict)]);
     }
 }

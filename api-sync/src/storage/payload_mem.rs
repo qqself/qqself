@@ -22,6 +22,12 @@ impl MemoryPayloadStorage {
     }
 }
 
+impl Default for MemoryPayloadStorage {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[async_trait]
 impl PayloadStorage for MemoryPayloadStorage {
     async fn set(&self, payload: Payload) -> Result<(), StorageErr> {
@@ -44,7 +50,7 @@ impl PayloadStorage for MemoryPayloadStorage {
     ) -> Pin<Box<dyn Stream<Item = Result<PayloadBytes, StorageErr>>>> {
         let mut found = Vec::new();
         let data = self.data.lock().unwrap();
-        let timestamp = after_timestamp.unwrap_or(Timestamp::zero());
+        let timestamp = after_timestamp.unwrap_or_else(Timestamp::zero);
         for v in data.iter().flatten() {
             if v.public_key() != public_key {
                 continue;

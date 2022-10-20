@@ -15,10 +15,9 @@ async fn main() -> std::io::Result<()> {
     let entry_storage =
         Data::new(Box::new(MemoryPayloadStorage::new()) as Box<dyn PayloadStorage + Sync + Send>);
     HttpServer::new(move || {
-        let app = actix_web::App::new()
+        actix_web::App::new()
             .configure(http_config(entry_storage.clone(), account_storage.clone()))
-            .wrap(Logger::default());
-        app
+            .wrap(Logger::default())
     })
     .bind(("0.0.0.0", 8080))?
     .run()

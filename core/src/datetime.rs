@@ -39,9 +39,7 @@ impl FromStr for Date {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if let Err(err) = check_format(s, vec!['d', 'd', 'd', 'd', '-', 'd', 'd', '-', 'd', 'd']) {
-            return Err(err);
-        }
+        check_format(s, vec!['d', 'd', 'd', 'd', '-', 'd', 'd', '-', 'd', 'd'])?;
         let year = parse_number(&s[0..4], 2000u16, 3000u16)?;
         let month = parse_number(&s[5..7], 1, 12)?;
         let day = parse_number(&s[8..10], 1, 31)?;
@@ -109,9 +107,7 @@ impl FromStr for DayTime {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if let Err(err) = check_format(s, vec!['d', 'd', ':', 'd', 'd']) {
-            return Err(err);
-        }
+        check_format(s, vec!['d', 'd', ':', 'd', 'd'])?;
         let hours = parse_number(&s[0..2], 0, 23)?;
         let minutes = parse_number(&s[3..5], 0, 59)?;
         Ok(DayTime { hours, minutes })
@@ -296,13 +292,13 @@ impl FromStr for DateTime {
                 s
             ));
         }
-        let date = (&s[0..10]).parse::<Date>()?;
-        let time = (&s[11..16]).parse::<DayTime>()?;
+        let date = s[0..10].parse::<Date>()?;
+        let time = s[11..16].parse::<DayTime>()?;
         Ok(DateTime { date, time })
     }
 }
 
-#[derive(PartialEq, Clone, Eq, PartialOrd)]
+#[derive(PartialEq, Clone, Eq)]
 pub struct DateTimeRange {
     pub start: DateTime,
     pub end: DateTime,
@@ -342,7 +338,13 @@ impl Ord for DateTimeRange {
     }
 }
 
-#[derive(PartialEq)]
+impl PartialOrd for DateTimeRange {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+#[derive(PartialEq, Eq)]
 pub enum DatePeriod {
     Day,
     Week,
@@ -405,7 +407,7 @@ fn check_format(s: &str, format: Vec<char>) -> Result<(), String> {
             ));
         }
         let expected = format[idx];
-        if expected == 'd' && !c.is_digit(10) {
+        if expected == 'd' && !c.is_ascii_digit() {
             return Err(format!("Expected digit at index {}, got {}", idx, c));
         }
         if expected != 'd' && expected != c {
@@ -461,7 +463,7 @@ impl Timestamp {
     }
 
     pub fn new_from_string(s: &str) -> Option<Self> {
-        s.parse::<u64>().map(|v| Timestamp(v)).ok()
+        s.parse::<u64>().map(Timestamp).ok()
     }
 
     pub fn elapsed(&self) -> u64 {

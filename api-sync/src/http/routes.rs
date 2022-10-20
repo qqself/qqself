@@ -45,7 +45,7 @@ async fn set(
     account_storage: Data<Box<dyn AccountStorage + Sync + Send>>,
 ) -> Result<impl Responder, HttpErrorType> {
     let payload = validate_payload(req.into_inner().payload).await?;
-    validate_account(&account_storage, &payload.public_key()).await?;
+    validate_account(&account_storage, payload.public_key()).await?;
     save_payload(&payload_storage, payload).await?;
     Ok("")
 }
@@ -60,10 +60,10 @@ async fn find(
     account_storage: Data<Box<dyn AccountStorage + Sync + Send>>,
 ) -> Result<HttpResponse, HttpErrorType> {
     let search_token = validate_token(req.into_inner().token)?;
-    validate_account(&account_storage, &search_token.public_key()).await?;
+    validate_account(&account_storage, search_token.public_key()).await?;
     let items = payload_storage
         .find(
-            &search_token.public_key(),
+            search_token.public_key(),
             search_token.search_timestamp().to_owned(),
         )
         .map_err(|_| HttpErrorType::IOError("Streaming error".to_string()))
@@ -74,9 +74,8 @@ async fn find(
 }
 
 async fn validate_payload(payload_data: String) -> Result<Payload, HttpErrorType> {
-    let encoded = BinaryToText::new_from_encoded(payload_data).ok_or(HttpErrorType::BadInput(
-        "Error validating encoded payload".to_string(),
-    ))?;
+    let encoded = BinaryToText::new_from_encoded(payload_data)
+        .ok_or_else(|| HttpErrorType::BadInput("Error validating encoded payload".to_string()))?;
     let payload_bytes = PayloadBytes::new_from_encrypted(encoded)
         .map_err(|_| HttpErrorType::BadInput("Error validating encrypted payload".to_string()))?;
 
@@ -149,7 +148,7 @@ mod tests {
         web::{self, Bytes, Data, ServiceConfig},
         App,
     };
-    use qqself_core::encryption::{keys::PrivateKey, payload::PayloadId};
+    use qqself_core::encryption::keys::PrivateKey;
 
     const PUBLIC_KEY_1: &str = "8A4MdxHGkuBnV4CY4W3ZgmMTiZkQHi1PdxG4yov65odytYFXkttWy8qojEp5rhNWn9ae3QWigZsfmSVojU62dFbUDR98p74VUqo47AoLLabVv7Ycj6VoEZj1Gz9YPPDhcUjbkzgzLb5n799MydJYdRLA17wDAuvNTcJ4m27F2jzg7Zv26r94eYbRRrYH6oauQGPr9a6XyvNKTzykLkU9m5C3vEnpTVai2NMdib9JiEeJUMUSaApNd4r3ZF9i46suP7qD9gimj2USuh1QHY3r9YKmcyurkZRGZhjyXAnbae98vuJtUxVyMMzV9QWkV1BodGMFc4gE77HhULKk1Z23igQWJZsDTUDhiZdLxs5pmW1699zEgNt42PtJGxQ4ouL5UZcNv42UpUrrXsnKpAKLkRKZTfpsdp4zmPYfSjMNqPQLqiyDLw1B1b5Vs23pAYNMNJoBJXp3wMsJFngqPtPDWZ9Bgm5361uAZa2yNBBfaJMoumTjAPY54MWzYbeqj7mB7ZvLm1351SVJn8rNqrHAE6fNxbruJVwjzbKzbLmD859ZBd2F1V4SKRQZSAymj9sfJYYCn3Z6KoKzBSgH2QYXoTb93dVGDGqegfwZ9EYq";
     const PRIVATE_KEY_1: &str = "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";
@@ -164,14 +163,12 @@ mod tests {
         (public_key, private_key)
     }
 
+    type Storage = Data<Box<dyn AccountStorage + Send + Sync>>;
+    type Account = Data<Box<dyn PayloadStorage + Send + Sync>>;
     // That madness caused by inability to return actix_web:App and passing function to `App.configure` is a recommended way
     // It's fine for configuring an app, but we want to share entry/account storages in tests so this beast was created
     // Essentially lazy_static should have been a perfect fit here to share storages across the tests but that didn't work with some weird errors
-    fn test_app() -> (
-        Data<Box<dyn AccountStorage + Send + Sync>>,
-        Data<Box<dyn PayloadStorage + Send + Sync>>,
-        impl FnOnce(&mut ServiceConfig),
-    ) {
+    fn test_app() -> (Storage, Account, impl FnOnce(&mut ServiceConfig)) {
         let entry_storage = Data::new(
             Box::new(MemoryPayloadStorage::new()) as Box<dyn PayloadStorage + Send + Sync>
         );
@@ -180,13 +177,13 @@ mod tests {
         );
         let entry_storage_clone = entry_storage.clone();
         let account_storage_clone = account_storage.clone();
-        return (
+        (
             account_storage,
             entry_storage,
             |cfg: &mut web::ServiceConfig| {
                 http_config(entry_storage_clone, account_storage_clone)(cfg)
             },
-        );
+        )
     }
 
     fn req_set(body: impl Serialize) -> test::TestRequest {
@@ -209,10 +206,10 @@ mod tests {
         private_key: &PrivateKey,
     ) -> Vec<String> {
         payload_storage
-            .find(&public_key, None)
+            .find(public_key, None)
             .map(|v| v.unwrap())
             .map(|v| v.validated(None).unwrap())
-            .map(|v| v.decrypt(&private_key).unwrap().text().to_string())
+            .map(|v| v.decrypt(private_key).unwrap().text().to_string())
             .collect::<Vec<_>>()
             .await
     }
@@ -322,7 +319,7 @@ mod tests {
         // 2 will be replaced with 4
         for ts in [1, 2, 3, 4] {
             let previous_version = if ts == 4 {
-                replace_id.as_ref().map(|v: &PayloadId| v.clone())
+                replace_id.as_ref().cloned()
             } else {
                 None
             };

@@ -9,12 +9,12 @@ use aes_gcm::{
 const NONCE: [u8; 12] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
 // AES encryption/decryption with ephemeral keys that are generated for each payload
-pub(crate) struct AES {
+pub(crate) struct Aes {
     key: Vec<u8>,
     payload: Vec<u8>,
 }
 
-impl AES {
+impl Aes {
     pub(crate) fn encrypt<B: AsRef<[u8]>>(bytes: B) -> Option<Self> {
         let key = Aes256Gcm::generate_key(&mut OsRng);
         let cipher = Aes256Gcm::new(&key);
@@ -47,8 +47,8 @@ mod tests {
 
     #[test]
     fn encrypt_decrypt() {
-        let encrypted = AES::encrypt(vec![10, 20]).unwrap();
-        let decrypted = AES::decrypt(encrypted.key(), encrypted.payload()).unwrap();
+        let encrypted = Aes::encrypt(vec![10, 20]).unwrap();
+        let decrypted = Aes::decrypt(encrypted.key(), encrypted.payload()).unwrap();
         assert_eq!(decrypted, vec![10, 20]);
     }
 }
