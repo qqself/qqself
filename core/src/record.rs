@@ -15,11 +15,10 @@ pub struct Entry {
 
 impl Ord for Entry {
     fn cmp(&self, other: &Self) -> Ordering {
-        return self
-            .date_range
+        self.date_range
             .cmp(&other.date_range)
             // TODO Hack for now, implement proper ordering for all intermediate objects
-            .then_with(|| self.to_string().cmp(&other.to_string()));
+            .then_with(|| self.to_string().cmp(&other.to_string()))
     }
 }
 
@@ -30,6 +29,7 @@ impl PartialOrd for Entry {
 }
 
 impl Entry {
+    #[allow(dead_code)]
     pub(crate) fn new(date_range: DateTimeRange, comment: Option<String>, tags: Vec<Tag>) -> Self {
         Entry {
             date_range,
@@ -38,6 +38,7 @@ impl Entry {
         }
     }
 
+    #[allow(dead_code)]
     pub(crate) fn parse(
         input: &str,
         date: Date,

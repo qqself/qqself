@@ -31,7 +31,7 @@ impl Display for HttpErrorType {
             HttpErrorType::BadInput(s) => format!("BadInput. {s}"),
             HttpErrorType::PaymentRequired(s) => format!("PaymentRequired. {s}"),
             HttpErrorType::IOError(s) => format!("IOError. {s}"),
-            HttpErrorType::OutdatedPayload => format!("OutdatedPayload. Payload was created too long time ago - create a new one with up to date timestamp, check /info endpoint for server timestamp"),
+            HttpErrorType::OutdatedPayload => "OutdatedPayload. Payload was created too long time ago - create a new one with up to date timestamp, check /info endpoint for server timestamp".to_string(),
             HttpErrorType::AccountErr(s) => format!("AccountErr. {s}"),
         };
         f.write_str(&s)

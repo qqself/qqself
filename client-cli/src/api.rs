@@ -3,11 +3,11 @@ use std::future::Future;
 use qqself_core::encryption::payload::PayloadBytes;
 use reqwest::{Error, Response};
 
-pub struct API {
+pub struct Api {
     client: reqwest::Client,
 }
 
-impl API {
+impl Api {
     pub fn new() -> Self {
         Self {
             client: reqwest::Client::new(),
@@ -35,8 +35,8 @@ mod tests {
         let (public_key, private_key) = generate_keys();
         let msg = "2022-10-10 00:00 01:00 test app=client_cli source=test_set";
         let payload =
-            PayloadBytes::encrypt(&public_key, &private_key, Timestamp::now(), &msg, None).unwrap();
-        let api = API::new();
+            PayloadBytes::encrypt(&public_key, &private_key, Timestamp::now(), msg, None).unwrap();
+        let api = Api::new();
         let resp = api.set(payload).await.unwrap();
         assert_eq!(resp.status(), 200);
         let body = resp.text().await.unwrap();

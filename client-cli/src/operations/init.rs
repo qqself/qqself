@@ -3,7 +3,7 @@ use std::{path::Path, process::exit};
 use crate::config::Config;
 use qqself_core::encryption::keys::{generate_keys, PrivateKey, PublicKey};
 use structopt::StructOpt;
-use tracing::{error, info, span, Level};
+use tracing::{error, info};
 
 #[derive(StructOpt, Debug)]
 #[structopt(about = "Creates new keys and saves it in the config.toml")]

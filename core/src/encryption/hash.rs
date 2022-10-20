@@ -8,7 +8,7 @@ use crate::binary_text::BinaryToText;
 // Hash of fixed 16 bytes size. We use that instead of a standard one to ensure
 // values are the same across different platforms and stable regardless of Rust version
 // BLAKE2 currently used as a hasher
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct StableHash([u8; StableHash::SIZE]);
 
 impl StableHash {
@@ -62,7 +62,7 @@ mod tests {
         assert_eq!(want, got.to_string());
 
         // Hash bytes
-        let got = StableHash::hash_bytes(&vec![10, 20]);
+        let got = StableHash::hash_bytes(&[10, 20]);
         assert_eq!(got.to_string(), "Nr2ASJ1iffPXuHonq1Hddk");
 
         // Dummy test to ensure capacity doesn't effect the hash

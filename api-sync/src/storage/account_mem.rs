@@ -17,6 +17,12 @@ impl MemoryAccountStorage {
     }
 }
 
+impl Default for MemoryAccountStorage {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[async_trait]
 impl AccountStorage for MemoryAccountStorage {
     async fn set(&self, acc: Account) -> Result<(), AccountStorageErr> {

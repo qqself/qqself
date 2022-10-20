@@ -20,7 +20,7 @@ use crate::record::{Entry, Prop, PropOperator, PropVal, Tag};
       PROPVALUE -> (\w|\W)+
 */
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum ParseError {
     NoTags,
     Duplicate(String, usize),
@@ -116,7 +116,7 @@ impl<'a> Parser<'a> {
             .next()
             .filter(|c| *c == '.')
             .and_then(|_| chars.next())
-            .filter(|c| c.is_digit(10))
+            .filter(|c| c.is_ascii_digit())
             .is_some()
         {
             self.consume_char('.');
@@ -167,7 +167,7 @@ impl<'a> Parser<'a> {
         }
         Ok(Some(Tag {
             name: name.unwrap(),
-            props: props,
+            props,
             start_pos,
         }))
     }

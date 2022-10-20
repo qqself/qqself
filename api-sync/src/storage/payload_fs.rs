@@ -45,7 +45,7 @@ impl FSPayloadStorage {
             "{}|{}|{}",
             public_key.hash_string(),
             id.timestamp(),
-            id.hash().to_string()
+            id.hash()
         );
         match data {
             Some(data) => std::fs::write(self.path.join(name), data)
@@ -62,7 +62,7 @@ impl FSPayloadStorage {
     ) -> Result<Vec<PayloadBytes>, StorageErr> {
         let mut found = Vec::new();
         let listing = read_dir(&self.path).map_err(|_| StorageErr::Err("Failed to read_dir"))?;
-        let timestamp = after_timestamp.unwrap_or(Timestamp::zero());
+        let timestamp = after_timestamp.unwrap_or_else(Timestamp::zero);
         for file in listing {
             let file = file.map_err(|_| StorageErr::Err("Failed to read folder file"))?;
             let name = file
@@ -104,12 +104,12 @@ impl PayloadStorage for FSPayloadStorage {
         // We can't use public_key as a file name as it can be much bigger than file names limits
         // FSStorage is mostly used for local deployments, so using hash instead is fine
         self.save_file(
-            &payload.public_key(),
+            payload.public_key(),
             payload.id(),
             Some(payload.data().data()),
         )?;
         if let Some(prev) = payload.previous_version() {
-            self.save_file(&payload.public_key(), prev, None)?;
+            self.save_file(payload.public_key(), prev, None)?;
         };
         Ok(())
     }
@@ -119,10 +119,10 @@ impl PayloadStorage for FSPayloadStorage {
         public_key: &PublicKey,
         after_timestamp: Option<Timestamp>,
     ) -> Pin<Box<dyn Stream<Item = Result<PayloadBytes, StorageErr>>>> {
-        let files = match self.find_files(&public_key, after_timestamp) {
+        let files = match self.find_files(public_key, after_timestamp) {
             Ok(v) => v,
             Err(err) => return Box::pin(stream::iter(vec![Err(err)])),
         };
-        Box::pin(stream::iter(files).map(|v| Ok(v)))
+        Box::pin(stream::iter(files).map(Ok))
     }
 }

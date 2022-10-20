@@ -12,15 +12,15 @@ use super::{
 };
 
 // RSA encryption
-pub struct RSA;
+pub struct Rsa;
 
-impl RSA {
+impl Rsa {
     const KEY_SIZE: usize = 2048; // 4096 takes very long time to generate in WebAssembly context
-    const MAX_PAYLOAD_SIZE: usize = RSA::KEY_SIZE / 8 - 11; // Formula from https://pkg.go.dev/crypto/rsa#EncryptPKCS1v15
+    const MAX_PAYLOAD_SIZE: usize = Rsa::KEY_SIZE / 8 - 11; // Formula from https://pkg.go.dev/crypto/rsa#EncryptPKCS1v15
     pub(crate) const SIGNATURE_SIZE: usize = 256;
 
     pub(crate) fn generate_keys() -> (PublicKey, PrivateKey) {
-        let private = RsaPrivateKey::new(&mut OsRng, RSA::KEY_SIZE).expect("generate rsa keys");
+        let private = RsaPrivateKey::new(&mut OsRng, Rsa::KEY_SIZE).expect("generate rsa keys");
         let public = private.to_public_key();
         let private = private
             .to_pkcs8_pem(LineEnding::LF)
@@ -44,7 +44,7 @@ impl RSA {
     }
 
     pub(crate) fn encrypt(public_key: &PublicKey, payload: &[u8]) -> Option<Vec<u8>> {
-        if payload.len() > RSA::MAX_PAYLOAD_SIZE {
+        if payload.len() > Rsa::MAX_PAYLOAD_SIZE {
             return None; // TODO Replace Option with Result<Vec<u8>, EncryptErr> and explicit error messages
         }
         let public_key = public_key.decoded()?;
@@ -53,7 +53,7 @@ impl RSA {
             &public_key,
             &mut OsRng,
             PaddingScheme::PKCS1v15Encrypt,
-            &payload,
+            payload,
         )
         .ok()
     }
@@ -67,7 +67,7 @@ impl RSA {
                 &digest.as_bytes(),
             )
             .ok()?;
-        if signature.len() != RSA::SIGNATURE_SIZE {
+        if signature.len() != Rsa::SIGNATURE_SIZE {
             // TODO: Should never happen and I guess there should be away to enforce it during compillation
             //       Probably RSA exposes some constant?
             return None;
@@ -112,7 +112,7 @@ mod tests {
 
     #[test]
     fn generate_new_keys() {
-        let (public, private) = RSA::generate_keys();
+        let (public, private) = Rsa::generate_keys();
         assert!(!public.hash_string().is_empty());
         assert!(!private.hash_string().is_empty());
     }
@@ -122,21 +122,21 @@ mod tests {
         // Encrypt <> decrypt
         let (public_key, private_key) = keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
         let message = "2022-08-18 22:20 23:20 qqself. Working on encryption\n";
-        let encrypted = RSA::encrypt(&public_key, message.as_bytes()).unwrap();
-        let decrypted = RSA::decrypt(&private_key, &encrypted).unwrap();
+        let encrypted = Rsa::encrypt(&public_key, message.as_bytes()).unwrap();
+        let decrypted = Rsa::decrypt(&private_key, &encrypted).unwrap();
         assert_eq!(decrypted, message.as_bytes());
 
         // New encryption of the same message generates different payload
-        let encrypted2 = RSA::encrypt(&public_key, message.as_bytes()).unwrap();
+        let encrypted2 = Rsa::encrypt(&public_key, message.as_bytes()).unwrap();
         assert_ne!(encrypted, encrypted2);
 
         // But still can be decrypted to the same original message
-        let decrypted = RSA::decrypt(&private_key, &encrypted2).unwrap();
+        let decrypted = Rsa::decrypt(&private_key, &encrypted2).unwrap();
         assert_eq!(decrypted, message.as_bytes());
 
         // Cannot decrypt with other key
         let (_, private_key) = keys(PUBLIC_KEY_2, PRIVATE_KEY_2);
-        assert!(RSA::decrypt(&private_key, &encrypted).is_none());
+        assert!(Rsa::decrypt(&private_key, &encrypted).is_none());
     }
 
     #[test]
@@ -144,15 +144,15 @@ mod tests {
         let (public_key, private_key) = keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
         let msg = "Hello world";
         let hash = StableHash::hash_string(msg);
-        let mut signature = RSA::sign(&private_key, &hash).unwrap();
-        assert!(RSA::verify_signature(&public_key, &signature, &hash).is_some());
+        let mut signature = Rsa::sign(&private_key, &hash).unwrap();
+        assert!(Rsa::verify_signature(&public_key, &signature, &hash).is_some());
         // Bad hash
         assert!(
-            RSA::verify_signature(&public_key, &signature, &StableHash::hash_string("foo"))
+            Rsa::verify_signature(&public_key, &signature, &StableHash::hash_string("foo"))
                 .is_none()
         );
         // Bad signature
         signature.push(0xFF);
-        assert!(RSA::verify_signature(&public_key, &signature, &hash).is_none());
+        assert!(Rsa::verify_signature(&public_key, &signature, &hash).is_none());
     }
 }

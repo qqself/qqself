@@ -2,14 +2,14 @@ use std::fmt::Display;
 
 use crate::binary_text::BinaryToText;
 
-use super::rsa::RSA;
+use super::rsa::Rsa;
 
 #[derive(Debug)]
 pub enum InputError {
     TooBig(String),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Key<const S: usize>(BinaryToText);
 
@@ -48,5 +48,5 @@ impl<const S: usize> Display for Key<S> {
 }
 
 pub fn generate_keys() -> (PublicKey, PrivateKey) {
-    RSA::generate_keys()
+    Rsa::generate_keys()
 }

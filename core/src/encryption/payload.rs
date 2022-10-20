@@ -1,15 +1,15 @@
 use crate::{binary_text::BinaryToText, datetime::Timestamp};
 
 use super::{
-    aes::AES,
+    aes::Aes,
     hash::StableHash,
     keys::{PrivateKey, PublicKey},
-    rsa::RSA,
+    rsa::Rsa,
 };
 
 use thiserror::Error;
 
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug, PartialEq, Eq)]
 pub enum PayloadError {
     #[error("{0}")]
     TooBig(String),
@@ -23,7 +23,7 @@ pub enum PayloadError {
     TimestampIsTooOld,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct PayloadId {
     timestamp: Timestamp,
     hash: StableHash,
@@ -41,7 +41,7 @@ impl PayloadId {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Plaintext {
     id: PayloadId,
     text: String,
@@ -75,10 +75,10 @@ impl Payload {
         let bytes = PayloadBinary::from_bytes(&encoded)
             .ok_or(PayloadError::ValidationError("Cannot read binary data"))?;
         // Decrypt AES key using RSA private key
-        let aes_key = RSA::decrypt(private_key, bytes.aes_key)
+        let aes_key = Rsa::decrypt(private_key, bytes.aes_key)
             .ok_or(PayloadError::DecryptionError("Failed to decrypt AES key"))?;
         // Now decrypt the payload with AES key
-        let data = AES::decrypt(&aes_key, bytes.aes_payload).ok_or(
+        let data = Aes::decrypt(&aes_key, bytes.aes_payload).ok_or(
             PayloadError::DecryptionError("Failed to decrypt the payload"),
         )?;
         let text = String::from_utf8(data).map_err(|_| {
@@ -139,16 +139,16 @@ impl PayloadBytes {
         previous_version: Option<PayloadId>,
     ) -> Result<Self, PayloadError> {
         // Generate new ephemeral AES key and encrypt the payload with it
-        let aes_payload = AES::encrypt(plaintext.as_bytes()).ok_or(
+        let aes_payload = Aes::encrypt(plaintext.as_bytes()).ok_or(
             PayloadError::EncryptionError("AES encryption of payload failed"),
         )?;
         // Encrypt AES key using RSA public key
-        let encrypted_aes_key = RSA::encrypt(&public_key, aes_payload.key()).ok_or(
+        let encrypted_aes_key = Rsa::encrypt(public_key, aes_payload.key()).ok_or(
             PayloadError::EncryptionError("RSA encryption of AES key failed"),
         )?;
         let bytes = PayloadBinary::to_bytes(
-            &private_key,
-            &public_key,
+            private_key,
+            public_key,
             PayloadBytes::VERSION,
             timestamp.as_u64(),
             &encrypted_aes_key,
@@ -186,7 +186,7 @@ impl PayloadBytes {
         let public_key = PublicKey::new(public_key_data)
             .map_err(|_| PayloadError::ValidationError("Public key validation error"))?;
         // Hash and RSA verify
-        if RSA::verify_signature(&public_key, bytes.signature, &bytes.hash).is_none() {
+        if Rsa::verify_signature(&public_key, bytes.signature, &bytes.hash).is_none() {
             return Err(PayloadError::ValidationError(
                 "Payload signature validation failed",
             ));
@@ -253,7 +253,7 @@ impl<'a> PayloadBinary<'a> {
         let (aes_key, idx) = PayloadBinary::read_bytes(data, idx, aes_key_len)?;
         let (aes_payload, idx) = PayloadBinary::read_bytes(data, idx, aes_payload_len)?;
         let all_but_signature = &data[..idx];
-        let hash = StableHash::hash_bytes(&all_but_signature);
+        let hash = StableHash::hash_bytes(all_but_signature);
         let signature = &data[idx..];
         if signature.is_empty() {
             return None;
@@ -282,7 +282,7 @@ impl<'a> PayloadBinary<'a> {
         let public_key_s = public_key.to_string();
         let public_key = public_key_s.as_bytes();
         let capacity =
-            16 + 8 * 5 + public_key.len() + aes_key.len() + aes_payload.len() + RSA::SIGNATURE_SIZE;
+            16 + 8 * 5 + public_key.len() + aes_key.len() + aes_payload.len() + Rsa::SIGNATURE_SIZE;
         let mut data = Vec::with_capacity(capacity);
         // Fixed sizes length
         data.extend_from_slice(&version.to_le_bytes());
@@ -305,7 +305,7 @@ impl<'a> PayloadBinary<'a> {
         data.extend_from_slice(aes_payload);
         // Hash the payload, sign it and append the signature
         let digest = StableHash::hash_bytes(&data);
-        let signature = RSA::sign(&private_key, &digest)?;
+        let signature = Rsa::sign(private_key, &digest)?;
         data.extend_from_slice(&signature);
         Some(data)
     }
@@ -363,8 +363,8 @@ mod tests {
             &public_key,
             PayloadBytes::VERSION,
             TIMESTAMP,
-            &vec![3; 30],
-            &vec![4; 40],
+            &[3; 30],
+            &[4; 40],
             Some(previous_id.clone()),
         )
         .unwrap();
@@ -374,9 +374,9 @@ mod tests {
         assert_eq!(data.public_key, public_key.to_string().as_bytes());
         assert_eq!(data.aes_key, &vec![3; 30]);
         assert_eq!(data.aes_payload, &vec![4; 40]);
-        assert_eq!(data.signature.len(), RSA::SIGNATURE_SIZE);
+        assert_eq!(data.signature.len(), Rsa::SIGNATURE_SIZE);
         assert_eq!(data.previous, Some(previous_id));
-        assert!(PayloadBinary::from_bytes(&vec![1; 100]).is_none())
+        assert!(PayloadBinary::from_bytes(&[1; 100]).is_none())
     }
 
     #[test]
@@ -410,7 +410,7 @@ mod tests {
         let (public_key1, private_key1) = keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
         let (_, _) = keys(PUBLIC_KEY_2, PRIVATE_KEY_2);
         // Decoding errors
-        let payload = PayloadBytes::new_from_encrypted(BinaryToText::new(&vec![10, 20])).unwrap();
+        let payload = PayloadBytes::new_from_encrypted(BinaryToText::new(&[10, 20])).unwrap();
         assert_eq!(
             payload.validated(None).unwrap_err(),
             PayloadError::ValidationError("Cannot read binary data")
@@ -441,7 +441,7 @@ mod tests {
         )
         .unwrap();
         let mut bad_payload = payload.0.encoded();
-        let bad_symbol = if bad_payload.ends_with("1") { "2" } else { "1" };
+        let bad_symbol = if bad_payload.ends_with('1') { "2" } else { "1" };
         bad_payload.replace_range(bad_payload.len() - 1..bad_payload.len(), bad_symbol);
         let encrypted_bad =
             PayloadBytes::new_from_encrypted(BinaryToText::new_from_encoded(bad_payload).unwrap())

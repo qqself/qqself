@@ -3,7 +3,7 @@ use crate::{binary_text::BinaryToText, datetime::Timestamp};
 use super::{
     hash::StableHash,
     keys::{PrivateKey, PublicKey},
-    rsa::RSA,
+    rsa::Rsa,
 };
 
 // Signed search token for retrieving entries from backend services
@@ -13,7 +13,7 @@ pub struct SearchToken {
     search_timestamp: Option<Timestamp>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum SearchTokenErr {
     ValidationError(&'static str),
     TimestampIsTooOld,
@@ -54,7 +54,7 @@ impl SearchToken {
         let public_key = PublicKey::new(public_key_data)
             .map_err(|_| SearchTokenErr::ValidationError("Public key validation error"))?;
         // Hash and RSA verify
-        if RSA::verify_signature(&public_key, bytes.signature, &bytes.hash).is_none() {
+        if Rsa::verify_signature(&public_key, bytes.signature, &bytes.hash).is_none() {
             return Err(SearchTokenErr::ValidationError(
                 "Payload signature validation failed",
             ));
@@ -89,7 +89,7 @@ impl SearchToken {
             public_key,
             SearchToken::VERSION,
             timestamp_created.as_u64(),
-            timestamp_search.unwrap_or(Timestamp::zero()).as_u64(),
+            timestamp_search.unwrap_or_else(Timestamp::zero).as_u64(),
         )
         .ok_or(SearchTokenErr::ValidationError(
             "Failed encoding a search token",
@@ -127,7 +127,7 @@ impl<'a> SearchTokenBinary<'a> {
         // Rest of the payload with dynamic sizes
         let (public_key, idx) = SearchTokenBinary::read_bytes(data, idx, public_key_len)?;
         let all_but_signature = &data[..idx];
-        let hash = StableHash::hash_bytes(&all_but_signature);
+        let hash = StableHash::hash_bytes(all_but_signature);
         let signature = &data[idx..];
         if signature.is_empty() {
             return None;
@@ -151,7 +151,7 @@ impl<'a> SearchTokenBinary<'a> {
     ) -> Option<Vec<u8>> {
         let public_key_s = public_key.to_string();
         let public_key = public_key_s.as_bytes();
-        let capacity = 8 * 4 + public_key.len() + RSA::SIGNATURE_SIZE;
+        let capacity = 8 * 4 + public_key.len() + Rsa::SIGNATURE_SIZE;
         let mut data = Vec::with_capacity(capacity);
         // Fixed sizes length
         data.extend_from_slice(&version.to_le_bytes());
@@ -162,7 +162,7 @@ impl<'a> SearchTokenBinary<'a> {
         data.extend_from_slice(public_key);
         // Hash the payload, sign it and append the signature
         let digest = StableHash::hash_bytes(&data);
-        let signature = RSA::sign(&private_key, &digest)?;
+        let signature = Rsa::sign(private_key, &digest)?;
         data.extend_from_slice(&signature);
         Some(data)
     }
@@ -235,7 +235,7 @@ mod tests {
             &public_key,
             &private_key,
             timestamp_created,
-            Some(timestamp_search.clone()),
+            Some(timestamp_search),
         )
         .unwrap();
         let decoded = SearchToken::new_from_encoded(encoded.clone(), Some(Timestamp::new(300)));
@@ -243,7 +243,7 @@ mod tests {
 
         // Broken signature
         let mut bad_data = encoded;
-        let bad_symbol = if bad_data.ends_with("1") { "2" } else { "1" };
+        let bad_symbol = if bad_data.ends_with('1') { "2" } else { "1" };
         bad_data.replace_range(bad_data.len() - 1..bad_data.len(), bad_symbol);
         let decoded = SearchToken::new_from_encoded(bad_data, None);
         assert_eq!(
