@@ -3,10 +3,6 @@ import ViteRsw from 'vite-plugin-rsw';
 
 export default defineConfig({
   plugins: [
-    ViteRsw({
-      crates: [
-        '@rsw/wrapper',
-      ]
-    }),
-  ]
+    ViteRsw(),
+  ],
 })
