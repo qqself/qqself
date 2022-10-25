@@ -1,15 +1,24 @@
 use std::collections::btree_map::Iter;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::rc::Weak;
+use std::vec;
 
+use crate::data_views::skills::SkillsView;
 use crate::datetime::DateTimeRange;
 use crate::parser::{ParseError, Parser};
+use crate::progress::skill::Skill;
 use crate::record::{Entry, Tag};
 
 #[derive(Clone, PartialEq, Debug, Ord, PartialOrd, Eq)]
 pub struct RecordEntry {
     revision: usize,
     entry: Entry,
+}
+
+impl RecordEntry {
+    pub fn entry(&self) -> &Entry {
+        &self.entry
+    }
 }
 
 #[derive(Clone, PartialEq, Debug, Ord, PartialOrd, Eq)]
@@ -75,6 +84,10 @@ impl Record {
             Record::Conflict(v) => v.date_range(),
         }
     }
+
+    pub fn from_entry(entry: Entry, revision: usize) -> Self {
+        Self::Value(RecordValue::Entry(RecordEntry { revision, entry }))
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -99,6 +112,7 @@ pub struct DB {
     entries: BTreeMap<DateTimeRange, Record>,
     subscribers: Vec<Weak<dyn DBSubscriber>>,
     sync_queue: VecDeque<ChangeEvent>,
+    view_skills: SkillsView,
 }
 
 impl DB {
@@ -107,7 +121,12 @@ impl DB {
             entries: BTreeMap::new(),
             subscribers: vec![],
             sync_queue: VecDeque::new(),
+            view_skills: SkillsView::default(),
         }
+    }
+
+    pub fn skills(&self) -> &Vec<Skill> {
+        self.view_skills.data()
     }
 
     pub fn add(&mut self, record: Record) {
@@ -121,6 +140,7 @@ impl DB {
                     cleanup = true;
                 }
             }
+            self.view_skills.update(self.entries.iter(), &event);
             if cleanup {
                 self.subscribers.retain(|s| s.upgrade().is_some());
             }
@@ -223,6 +243,7 @@ impl DB {
 
     pub fn subscribe(&mut self, subscriber: Weak<dyn DBSubscriber>) {
         self.subscribers.push(subscriber);
+        // TODO Immediately call new subscriber with existing data if we have anything
     }
 }
 
@@ -232,18 +253,54 @@ impl Default for DB {
     }
 }
 
+#[derive(PartialEq, Eq, Debug, Clone, Default)]
+pub struct Selector {
+    pub tags: Vec<Tag>,
+}
+
+impl Selector {
+    pub fn matched_tags(&self, entry: &Entry) -> Vec<Tag> {
+        // We consider query tags as part of OR statements and entry
+        // is matched if any of the tags matches, which matched if any of props matches.
+        // Probably should optimize it as it's quadratic and inside prop matching is
+        // quadratic as well. On the other hand usually we have 1-2 tags with 1-2 props
+        let mut tags = Vec::new();
+        for query_tag in &self.tags {
+            for entry_tag in &entry.tags {
+                if entry_tag.matches(query_tag) {
+                    tags.push(entry_tag.clone());
+                }
+            }
+        }
+        tags
+    }
+    pub fn matches(&self, entry: &Entry) -> bool {
+        for query_tag in &self.tags {
+            for entry_tag in &entry.tags {
+                if entry_tag.matches(query_tag) {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+}
 // To query entries filtered by certain conditions
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone, Default)]
 pub struct Query {
-    pub query: Vec<Tag>,
+    pub selector: Selector,
     pub date_filter: Option<DateTimeRange>,
 }
 
 impl Query {
     pub fn new(query: &str, date_filter: Option<DateTimeRange>) -> Result<Query, ParseError> {
         let mut parser = Parser::new(query);
-        let (query, _) = parser.parse_record()?;
-        Ok(Query { query, date_filter })
+        let (tags, _) = parser.parse_record()?;
+        let selector = Selector { tags };
+        Ok(Query {
+            selector,
+            date_filter,
+        })
     }
 
     pub fn matched_tags(&self, entry: &Entry) -> Vec<Tag> {
@@ -253,19 +310,7 @@ impl Query {
                 return vec![];
             }
         }
-        // We consider query tags as part of OR statements and entry
-        // is matched if any of the tags matches, which matched if any of props matches.
-        // Probably should optimize it as it's quadratic and inside prop matching is
-        // quadratic as well. On the other hand usually we have 1-2 tags with 1-2 props
-        let mut tags = Vec::new();
-        for query_tag in &self.query {
-            for entry_tag in &entry.tags {
-                if entry_tag.matches(query_tag) {
-                    tags.push(entry_tag.clone());
-                }
-            }
-        }
-        tags
+        self.selector.matched_tags(entry)
     }
 }
 

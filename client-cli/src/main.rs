@@ -1,6 +1,7 @@
 use operations::{
     export::{export, ExportOpts},
     init::{init, InitOpts},
+    report::{report, ReportOpts},
 };
 use structopt::StructOpt;
 use tracing::metadata::LevelFilter;
@@ -13,6 +14,7 @@ mod operations;
 enum Opts {
     Init(InitOpts),
     Export(ExportOpts),
+    Report(ReportOpts),
 }
 
 fn main() {
@@ -29,5 +31,6 @@ fn main() {
     match Opts::from_args() {
         Opts::Init(opts) => init(opts),
         Opts::Export(opts) => export(opts),
+        Opts::Report(opts) => report(opts),
     }
 }
