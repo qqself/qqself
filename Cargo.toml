@@ -3,6 +3,6 @@
 members = [
     "api-sync",
     "client-cli",
-    "client-web-core",
     "core",
+    "client-web/core"
 ]

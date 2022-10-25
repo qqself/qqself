@@ -1,0 +1,4 @@
+cli="yarn"
+
+[[crates]]
+name = "core"
