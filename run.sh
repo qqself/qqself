@@ -20,11 +20,12 @@ usage() {
   exit 1
 }
 
-# Install required dependencies that we didn't vendor yet
+# Unpack vendored dependencies or install things that we didn't vendor yet
 deps() {
-  # TODO Vendor everything from here and remove this subcommand
+  (cd client-web && yarn install --offline) 
+  # TODO Vendor wasm-pack
   curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-  (cd client-web && yarn)
+  
 }
 
 # Builds everything
