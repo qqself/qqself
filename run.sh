@@ -12,44 +12,87 @@ log() { echo "[$(date)] $1"; }
 
 usage() {
   echo "Usage:
-    ./run.sh build  [FOLDER] 
-    ./run.sh test   [FOLDER] 
-    ./run.sh deploy [FOLDER]
-  Commands by default will run action for all projects. Optionally you can pass [FOLDER] to filter out all the rest"
+    ./run.sh build  
+    ./run.sh test   
+    ./run.sh deploy 
+    ./run.sh lint   
+    ./run.sh deps"
   exit 1
 }
 
+# Install required dependencies that we didn't vendor yet
+deps() {
+  # TODO Vendor everything from here and remove this subcommand
+  curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+  (cd client-web && yarn)
+}
+
+# Builds everything
 build() {
   log "Building all Rust projects"
   cargo build --frozen
+
+  log "Building client-web - core"
+  (cd client-web && yarn build)
 }
 
+# Run all the tests
 test() {
   log "Testing all Rust projects"
   cargo test --frozen
 }
 
-deploy() {
-    log "Deploying api-sync"    
-    # Build new Docker image and push to our public AWS ECR registry
-    repo="public.ecr.aws/z9w5n5h3"
-    region="us-east-1"
-    tag="$repo/qqself-api-sync:$VERSION"
-    docker build . --file api-sync/Dockerfile --tag "$tag"
-    aws ecr-public get-login-password --region "$region" | docker login --username AWS --password-stdin "$repo"
-    docker push "$tag"
-    # Initiate deployment: Get ARN of AWS AppRunner service and update it's config to point to the new Docker image tag
-    arn=$(aws apprunner list-services --query "ServiceSummaryList[?ServiceName=='qqself-api-sync'].ServiceArn" --output text)   
-    config="{\"ImageRepository\":{\"ImageIdentifier\":\"$tag\",\"ImageRepositoryType\":\"ECR_PUBLIC\"}}"
-    aws apprunner update-service --service-arn "$arn" --source-configuration "$config" > /dev/null # No need to show whole config in CI
+# Run linters and other static checkers
+lint() {
+  log "Linting all the Rust projects"
+  cargo clippy --all-targets --all-features -- -D warnings
 }
 
-if [[ "$ACTION" == "build" ]]; then
-  build
-elif [[ "$ACTION" == "test" ]]; then
-  test
-elif [[ "$ACTION" == "deploy" ]]; then
-  deploy  
-else
-  usage
-fi
+# Build a new Docker container and push to the registry
+docker_push() {
+  local repo="$1"
+  local name="$2"
+  local dockerfile="$3"
+  tag="$repo/$name"
+  region="us-east-1"
+  docker build . --file "$dockerfile" --tag "$tag"
+  aws ecr-public get-login-password --region "$region" | docker login --username AWS --password-stdin "$repo"
+  docker push "$tag"
+}
+
+apprunner_update() {
+  local service="$1"
+  local tag="$2"
+  # Initiate deployment: Get ARN of AWS AppRunner service and update it's config to point to the new Docker image tag
+  arn=$(aws apprunner list-services --query "ServiceSummaryList[?ServiceName=='$service'].ServiceArn" --output text)   
+  config="{\"ImageRepository\":{\"ImageIdentifier\":\"$tag\",\"ImageRepositoryType\":\"ECR_PUBLIC\"}}"
+  aws apprunner update-service --service-arn "$arn" --source-configuration "$config" > /dev/null # No need to show whole config in CI
+}
+
+deploy() {
+    if [[ "$1" == "api-sync" ]]; then
+      log "Deploying api-sync" 
+      repo="public.ecr.aws/z9w5n5h3"
+      name="qqself-api-sync:$VERSION"
+      docker_push "$repo" "$name" "api-sync/Dockerfile" 
+      apprunner_update "qqself-api-sync" "$repo/$name"
+    elif [[ "$1" == "client-web" ]]; then 
+      log "Deploying client-web"
+      (cd client-web && yarn build) # TODO Should we commit dist actually?
+      repo="public.ecr.aws/m5h4l2c6"
+      name="qqself-app:$VERSION"
+      docker_push "$repo" "$name" "client-web/Dockerfile"
+      apprunner_update "qqself-client-web" "$repo/$name" 
+    else 
+      log "Specify what to deploy: api-sync or client-web"
+    fi
+}
+
+case "$ACTION" in
+  "build") build ;;
+  "test") test ;;
+  "deploy") deploy "$PARAM" ;;
+  "deps") deps ;;
+  "lint") lint ;;
+  *) usage ;;
+esac    

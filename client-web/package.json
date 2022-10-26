@@ -3,7 +3,7 @@
   "scripts": {
     "start": "vite",
     "watch": "rsw watch",
-    "build": "rsw build && vite build"
+    "build": "wasm-pack build core --out-dir pkg --target web --release && vite build"
   },
   "dependencies": {
     "lit": "^2.4.0",
