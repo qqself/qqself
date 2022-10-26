@@ -13,7 +13,7 @@ export class Main extends LitElement {
     (async () => {
       log("Initializing...");
       await init();
-      this.msg = `Rust calculated hash: ${foo("msg")}`;
+      this.msg = `Rust calculated hash: ${foo("msg2")}`;
       log(`Initialization done`);
     })();
   }
