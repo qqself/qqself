@@ -40,4 +40,17 @@ jobs:
         aws-region: us-east-1
     - run: ./run.sh deps
     - run: ./run.sh deploy client-web
+  
+  deploy-www:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.WWW_REGISTRY_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.WWW_REGISTRY_KEY_SECRET }}
+        aws-region: us-east-1
+    - run: ./run.sh deps
+    - run: ./run.sh deploy www
 

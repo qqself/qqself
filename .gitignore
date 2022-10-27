@@ -2,6 +2,4 @@ target
 node_modules
 .rsw
 dist
-config.toml
 journal.txt
-.rsw
