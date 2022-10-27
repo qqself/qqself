@@ -6,13 +6,13 @@ ACTION=""
 if [[ -n "${1:-}" ]]; then ACTION=$1; fi
 PARAM=""
 if [[ -n "${2:-}" ]]; then PARAM=$2; fi
-VERSION=${VERSION:-$(date +%s)}
+VERSION=${GITHUB_SHA:-$(date +%s)}
 
 log() { echo "[$(date)] $1"; }
 
 usage() {
   echo "Usage:
-    ./run.sh build  
+    ./run.sh build [ client-web | api-sync | www ]
     ./run.sh test   
     ./run.sh deploy 
     ./run.sh lint   
@@ -25,14 +25,12 @@ deps() {
   (cd client-web && yarn install --offline) 
   # TODO Vendor wasm-pack
   curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-  
 }
 
 # Builds everything
 build() {
   log "Building all Rust projects"
   cargo build --frozen
-
   log "Building client-web - core"
   (cd client-web && yarn build)
 }
@@ -67,26 +65,31 @@ apprunner_update() {
   # Initiate deployment: Get ARN of AWS AppRunner service and update it's config to point to the new Docker image tag
   arn=$(aws apprunner list-services --query "ServiceSummaryList[?ServiceName=='$service'].ServiceArn" --output text)   
   config="{\"ImageRepository\":{\"ImageIdentifier\":\"$tag\",\"ImageRepositoryType\":\"ECR_PUBLIC\"}}"
-  aws apprunner update-service --service-arn "$arn" --source-configuration "$config" > /dev/null # No need to show whole config in CI
+  aws apprunner update-service --service-arn "$arn" --source-configuration "$config" > /dev/null # Remove too noisy output
 }
 
 deploy() {
-    if [[ "$1" == "api-sync" ]]; then
-      log "Deploying api-sync" 
-      repo="public.ecr.aws/z9w5n5h3"
-      name="qqself-api-sync:$VERSION"
-      docker_push "$repo" "$name" "api-sync/Dockerfile" 
-      apprunner_update "qqself-api-sync" "$repo/$name"
-    elif [[ "$1" == "client-web" ]]; then 
-      log "Deploying client-web"
-      (cd client-web && yarn build) # TODO Should we commit dist actually?
-      repo="public.ecr.aws/m5h4l2c6"
-      name="qqself-app:$VERSION"
-      docker_push "$repo" "$name" "client-web/Dockerfile"
-      apprunner_update "qqself-client-web" "$repo/$name" 
-    else 
-      log "Specify what to deploy: api-sync or client-web"
-    fi
+  local service="$1"
+  log "Deploying $service"
+  if [[ "$service" == "api-sync" ]]; then
+    repo="public.ecr.aws/q1q1x2u3"
+    name="qqself-api-sync:$VERSION"
+    docker_push "$repo" "$name" "api-sync/Dockerfile" 
+    apprunner_update "qqself-api-sync" "$repo/$name"
+  elif [[ "$service" == "client-web" ]]; then 
+    (cd client-web && yarn build) # TODO Should we commit dist actually?
+    repo="public.ecr.aws/m5h4l2c6"
+    name="qqself-app:$VERSION"
+    docker_push "$repo" "$name" "client-web/Dockerfile"
+    apprunner_update "qqself-client-web" "$repo/$name" 
+    elif [[ "$service" == "www" ]]; then 
+    repo="public.ecr.aws/q2c2s6b5"
+    name="qqself-www:$VERSION"
+    docker_push "$repo" "$name" "www/Dockerfile"
+    apprunner_update "qqself-www" "$repo/$name" 
+  else 
+    log "Specify what to deploy: api-sync | client-web | www"
+  fi
 }
 
 case "$ACTION" in
