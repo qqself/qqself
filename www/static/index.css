@@ -1,0 +1,24 @@
+.root {
+  display: flex;
+  justify-content: center;
+  margin: 20px;
+}
+.content {
+  text-align: center;
+}
+.title {
+  margin: 20px 0;
+}
+.logo {
+  max-width: 256px;
+  max-height: 256px;
+}
+.description {
+  max-width: 800px;
+  text-align: justify;
+}
+.description p,
+.description ul,
+.description hr {
+  margin-bottom: 20px;
+}
