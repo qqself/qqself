@@ -18,27 +18,24 @@ export class LoadingPage extends LitElement {
   @state()
   errors = "";
 
-  constructor() {
-    super();
-    (async () => {
-      log("Checking requirements");
-      const missingApi = this.checkMissingAPI();
-      if (missingApi) {
-        this.errors = missingApi;
-        return;
-      }
-      try {
-        await init();
-        setTimeout(() => {
-          this.loaded = true;
-          log("Initialized");
-          this.dispatchEvent(new Event("loaded"));
-        }, 500); // TODO There has to be a better way to solve flickering of UI when checks completes very fast
-      } catch (ex: any) {
-        this.errors = ex.toString();
-        return;
-      }
-    })();
+  async firstUpdated() {
+    log("Checking requirements");
+    const missingApi = this.checkMissingAPI();
+    if (missingApi) {
+      this.errors = missingApi;
+      return;
+    }
+    try {
+      await init();
+      setTimeout(() => {
+        this.loaded = true;
+        log("Initialized");
+        this.dispatchEvent(new Event("loaded"));
+      }, 500); // TODO There has to be a better way to solve flickering of UI when checks completes very fast
+    } catch (ex: any) {
+      this.errors = ex.toString();
+      return;
+    }
   }
 
   checkMissingAPI() {
