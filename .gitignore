@@ -3,3 +3,4 @@ node_modules
 .rsw
 dist
 journal.txt
+yarn-error.log
