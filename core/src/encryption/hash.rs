@@ -43,9 +43,12 @@ impl Display for StableHash {
 
 #[cfg(test)]
 mod tests {
+    use wasm_bindgen_test::wasm_bindgen_test;
+
     use super::*;
 
     #[test]
+    #[wasm_bindgen_test]
     fn hash() {
         // Hash works
         let want = "WC8iEKfwZ7HKMn1APAEy1";

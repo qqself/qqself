@@ -95,6 +95,8 @@ impl Rsa {
 
 #[cfg(test)]
 mod tests {
+    use wasm_bindgen_test::wasm_bindgen_test;
+
     use super::*;
 
     const PUBLIC_KEY_1: &str = "8A4MdxHGkuBnV4CY4W3ZgmMTiZkQHi1PdxG4yov65odytYFXkttWy8qojEp5rhNWn9ae3QWigZsfmSVojU62dFbUDR98p74VUqo47AoLLabVv7Ycj6VoEZj1Gz9YPPDhcUjbkzgzLb5n799MydJYdRLA17wDAuvNTcJ4m27F2jzg7Zv26r94eYbRRrYH6oauQGPr9a6XyvNKTzykLkU9m5C3vEnpTVai2NMdib9JiEeJUMUSaApNd4r3ZF9i46suP7qD9gimj2USuh1QHY3r9YKmcyurkZRGZhjyXAnbae98vuJtUxVyMMzV9QWkV1BodGMFc4gE77HhULKk1Z23igQWJZsDTUDhiZdLxs5pmW1699zEgNt42PtJGxQ4ouL5UZcNv42UpUrrXsnKpAKLkRKZTfpsdp4zmPYfSjMNqPQLqiyDLw1B1b5Vs23pAYNMNJoBJXp3wMsJFngqPtPDWZ9Bgm5361uAZa2yNBBfaJMoumTjAPY54MWzYbeqj7mB7ZvLm1351SVJn8rNqrHAE6fNxbruJVwjzbKzbLmD859ZBd2F1V4SKRQZSAymj9sfJYYCn3Z6KoKzBSgH2QYXoTb93dVGDGqegfwZ9EYq";
@@ -111,6 +113,7 @@ mod tests {
     }
 
     #[test]
+    #[wasm_bindgen_test]
     fn generate_new_keys() {
         let (public, private) = Rsa::generate_keys();
         assert!(!public.hash_string().is_empty());
@@ -118,6 +121,7 @@ mod tests {
     }
 
     #[test]
+    #[wasm_bindgen_test]
     fn encrypy_decrypt() {
         // Encrypt <> decrypt
         let (public_key, private_key) = keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
@@ -140,6 +144,7 @@ mod tests {
     }
 
     #[test]
+    #[wasm_bindgen_test]
     fn sign_verify() {
         let (public_key, private_key) = keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
         let msg = "Hello world";

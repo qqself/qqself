@@ -6,7 +6,7 @@ use operations::{
 use structopt::StructOpt;
 use tracing::metadata::LevelFilter;
 use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter};
-mod api;
+mod http;
 mod config;
 mod operations;
 

@@ -6,3 +6,4 @@ pub mod encryption;
 pub mod parser;
 pub mod progress;
 pub mod record;
+pub mod api;

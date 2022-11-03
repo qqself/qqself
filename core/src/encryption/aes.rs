@@ -43,9 +43,12 @@ impl Aes {
 
 #[cfg(test)]
 mod tests {
+    use wasm_bindgen_test::wasm_bindgen_test;
+
     use super::*;
 
     #[test]
+    #[wasm_bindgen_test]
     fn encrypt_decrypt() {
         let encrypted = Aes::encrypt(vec![10, 20]).unwrap();
         let decrypted = Aes::decrypt(encrypted.key(), encrypted.payload()).unwrap();

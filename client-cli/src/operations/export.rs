@@ -6,13 +6,13 @@ use std::{
     thread::{self, JoinHandle},
 };
 
-use qqself_core::{datetime::Timestamp, encryption::payload::PayloadBytes};
+use qqself_core::api::ApiRequest;
 use rayon::prelude::{ParallelBridge, ParallelIterator};
 use structopt::StructOpt;
 use tokio::sync::mpsc;
 use tracing::{error, info};
 
-use crate::{api::Api, config::Config};
+use crate::{config::Config, http::Http};
 
 #[derive(StructOpt, Debug)]
 #[structopt(about = "Exports all the records from journal file to the cloud")]
@@ -68,11 +68,9 @@ fn export_journal(journal_path: &Path, config: Config) {
                 .parse_date_record(None, None)
                 .unwrap();
             let (public_key, private_key) = config.keys();
-            let enc_bytes =
-                PayloadBytes::encrypt(public_key, private_key, Timestamp::now(), &line, None)
-                    .unwrap();
+            let req = ApiRequest::new_set_request(public_key, private_key, line).unwrap();
             let tx = &send_channels[idx % send_channels.len()];
-            tx.blocking_send(enc_bytes).unwrap();
+            tx.blocking_send(req).unwrap();
         });
 
     // Done with sending, inform receivers that we are done and wait until Tokio has finished the processing
@@ -80,12 +78,12 @@ fn export_journal(journal_path: &Path, config: Config) {
     sending_runtime.join().unwrap()
 }
 
-fn start_sender() -> (JoinHandle<()>, Vec<mpsc::Sender<PayloadBytes>>) {
+fn start_sender() -> (JoinHandle<()>, Vec<mpsc::Sender<ApiRequest>>) {
     let send_count = 20; // how many simultaneous requests we could have
     let mut receivers = Vec::with_capacity(send_count);
     let mut senders = Vec::with_capacity(send_count);
     for _ in 0..send_count {
-        let (tx, rs) = mpsc::channel::<PayloadBytes>(1);
+        let (tx, rs) = mpsc::channel::<ApiRequest>(1);
         senders.push(tx);
         receivers.push(rs);
     }
@@ -99,9 +97,9 @@ fn start_sender() -> (JoinHandle<()>, Vec<mpsc::Sender<PayloadBytes>>) {
                 let mut join_handles = Vec::new();
                 for mut rx in receivers {
                     join_handles.push(tokio::spawn(async move {
-                        let api = Api::new();
+                        let http = Http::new();
                         while let Some(v) = rx.recv().await {
-                            let resp = api.set(v).await.unwrap();
+                            let resp = http.send(v).await.unwrap();
                             if resp.status() != 200 {
                                 panic!("Non 200 status"); // TODO In client-cli we don't have error handling for now, need to fix
                             }

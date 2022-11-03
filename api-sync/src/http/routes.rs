@@ -35,31 +35,23 @@ async fn info() -> impl Responder {
     })
 }
 
-#[derive(Deserialize, Serialize)]
-struct SetReq {
-    payload: String,
-}
 async fn set(
-    req: web::Json<SetReq>,
+    req: String,
     payload_storage: Data<Box<dyn PayloadStorage + Sync + Send>>,
     account_storage: Data<Box<dyn AccountStorage + Sync + Send>>,
 ) -> Result<impl Responder, HttpErrorType> {
-    let payload = validate_payload(req.into_inner().payload).await?;
+    let payload = validate_payload(req).await?;
     validate_account(&account_storage, payload.public_key()).await?;
     save_payload(&payload_storage, payload).await?;
     Ok("")
 }
 
-#[derive(Deserialize, Serialize)]
-struct FindReq {
-    token: String,
-}
 async fn find(
-    req: web::Json<FindReq>,
+    req: String,
     payload_storage: Data<Box<dyn PayloadStorage + Sync + Send>>,
     account_storage: Data<Box<dyn AccountStorage + Sync + Send>>,
 ) -> Result<HttpResponse, HttpErrorType> {
-    let search_token = validate_token(req.into_inner().token)?;
+    let search_token = validate_token(req)?;
     validate_account(&account_storage, search_token.public_key()).await?;
     let items = payload_storage
         .find(
@@ -93,7 +85,7 @@ async fn validate_payload(payload_data: String) -> Result<Payload, HttpErrorType
 
 fn validate_token(data: String) -> Result<SearchToken, HttpErrorType> {
     SearchToken::new_from_encoded(data, Some(Timestamp::now() - MAX_PAYLOAD_AGE))
-        .map_err(|_| HttpErrorType::BadInput("Error encoding search token".to_string()))
+        .map_err(|err| HttpErrorType::BadInput(format!("Error encoding search token. {}", err)))
 }
 
 async fn validate_account(
@@ -186,18 +178,18 @@ mod tests {
         )
     }
 
-    fn req_set(body: impl Serialize) -> test::TestRequest {
+    fn req_set(body: String) -> test::TestRequest {
         test::TestRequest::post()
             .uri("/set")
-            .insert_header((header::CONTENT_TYPE, "application/json"))
-            .set_json(body)
+            .insert_header((header::CONTENT_TYPE, "text/plain"))
+            .set_payload(body)
     }
 
-    fn req_find(body: impl Serialize) -> test::TestRequest {
+    fn req_find(body: String) -> test::TestRequest {
         test::TestRequest::post()
             .uri("/find")
-            .insert_header((header::CONTENT_TYPE, "application/json"))
-            .set_json(body)
+            .insert_header((header::CONTENT_TYPE, "text/plain"))
+            .set_payload(body)
     }
 
     async fn items_plaintext(
@@ -245,10 +237,7 @@ mod tests {
             .to_request();
         let resp: HttpError = test::call_and_read_body_json(&app, req).await;
         assert_eq!(resp.error_code, 422);
-        assert_eq!(
-            resp.error,
-            "BadInput. Json deserialize error: missing field `payload` at line 1 column 2"
-        );
+        assert_eq!(resp.error, "BadInput. Error validating encoded payload");
     }
 
     #[actix_web::test]
@@ -259,10 +248,8 @@ mod tests {
         let encrypted =
             PayloadBytes::encrypt(&public_key, &private_key, Timestamp::zero(), "entry", None)
                 .unwrap();
-        let body = SetReq {
-            payload: encrypted.data(),
-        };
-        let resp: HttpError = test::call_and_read_body_json(&app, req_set(body).to_request()).await;
+        let resp: HttpError =
+            test::call_and_read_body_json(&app, req_set(encrypted.data()).to_request()).await;
         assert_eq!(resp.error, "OutdatedPayload. Payload was created too long time ago - create a new one with up to date timestamp, check /info endpoint for server timestamp".to_string());
         assert_eq!(resp.error_code, 408);
     }
@@ -275,10 +262,8 @@ mod tests {
         let encrypted =
             PayloadBytes::encrypt(&public_key, &private_key, Timestamp::now(), "entry", None)
                 .unwrap();
-        let body = SetReq {
-            payload: encrypted.data() + "h",
-        };
-        let resp: HttpError = test::call_and_read_body_json(&app, req_set(body).to_request()).await;
+        let resp: HttpError =
+            test::call_and_read_body_json(&app, req_set(encrypted.data() + "h").to_request()).await;
         assert_eq!(
             resp.error,
             "BadInput. Payload validation failure. Cannot read binary data".to_string()
@@ -300,10 +285,7 @@ mod tests {
                 None,
             )
             .unwrap();
-            let body = SetReq {
-                payload: encrypted.data(),
-            };
-            let resp = test::call_service(&app, req_set(body).to_request()).await;
+            let resp = test::call_service(&app, req_set(encrypted.data()).to_request()).await;
             assert_eq!(resp.status(), 200)
         }
         let got = items_plaintext(&payload_storage, &public_key, &private_key).await;
@@ -335,10 +317,7 @@ mod tests {
             if ts == 2 {
                 replace_id.replace(payload.id().clone());
             }
-            let body = SetReq {
-                payload: payload.data().data(),
-            };
-            let resp = test::call_service(&app, req_set(body).to_request()).await;
+            let resp = test::call_service(&app, req_set(payload.data().data()).to_request()).await;
             assert_eq!(resp.status(), 200)
         }
         let got = items_plaintext(&payload_storage, &public_key, &private_key).await;
@@ -360,10 +339,7 @@ mod tests {
                 None,
             )
             .unwrap();
-            let body = SetReq {
-                payload: encrypted.data(),
-            };
-            let resp = test::call_service(&app, req_set(body).to_request()).await;
+            let resp = test::call_service(&app, req_set(encrypted.data()).to_request()).await;
             assert_eq!(resp.status(), 200)
         }
         let extract_plaintext = |data: Bytes| {
@@ -380,31 +356,25 @@ mod tests {
         };
 
         // Return all
-        let body = FindReq {
-            token: SearchToken::encode(&public_key, &private_key, time_start.clone(), None)
-                .unwrap(),
-        };
+        let body =
+            SearchToken::encode(&public_key, &private_key, time_start.clone(), None).unwrap();
         let resp = test::call_and_read_body(&app, req_find(body).to_request()).await;
         assert_eq!(extract_plaintext(resp), vec!["1", "2", "3"]);
 
         // Return after
-        let body = FindReq {
-            token: SearchToken::encode(
-                &public_key,
-                &private_key,
-                Timestamp::now(),
-                Some(Timestamp::new(time_start.as_u64() + 2)),
-            )
-            .unwrap(),
-        };
+        let body = SearchToken::encode(
+            &public_key,
+            &private_key,
+            Timestamp::now(),
+            Some(Timestamp::new(time_start.as_u64() + 2)),
+        )
+        .unwrap();
         let resp = test::call_and_read_body(&app, req_find(body).to_request()).await;
         assert_eq!(extract_plaintext(resp), vec!["3"]);
 
         // Another key
         let (public_key, private_key) = keys(PUBLIC_KEY_2, PRIVATE_KEY_2);
-        let body = FindReq {
-            token: SearchToken::encode(&public_key, &private_key, time_start, None).unwrap(),
-        };
+        let body = SearchToken::encode(&public_key, &private_key, time_start, None).unwrap();
         let resp = test::call_and_read_body(&app, req_find(body).to_request()).await;
         assert!(extract_plaintext(resp).is_empty());
     }
