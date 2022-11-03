@@ -14,3 +14,4 @@ qqself-core = { path = "../core", features = ["serde"] }
 serde = { version="1.0.144", features = ["derive"] }
 tempdir = "0.3.7"
 tokio = { version = "1.20.1", features = ["rt", "macros", "time"] }
+thiserror = "1.0.35"

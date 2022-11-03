@@ -55,9 +55,12 @@ impl BinaryToText {
 
 #[cfg(test)]
 mod tests {
+    use wasm_bindgen_test::wasm_bindgen_test;
+
     use super::*;
 
     #[test]
+    #[wasm_bindgen_test]
     fn binary_text_from_bytes() {
         let binary_text = BinaryToText::new(&[10, 20]);
         assert_eq!(binary_text.encoded(), "mV");
@@ -66,6 +69,7 @@ mod tests {
     }
 
     #[test]
+    #[wasm_bindgen_test]
     fn binary_text_from_encoded() {
         let encoded = BinaryToText::new(&[10, 20]).encoded();
         let binary_text = BinaryToText::new_from_encoded(encoded).unwrap();
@@ -73,6 +77,7 @@ mod tests {
     }
 
     #[test]
+    #[wasm_bindgen_test]
     fn binary_text_errors() {
         let bad_characters = r#"C:\\Windows\cmd.exe"#;
         assert!(BinaryToText::new_from_encoded(bad_characters.to_string()).is_none());

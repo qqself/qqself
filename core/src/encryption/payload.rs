@@ -296,9 +296,9 @@ impl<'a> PayloadBinary<'a> {
             None => data.push(0x00),
         }
         data.extend_from_slice(&timestamp.to_le_bytes());
-        data.extend_from_slice(&public_key.len().to_le_bytes());
-        data.extend_from_slice(&aes_key.len().to_le_bytes());
-        data.extend_from_slice(&aes_payload.len().to_le_bytes());
+        data.extend_from_slice(&usize_bytes(public_key.len()));
+        data.extend_from_slice(&usize_bytes(aes_key.len()));
+        data.extend_from_slice(&usize_bytes(aes_payload.len()));
         // Dynamic sizes
         data.extend_from_slice(public_key);
         data.extend_from_slice(aes_key);
@@ -334,8 +334,19 @@ impl<'a> PayloadBinary<'a> {
     }
 }
 
+// usize size depends on a target, most are 64 bit, but WebAssembly is 32 bit
+// We have to be extra careful with usize bytes to ensure encoded data can be read everywhere
+pub(crate) fn usize_bytes(v: usize) -> [u8; 8] {
+    let v: u64 = v
+        .try_into()
+        .expect("only 32 and 64 bit systems are supported");
+    v.to_le_bytes()
+}
+
 #[cfg(test)]
 mod tests {
+    use wasm_bindgen_test::wasm_bindgen_test;
+
     use super::*;
 
     const PUBLIC_KEY_1: &str = "8A4MdxHGkuBnV4CY4W3ZgmMTiZkQHi1PdxG4yov65odytYFXkttWy8qojEp5rhNWn9ae3QWigZsfmSVojU62dFbUDR98p74VUqo47AoLLabVv7Ycj6VoEZj1Gz9YPPDhcUjbkzgzLb5n799MydJYdRLA17wDAuvNTcJ4m27F2jzg7Zv26r94eYbRRrYH6oauQGPr9a6XyvNKTzykLkU9m5C3vEnpTVai2NMdib9JiEeJUMUSaApNd4r3ZF9i46suP7qD9gimj2USuh1QHY3r9YKmcyurkZRGZhjyXAnbae98vuJtUxVyMMzV9QWkV1BodGMFc4gE77HhULKk1Z23igQWJZsDTUDhiZdLxs5pmW1699zEgNt42PtJGxQ4ouL5UZcNv42UpUrrXsnKpAKLkRKZTfpsdp4zmPYfSjMNqPQLqiyDLw1B1b5Vs23pAYNMNJoBJXp3wMsJFngqPtPDWZ9Bgm5361uAZa2yNBBfaJMoumTjAPY54MWzYbeqj7mB7ZvLm1351SVJn8rNqrHAE6fNxbruJVwjzbKzbLmD859ZBd2F1V4SKRQZSAymj9sfJYYCn3Z6KoKzBSgH2QYXoTb93dVGDGqegfwZ9EYq";
@@ -353,11 +364,13 @@ mod tests {
     }
 
     #[test]
+    #[wasm_bindgen_test]
     fn binary_data() {
         // No previous
         let (public_key, private_key) = keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
         let previous_id =
             PayloadId::new(Timestamp::new(TIMESTAMP), StableHash::hash_string("entry"));
+
         let bytes = PayloadBinary::to_bytes(
             &private_key,
             &public_key,
@@ -369,6 +382,7 @@ mod tests {
         )
         .unwrap();
         let data = PayloadBinary::from_bytes(&bytes).unwrap();
+
         assert_eq!(data.version, 1);
         assert_eq!(data.timestamp, Timestamp::new(TIMESTAMP));
         assert_eq!(data.public_key, public_key.to_string().as_bytes());
@@ -380,6 +394,7 @@ mod tests {
     }
 
     #[test]
+    #[wasm_bindgen_test]
     fn encrypt_decrypt() {
         let (public_key, private_key) = keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
         let data = "payload";
@@ -406,6 +421,7 @@ mod tests {
     }
 
     #[test]
+    #[wasm_bindgen_test]
     fn validation() {
         let (public_key1, private_key1) = keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
         let (_, _) = keys(PUBLIC_KEY_2, PRIVATE_KEY_2);

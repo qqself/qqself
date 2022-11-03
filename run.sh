@@ -39,6 +39,12 @@ build() {
 test() {
   log "Testing all Rust projects"
   cargo test --frozen
+
+  log "Testing WebAssembly"
+  (cd core && wasm-pack test --node)
+
+  log "Testing all Typescript projects"
+  (cd client-web && yarn test)
 }
 
 # Run linters and other static checkers

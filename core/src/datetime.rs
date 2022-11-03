@@ -446,8 +446,8 @@ impl Timestamp {
 
     #[cfg(target_arch = "wasm32")]
     pub fn now() -> Self {
-        let now = date_now();
-        Timestamp(now)
+        let now = js_sys::Date::now() / 1000.0;
+        Timestamp(now as u64)
     }
 
     pub fn new(timestamp: u64) -> Self {
@@ -504,20 +504,10 @@ impl Add<Duration> for Timestamp {
     }
 }
 
-#[cfg(target_arch = "wasm32")]
-use wasm_bindgen::prelude::wasm_bindgen;
-
-#[cfg(target_arch = "wasm32")]
-#[wasm_bindgen(inline_js = r#"
-export function date_now() {
-  return Date.now();
-}"#)]
-extern "C" {
-    fn date_now() -> u64;
-}
-
 #[cfg(test)]
 mod tests {
+    use wasm_bindgen_test::wasm_bindgen_test;
+
     use super::*;
 
     #[test]
@@ -642,6 +632,7 @@ mod tests {
     }
 
     #[test]
+    #[wasm_bindgen_test]
     fn timestamp_string_lexicographic_order() {
         let max = Timestamp::new_from_string(&u64::MAX.to_string())
             .unwrap()

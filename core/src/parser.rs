@@ -348,6 +348,8 @@ impl<'a> Parser<'a> {
 
 #[cfg(test)]
 mod tests {
+    use wasm_bindgen_test::wasm_bindgen_test;
+
     use crate::datetime::TimeDuration;
 
     use super::*;
@@ -355,6 +357,7 @@ mod tests {
     const BASE_DATE: Date = Date::new(2000, 1, 1);
 
     #[test]
+    #[wasm_bindgen_test]
     fn entry_parsing() {
         let dr = |hours: u8, minutes: u8| DateTimeRange {
             start: DateTime::new(BASE_DATE.clone(), DayTime::new(hours, minutes)),
@@ -500,6 +503,7 @@ mod tests {
     }
 
     #[test]
+    #[wasm_bindgen_test]
     fn encoding_decoding() {
         let cases = vec![
             "tag1",
@@ -526,6 +530,7 @@ mod tests {
     }
 
     #[test]
+    #[wasm_bindgen_test]
     fn normalizing() {
         let cases = vec![
             // Spaces trimmed and collapsed
@@ -557,6 +562,7 @@ mod tests {
     }
 
     #[test]
+    #[wasm_bindgen_test]
     fn parsing_errors() {
         let cases = vec![
             ("01:01  .", ParseError::NoTags),
@@ -580,6 +586,7 @@ mod tests {
     }
 
     #[test]
+    #[wasm_bindgen_test]
     fn parse_datetime_relevance() {
         // First record of the day, no prev time known, record will be of zero duration
         let entry = Entry::parse("07:00 foo", BASE_DATE, None).unwrap();

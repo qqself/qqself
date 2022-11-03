@@ -3,39 +3,30 @@ pub mod routes;
 use actix_web::{http::header::ContentType, HttpResponse};
 use qqself_core::datetime::Timestamp;
 use serde::{Deserialize, Serialize};
-use std::fmt::Display;
 
-#[derive(Debug)]
+use thiserror::Error;
+
+#[derive(Error, Debug)]
 pub enum HttpErrorType {
+    #[error("BadInput. {0}")]
     BadInput(String),
+    #[error("BadToken. {0}")]
     BadToken(String),
+    #[error("OutdatedPayload. Payload was created too long time ago - create a new one with up to date timestamp, check /info endpoint for server timestamp")]
     OutdatedPayload,
+    #[error("PaymentRequired. {0}")]
     PaymentRequired(String),
+    #[error("AccountErr. {0}")]
     AccountErr(String),
+    #[error("IOError. {0}")]
     IOError(String),
 }
-
-impl std::error::Error for HttpErrorType {}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HttpError {
     pub timestamp: Timestamp,
     pub error_code: u16,
     pub error: String,
-}
-
-impl Display for HttpErrorType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            HttpErrorType::BadToken(s) => format!("BadToken. {s}"),
-            HttpErrorType::BadInput(s) => format!("BadInput. {s}"),
-            HttpErrorType::PaymentRequired(s) => format!("PaymentRequired. {s}"),
-            HttpErrorType::IOError(s) => format!("IOError. {s}"),
-            HttpErrorType::OutdatedPayload => "OutdatedPayload. Payload was created too long time ago - create a new one with up to date timestamp, check /info endpoint for server timestamp".to_string(),
-            HttpErrorType::AccountErr(s) => format!("AccountErr. {s}"),
-        };
-        f.write_str(&s)
-    }
 }
 
 impl actix_web::error::ResponseError for HttpErrorType {
