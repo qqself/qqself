@@ -1,7 +1,7 @@
 use crate::{
     datetime::Timestamp,
     encryption::{
-        keys::{PrivateKey, PublicKey},
+        keys::Keys,
         payload::{PayloadBytes, PayloadError},
         search_token::{SearchToken, SearchTokenErr},
     },
@@ -27,12 +27,15 @@ pub struct ApiRequest {
 impl ApiRequest {
     // Create new Find request for sync API
     pub fn new_find_request(
-        public_key: &PublicKey,
-        private_key: &PrivateKey,
+        keys: &Keys,
         timestamp_search: Option<Timestamp>,
     ) -> Result<Self, RequestCreateErr> {
-        let payload =
-            SearchToken::encode(public_key, private_key, Timestamp::now(), timestamp_search)?;
+        let payload = SearchToken::encode(
+            &keys.public_key,
+            &keys.private_key,
+            Timestamp::now(),
+            timestamp_search,
+        )?;
         Ok(Self {
             url: "https://api.qqself.com/find",
             payload,
@@ -41,13 +44,14 @@ impl ApiRequest {
     }
 
     // Create new Set request for sync API
-    pub fn new_set_request(
-        public_key: &PublicKey,
-        private_key: &PrivateKey,
-        plaintext: String,
-    ) -> Result<Self, RequestCreateErr> {
-        let payload =
-            PayloadBytes::encrypt(public_key, private_key, Timestamp::now(), &plaintext, None)?;
+    pub fn new_set_request(keys: &Keys, plaintext: String) -> Result<Self, RequestCreateErr> {
+        let payload = PayloadBytes::encrypt(
+            &keys.public_key,
+            &keys.private_key,
+            Timestamp::now(),
+            &plaintext,
+            None,
+        )?;
         Ok(Self {
             url: "https://api.qqself.com/set",
             payload: payload.data(),

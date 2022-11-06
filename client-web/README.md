@@ -7,3 +7,5 @@ Tests are running using `Jest` in `NodeJS` which supports WebAssembly just fine.
 ## Development
 
 Using `vite` and `rsw` hot reload is supported for both TypeScript and Rust. Run `yarn start` and then `yarn build` in another terminal.
+
+Minimum `NodeJS` version is 18 as we are using `fetch` API in tests

@@ -4,13 +4,11 @@ import { customElement, state } from "lit/decorators.js";
 import "./pages/loading";
 import "./pages/register";
 import "./pages/login";
-import "./pages/enter";
 import "./pages/progress";
-import { Keys } from "./keyFile";
+import { Keys } from "../core/pkg/qqself_client_web_core";
 
-type Page = "enter" | "login" | "register" | "progress";
+type Page = "login" | "register" | "progress";
 
-// Main global state, similar to the Redux
 interface State {
   initComplete: boolean;
   page: Page;
@@ -19,7 +17,7 @@ interface State {
 
 const defaultState: State = {
   initComplete: false,
-  page: "enter",
+  page: "login",
   keys: null,
 };
 
@@ -30,10 +28,14 @@ export class Main extends LitElement {
 
   constructor() {
     super();
-    const availablePages = ["enter", "login", "register", "progress"];
+    const availablePages = ["login", "register", "progress"];
     const page = window.location.hash.slice(1);
     if (availablePages.includes(page)) {
-      this.state.page = page as Page;
+      if (page != "progress" || this.state.keys) {
+        this.state.page = page as Page; // Show progress only when keys are available
+      } else {
+        this.moveToPage("login");
+      }
     }
   }
 
@@ -49,21 +51,6 @@ export class Main extends LitElement {
       />`;
     }
     switch (this.state.page) {
-      case "enter": {
-        return html`<q-enter-page
-          @login=${() => this.moveToPage("login")}
-          @register=${() => this.moveToPage("register")}
-        />`;
-      }
-      case "register": {
-        return html`<q-register-page
-          @registered=${(sender: any) => {
-            const keys = sender.detail.keys as Keys;
-            this.state = { ...this.state, keys };
-            this.moveToPage("login");
-          }}
-        />`;
-      }
       case "login": {
         return html`<q-login-page
           .keys=${this.state.keys}
@@ -72,6 +59,12 @@ export class Main extends LitElement {
             this.state = { ...this.state, keys };
             this.moveToPage("progress");
           }}
+          @register=${() => this.moveToPage("register")}
+        />`;
+      }
+      case "register": {
+        return html`<q-register-page
+          @registered=${() => this.moveToPage("login")}
         />`;
       }
       case "progress": {

@@ -1,8 +1,8 @@
 [workspace]
 
 members = [
+    "core",
     "api-sync",
     "client-cli",
-    "core",
     "client-web/core"
 ]

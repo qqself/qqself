@@ -1,8 +1,8 @@
 import { css, html, LitElement } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import { Keys } from "../../core/pkg/qqself_client_web_core";
 import "../components/logoBlock";
 import "../controls/button";
-import { Keys, stringToKeys } from "../keyFile";
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -21,54 +21,25 @@ export class LoginPage extends LitElement {
   openFile: HTMLInputElement | undefined;
 
   @state()
-  publicKey = "";
-
-  @state()
-  privateKey = "";
-
-  @state()
   error = "";
-
-  connectedCallback() {
-    super.connectedCallback();
-    if (this.keys) {
-      this.publicKey = this.keys.publicKey;
-      this.privateKey = this.keys.privateKey;
-    }
-  }
 
   keyFileOpened(e: Event) {
     const reader = new FileReader();
     reader.onload = (e: any) => {
-      const keysResult = stringToKeys(e.target.result);
-      if (keysResult instanceof Error) {
-        this.error = keysResult.message;
-      } else {
-        this.publicKey = keysResult.publicKey;
-        this.privateKey = keysResult.privateKey;
+      try {
+        const keys = Keys.deserialize(e.target.result);
+        this.dispatchEvent(
+          new CustomEvent("loggedIn", {
+            detail: {
+              keys,
+            },
+          })
+        );
+      } catch (ex: any) {
+        this.error = ex;
       }
     };
     reader.readAsText((e.target as any).files[0]);
-  }
-
-  login() {
-    this.dispatchEvent(
-      new CustomEvent("loggedIn", {
-        detail: {
-          keys: { publicKey: this.publicKey, privateKey: this.privateKey },
-        },
-      })
-    );
-  }
-
-  resetForm() {
-    this.publicKey = "";
-    this.privateKey = "";
-    this.error = "";
-  }
-
-  isLoginDisabled() {
-    return !this.publicKey || !this.privateKey;
   }
 
   static styles = css`
@@ -93,53 +64,32 @@ export class LoginPage extends LitElement {
     }
   `;
 
+  resetState() {
+    this.error = "";
+  }
+
+  login() {
+    this.resetState();
+    this.openFile?.click();
+  }
+
+  register() {
+    this.resetState();
+    this.dispatchEvent(new Event("register"));
+  }
+
   render() {
     return html`
       <q-logo-block>
         <h1>Login</h1>
-        <a
-          class="keyFile"
-          href=""
-          @click="${(event: Event) => {
-            this.resetForm();
-            this.openFile?.click();
-            event.preventDefault();
-          }}"
-          >Login using key file</a
-        >
+        <p>${this.error}</p>
         <input id="openFile" type="file" @change="${this.keyFileOpened}" />
-        <div class="keyInput">
-          <label for="username">Public key</label>
-          <input
-            type="text"
-            id="username"
-            autocomplete="username"
-            name="username"
-            .value="${this.publicKey}"
-            required
-            @input="${(e: any) => (this.publicKey = e.target.value)}"
-          />
+        <div class="root">
+          <q-button class="btn" @clicked="${this.login}"
+            >Login with key file</q-button
+          >
+          <q-button class="btn" @clicked="${this.register}">Register</q-button>
         </div>
-        <div class="keyInput">
-          <label for="current-password">Private key</label>
-          <input
-            id="current-password"
-            autocomplete="current-password"
-            type="text"
-            name="password"
-            .value="${this.privateKey}"
-            required
-            @input="${(e: any) => (this.privateKey = e.target.value)}"
-          />
-        </div>
-        <p class="error">${this.error}</p>
-        <q-button
-          class="login"
-          @clicked="${this.login}"
-          ?disabled=${this.isLoginDisabled()}
-          ?isSubmit=${true}
-          >Login</q-button
-        >
       </q-logo-block>
     `;
   }

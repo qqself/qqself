@@ -12,7 +12,7 @@ use structopt::StructOpt;
 use tokio::sync::mpsc;
 use tracing::{error, info};
 
-use crate::{config::Config, http::Http};
+use crate::{http::Http, key_file::KeyFile};
 
 #[derive(StructOpt, Debug)]
 #[structopt(about = "Exports all the records from journal file to the cloud")]
@@ -21,23 +21,23 @@ pub struct ExportOpts {
     #[structopt(short, long, default_value = "journal.txt")]
     journal_path: String,
 
-    /// Path to config
-    #[structopt(short, long, default_value = "config.toml")]
-    config_path: String,
+    /// Path to key file
+    #[structopt(short, long, default_value = "qqself_keys.txt")]
+    keys_path: String,
 }
 
 // TODO I'm still not sure about error handling, but unwrap everywhere is bad. Try anyhow crate?
 
 #[tracing::instrument(level = "trace", skip_all)]
 pub fn export(opts: ExportOpts) {
-    let config = Config::load(Path::new(&opts.config_path));
+    let keys = KeyFile::load(Path::new(&opts.keys_path));
     let journal_path = Path::new(&opts.journal_path);
     if !journal_path.exists() {
         error!("Journal file does not exists at {:?}", journal_path);
         exit(1);
     }
     info!("Exporting. Reading journal file at {:?}", journal_path);
-    export_journal(journal_path, config);
+    export_journal(journal_path, keys);
     info!("Exporting finished")
 }
 
@@ -45,7 +45,7 @@ pub fn export(opts: ExportOpts) {
 // it with Rayon, but HTTP is async and runs on Tokio. We create N mpsc send channels to send HTTP requests in
 // parallel to the backend. tokio::sync::broadcast looked like a better fit, but concept of Lagging caused issues
 #[tracing::instrument(level = "trace", skip_all)]
-fn export_journal(journal_path: &Path, config: Config) {
+fn export_journal(journal_path: &Path, keys: KeyFile) {
     let file = File::open(journal_path).expect("Cannot open journal file");
     let reader = BufReader::new(file);
     let (sending_runtime, send_channels) = start_sender();
@@ -67,8 +67,7 @@ fn export_journal(journal_path: &Path, config: Config) {
             qqself_core::parser::Parser::new(&line)
                 .parse_date_record(None, None)
                 .unwrap();
-            let (public_key, private_key) = config.keys();
-            let req = ApiRequest::new_set_request(public_key, private_key, line).unwrap();
+            let req = ApiRequest::new_set_request(keys.keys(), line).unwrap();
             let tx = &send_channels[idx % send_channels.len()];
             tx.blocking_send(req).unwrap();
         });

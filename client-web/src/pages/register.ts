@@ -1,10 +1,9 @@
 import { css, html, LitElement } from "lit";
 import { customElement, state } from "lit/decorators.js";
-import { createNewKeys } from "../../core/pkg";
+import { Keys } from "../../core/pkg/qqself_client_web_core";
 import { log } from "../logger";
 import "../components/logoBlock";
 import "../controls/button";
-import { Keys, keysToString } from "../keyFile";
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -41,21 +40,15 @@ export class RegisterPage extends LitElement {
     // TODO Generating keys is CPU heavy and blocks rendering, move all the encryption to the background Worker
     setTimeout(() => {
       log("Generating new keys...");
-      this.keysGenerated = createNewKeys();
+      this.keysGenerated = Keys.createNewKeys();
       this.generating = false;
       log("Key generation done");
     }, 100); // Give UI chance to render loading UI
   }
 
-  login() {
-    this.dispatchEvent(
-      new CustomEvent("registered", { detail: { keys: this.keysGenerated } })
-    );
-  }
-
   createDownloadLink() {
     const keys = this.keysGenerated!; // By that time keys always exists
-    const blob = new Blob([keysToString(keys)], { type: "text/plain" });
+    const blob = new Blob([keys.serialize()], { type: "text/plain" });
     return window.URL.createObjectURL(blob);
   }
 
@@ -87,17 +80,15 @@ export class RegisterPage extends LitElement {
     return html`
       <q-logo-block>
         <h1>Keys generated</h1>
-        <p class="advice">
-          Keys generated, we advice you to download and store the key file in a
-          safe place
-        </p>
         <a
           class="download"
           download="qqself_keys.txt"
           href="${this.createDownloadLink()}"
           >Download key file</a
         >
-        <q-button class="login" @clicked="${this.login}"
+        <q-button
+          class="login"
+          @clicked="${() => this.dispatchEvent(new Event("registered"))}"
           >Continue to login</q-button
         >
       </q-logo-block>
