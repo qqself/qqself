@@ -3,22 +3,36 @@
 use qqself_core::{
     api::{ApiRequest, RequestCreateErr},
     binary_text::BinaryToText,
-    encryption::keys::{generate_keys, PrivateKey, PublicKey},
+    encryption::{self, payload::PayloadBytes},
 };
 use wasm_bindgen::prelude::wasm_bindgen;
 
-#[wasm_bindgen(getter_with_clone)]
-pub struct Keys {
-    pub publicKey: String,
-    pub privateKey: String,
-}
+#[wasm_bindgen]
+pub struct Keys(encryption::keys::Keys);
 
 #[wasm_bindgen]
-pub fn createNewKeys() -> Keys {
-    let (public_key, private_key) = generate_keys();
-    Keys {
-        publicKey: public_key.to_string(),
-        privateKey: private_key.to_string(),
+impl Keys {
+    pub fn createNewKeys() -> Keys {
+        Self(encryption::keys::Keys::generate_new())
+    }
+    pub fn deserialize(data: String) -> Result<Keys, String> {
+        match encryption::keys::Keys::deserialize(data) {
+            Some(keys) => Ok(Self(keys)),
+            None => Err("Failed to deserialize the key file".to_string()),
+        }
+    }
+    pub fn serialize(&self) -> String {
+        self.0.serialize()
+    }
+    pub fn decrypt(&self, data: String) -> Result<String, String> {
+        let binary =
+            BinaryToText::new_from_encoded(data).ok_or_else(|| "Bad data encoding".to_string())?;
+        let payload = PayloadBytes::new_from_encrypted(binary).map_err(|v| v.to_string())?;
+        let payload = payload.validated(None).map_err(|v| v.to_string())?;
+        let decrypted = payload
+            .decrypt(&self.0.private_key)
+            .map_err(|v| v.to_string())?;
+        Ok(decrypted.text().to_string())
     }
 }
 
@@ -50,20 +64,6 @@ impl From<RequestCreateErr> for ApiError {
     }
 }
 
-fn parse_keys(public: &str, private: &str) -> Result<(PublicKey, PrivateKey), ApiError> {
-    let err = |msg: &str| ApiError {
-        code: ApiErrorType::EncodingError,
-        msg: msg.to_string(),
-    };
-    let public_key = BinaryToText::new_from_encoded(public.to_string())
-        .ok_or_else(|| err("Cannot encode public key"))?;
-    let public_key = PublicKey::new(public_key).map_err(|_| err("Cannot create public key"))?;
-    let private_key = BinaryToText::new_from_encoded(private.to_string())
-        .ok_or_else(|| err("Cannot encode private key"))?;
-    let private_key = PrivateKey::new(private_key).map_err(|_| err("Cannot create private key"))?;
-    Ok((public_key, private_key))
-}
-
 #[wasm_bindgen(getter_with_clone)]
 pub struct Request {
     pub url: String,
@@ -72,13 +72,25 @@ pub struct Request {
 }
 
 // TODO Temporary here, after all we should move API IO to core as well
+#[wasm_bindgen(getter_with_clone)]
+pub struct API {}
+
 #[wasm_bindgen]
-pub fn createApiFindRequest(keys: Keys) -> Result<Request, ApiError> {
-    let (public_key, private_key) = parse_keys(&keys.publicKey, &keys.privateKey)?;
-    let req = ApiRequest::new_find_request(&public_key, &private_key, None)?;
-    Ok(Request {
-        url: req.url.to_string(),
-        payload: req.payload,
-        contentType: req.content_type.to_string(),
-    })
+impl API {
+    pub fn createApiFindRequest(keys: &Keys) -> Result<Request, ApiError> {
+        let req = ApiRequest::new_find_request(&keys.0, None)?;
+        Ok(Request {
+            url: req.url.to_string(),
+            payload: req.payload,
+            contentType: req.content_type.to_string(),
+        })
+    }
+    pub fn createApiSetRequest(keys: &Keys, msg: &str) -> Result<Request, ApiError> {
+        let req = ApiRequest::new_set_request(&keys.0, msg.to_string())?;
+        Ok(Request {
+            url: req.url.to_string(),
+            payload: req.payload,
+            contentType: req.content_type.to_string(),
+        })
+    }
 }

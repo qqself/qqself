@@ -7,7 +7,7 @@ use structopt::StructOpt;
 use tracing::metadata::LevelFilter;
 use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter};
 mod http;
-mod config;
+mod key_file;
 mod operations;
 
 #[derive(StructOpt, Debug)]

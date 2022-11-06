@@ -1,8 +1,8 @@
 import { css, html, LitElement } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { Keys } from "../../core/pkg/qqself_client_web_core";
 import "../components/logoBlock";
 import "../controls/button";
-import { Keys } from "../keyFile";
 
 declare global {
   interface HTMLElementTagNameMap {

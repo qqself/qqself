@@ -25,25 +25,26 @@ impl Http {
 
 #[cfg(test)]
 mod tests {
+    use qqself_core::encryption::keys::Keys;
+
     use super::*;
-    use qqself_core::encryption::keys::generate_keys;
 
     #[tokio::test]
     async fn test_api() {
-        let (public_key, private_key) = generate_keys();
-        let msg = "2022-10-10 00:00 01:00 test app=client_cli source=test_set";
-        let req = ApiRequest::new_set_request(&public_key, &private_key, msg.to_string()).unwrap();
-        let payload = req.payload.clone();
+        let keys = Keys::generate_new();
         let http = Http::new();
 
         // Set
+        let msg = "2022-10-10 00:00 01:00 test app=client_cli source=test_set";
+        let req = ApiRequest::new_set_request(&keys, msg.to_string()).unwrap();
+        let payload = req.payload.clone();
         let resp = http.send(req).await.unwrap();
         assert_eq!(resp.status(), 200);
         let body = resp.text().await.unwrap();
         assert_eq!(body, "");
 
         // Find what we've just added
-        let req = ApiRequest::new_find_request(&public_key, &private_key, None).unwrap();
+        let req = ApiRequest::new_find_request(&keys, None).unwrap();
         let resp = http.send(req).await.unwrap();
         assert_eq!(resp.status(), 200);
         let body = resp.text().await.unwrap();
