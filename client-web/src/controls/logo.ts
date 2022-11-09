@@ -1,10 +1,10 @@
-import { css, html, LitElement } from "lit";
-import { customElement } from "lit/decorators.js";
-import logo from "./logo_512.png";
+import { css, html, LitElement } from "lit"
+import { customElement } from "lit/decorators.js"
+import logo from "./logo_512.png"
 
 declare global {
   interface HTMLElementTagNameMap {
-    "q-logo": Logo;
+    "q-logo": Logo
   }
 }
 
@@ -15,9 +15,9 @@ export class Logo extends LitElement {
       max-width: 256px;
       max-height: 256px;
     }
-  `;
+  `
 
   render() {
-    return html`<a href="/"><img class="logo" alt="logo" src=${logo} /></a>`;
+    return html`<a href="/"><img class="logo" alt="logo" src=${logo} /></a>`
   }
 }

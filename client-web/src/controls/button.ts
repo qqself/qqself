@@ -1,13 +1,13 @@
-import { css, html, LitElement } from "lit";
-import { customElement, property } from "lit/decorators.js";
-import { classMap } from "lit/directives/class-map.js";
-import { ifDefined } from "lit/directives/if-defined";
-import { defaultFont } from "../constants";
-import "../controls/logo";
+import { css, html, LitElement } from "lit"
+import { customElement, property } from "lit/decorators.js"
+import { classMap } from "lit/directives/class-map.js"
+import { ifDefined } from "lit/directives/if-defined"
+import { defaultFont } from "../constants"
+import "../controls/logo"
 
 declare global {
   interface HTMLElementTagNameMap {
-    "q-button": Button;
+    "q-button": Button
   }
 }
 
@@ -25,25 +25,25 @@ export class Button extends LitElement {
         color: #fff;
       }
     `,
-  ];
+  ]
 
   @property({ type: Boolean })
-  disabled = false;
+  disabled = false
 
   @property({ type: Boolean })
-  isSubmit = false;
+  isSubmit = false
 
   onClick() {
-    this.dispatchEvent(new Event("clicked"));
+    this.dispatchEvent(new Event("clicked"))
   }
 
   render() {
-    const classes = { disabled: this.disabled, root: true };
-    const buttonType = this.isSubmit ? "submit" : "button";
+    const classes = { disabled: this.disabled, root: true }
+    const buttonType = this.isSubmit ? "submit" : "button"
     return html`<div class=${classMap(classes)}>
       <button @click="${this.onClick}" type="${buttonType}">
         <slot></slot>
       </button>
-    </div>`;
+    </div>`
   }
 }

@@ -30,6 +30,7 @@ pub struct ExportOpts {
 
 #[tracing::instrument(level = "trace", skip_all)]
 pub fn export(opts: ExportOpts) {
+    info!("Exporting. Reading key file at {:?}", opts.keys_path);
     let keys = KeyFile::load(Path::new(&opts.keys_path));
     let journal_path = Path::new(&opts.journal_path);
     if !journal_path.exists() {

@@ -4,7 +4,8 @@
     "start": "vite",
     "watch": "rsw watch",
     "build": "wasm-pack build core --out-dir pkg --target web --release && tsc --noEmit && vite build",
-    "test": "wasm-pack build core --out-dir pkg --target nodejs --release && jest"
+    "test": "wasm-pack build core --out-dir pkg --target nodejs --release && jest",
+    "format": "prettier --write 'src/**/*.ts'"
   },
   "dependencies": {
     "lit": "^2.4.0"

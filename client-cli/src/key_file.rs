@@ -10,8 +10,8 @@ impl KeyFile {
     }
 
     pub fn load(path: &Path) -> Self {
-        let data = fs::read_to_string(path).unwrap();
-        let keys = Keys::deserialize(data).expect("key file cannot be parsed");
+        let data = fs::read_to_string(path).expect("key file should be available");
+        let keys = Keys::deserialize(data).expect("key file should contain key information");
         Self(keys)
     }
 
