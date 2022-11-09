@@ -3,6 +3,7 @@ import { customElement, state } from "lit/decorators.js";
 import init from "../../core/pkg";
 import { log } from "../logger";
 import "../components/logoBlock";
+import { EncryptionPool } from "../encryptionPool";
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -30,7 +31,14 @@ export class LoadingPage extends LitElement {
       setTimeout(() => {
         this.loaded = true;
         log("Initialized");
-        this.dispatchEvent(new Event("loaded"));
+        const encryptionPool = new EncryptionPool();
+        this.dispatchEvent(
+          new CustomEvent("loaded", {
+            detail: {
+              encryptionPool,
+            },
+          })
+        );
       }, 500); // TODO There has to be a better way to solve flickering of UI when checks completes very fast
     } catch (ex: any) {
       this.errors = ex.toString();

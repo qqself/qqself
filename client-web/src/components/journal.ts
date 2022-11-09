@@ -14,10 +14,10 @@ export class Journal extends LitElement {
   entries: string[] = [];
 
   render() {
-    const text = this.entries.join("\n");
+    const text = this.entries;
     return html`<div class="journal">
       <h2>Entries</h2>
-      ${text}
+      ${text.map((v) => html`<p>${v}</p>`)}
     </div>`;
   }
 }

@@ -1,9 +1,10 @@
 import { css, html, LitElement } from "lit";
-import { customElement, state } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { Keys } from "../../core/pkg/qqself_client_web_core";
 import { log } from "../logger";
 import "../components/logoBlock";
 import "../controls/button";
+import { EncryptionPool } from "../encryptionPool";
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -15,6 +16,9 @@ declare global {
 export class RegisterPage extends LitElement {
   @state()
   keysGenerated: Keys | null = null;
+
+  @property({ type: Object })
+  encryptionPool: EncryptionPool | null = null;
 
   @state()
   generating = false;
@@ -35,15 +39,12 @@ export class RegisterPage extends LitElement {
     }
   `;
 
-  createNewKeys() {
+  async createNewKeys() {
     this.generating = true;
-    // TODO Generating keys is CPU heavy and blocks rendering, move all the encryption to the background Worker
-    setTimeout(() => {
-      log("Generating new keys...");
-      this.keysGenerated = Keys.createNewKeys();
-      this.generating = false;
-      log("Key generation done");
-    }, 100); // Give UI chance to render loading UI
+    log("Generating new keys...");
+    this.keysGenerated = await this.encryptionPool!.generateNewKeys();
+    log("Key generation done");
+    this.generating = false;
   }
 
   createDownloadLink() {

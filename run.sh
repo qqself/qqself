@@ -51,6 +51,8 @@ test() {
 lint() {
   log "Linting all the Rust projects"
   cargo clippy --all-targets --all-features -- -D warnings
+  log "Linting all TypeScript projects"
+  (cd client-web && $(npm bin)/prettier --check "**/*.ts")
 }
 
 # Build a new Docker container and push to the registry
@@ -83,12 +85,12 @@ deploy() {
     docker_push "$repo" "$name" "api-sync/Dockerfile" 
     apprunner_update "qqself-api-sync" "$repo/$name"
   elif [[ "$service" == "client-web" ]]; then 
-    (cd client-web && yarn build) # TODO Should we commit dist actually?
+    (cd client-web && yarn build)
     repo="public.ecr.aws/m5h4l2c6"
     name="qqself-app:$VERSION"
     docker_push "$repo" "$name" "client-web/Dockerfile"
     apprunner_update "qqself-client-web" "$repo/$name" 
-    elif [[ "$service" == "www" ]]; then 
+  elif [[ "$service" == "www" ]]; then 
     repo="public.ecr.aws/q2c2s6b5"
     name="qqself-www:$VERSION"
     docker_push "$repo" "$name" "www/Dockerfile"

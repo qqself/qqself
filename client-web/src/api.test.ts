@@ -19,6 +19,7 @@ describe("API", () => {
 
     // Get those back
     const got = await API.find(keys);
-    expect(got).toEqual(["msg1", "msg2"]);
+    const plaintext = got.map((v) => keys.decrypt(v));
+    expect(plaintext).toEqual(["msg1", "msg2"]);
   });
 });

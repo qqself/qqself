@@ -6,6 +6,7 @@ import "./pages/register";
 import "./pages/login";
 import "./pages/progress";
 import { Keys } from "../core/pkg/qqself_client_web_core";
+import { EncryptionPool } from "./encryptionPool";
 
 type Page = "login" | "register" | "progress";
 
@@ -13,12 +14,14 @@ interface State {
   initComplete: boolean;
   page: Page;
   keys: Keys | null;
+  encryptionPool: EncryptionPool | null;
 }
 
 const defaultState: State = {
   initComplete: false,
   page: "login",
   keys: null,
+  encryptionPool: null,
 };
 
 @customElement("q-main")
@@ -47,13 +50,21 @@ export class Main extends LitElement {
   render() {
     if (!this.state.initComplete) {
       return html`<q-loading-page
-        @loaded=${() => (this.state = { ...this.state, initComplete: true })}
+        @loaded=${(sender: any) => {
+          const encryptionPool = sender.detail.encryptionPool as EncryptionPool;
+          this.state = {
+            ...this.state,
+            encryptionPool: encryptionPool,
+            initComplete: true,
+          };
+        }}
       />`;
     }
     switch (this.state.page) {
       case "login": {
         return html`<q-login-page
           .keys=${this.state.keys}
+          .encryptionPool=${this.state.encryptionPool}
           @loggedIn=${(sender: any) => {
             const keys = sender.detail.keys as Keys;
             this.state = { ...this.state, keys };
@@ -64,11 +75,15 @@ export class Main extends LitElement {
       }
       case "register": {
         return html`<q-register-page
+          .encryptionPool=${this.state.encryptionPool}
           @registered=${() => this.moveToPage("login")}
         />`;
       }
       case "progress": {
-        return html`<q-progress-page .keys=${this.state.keys} />`;
+        return html`<q-progress-page
+          .keys=${this.state.keys}
+          .encryptionPool=${this.state.encryptionPool}
+        />`;
       }
     }
   }

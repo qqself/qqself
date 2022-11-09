@@ -1,4 +1,5 @@
 import { API, Keys, Request } from "../core/pkg/qqself_client_web_core";
+import { EncryptionPool } from "./encryptionPool";
 
 type ApiError = {
   timestamp: number;
@@ -36,8 +37,5 @@ export const find = async (keys: Keys): Promise<string[]> => {
   if (!lines) {
     return []; // Find returned no lines
   }
-  return lines
-    .split("\n")
-    .filter((v) => v) // TODO We seems to always have a last empty row, can we get rid of it?
-    .map((v) => keys.decrypt(v));
+  return lines.split("\n").filter((v) => v); // Filter out empty line
 };

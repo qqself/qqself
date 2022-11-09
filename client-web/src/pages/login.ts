@@ -3,6 +3,7 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { Keys } from "../../core/pkg/qqself_client_web_core";
 import "../components/logoBlock";
 import "../controls/button";
+import { EncryptionPool } from "../encryptionPool";
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -16,6 +17,9 @@ declare global {
 export class LoginPage extends LitElement {
   @property({ type: Object })
   keys: Keys | null = null;
+
+  @property({ type: Object })
+  encryptionPool: EncryptionPool | null = null;
 
   @query("#openFile")
   openFile: HTMLInputElement | undefined;

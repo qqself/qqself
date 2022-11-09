@@ -5,6 +5,8 @@ import { find } from "../api";
 import "../components/logoBlock";
 import "../controls/button";
 import "../components/journal";
+import { EncryptionPool } from "../encryptionPool";
+import { log } from "../logger";
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -17,6 +19,9 @@ export class ProgressPage extends LitElement {
   @property({ type: Object })
   keys: Keys | null = null;
 
+  @property({ type: Object })
+  encryptionPool: EncryptionPool | null = null;
+
   @state()
   entries: string[] = [];
 
@@ -25,13 +30,17 @@ export class ProgressPage extends LitElement {
 
   async connectedCallback() {
     super.connectedCallback();
-    if (!this.keys) {
-      this.error =
-        "Cannot fetch the data as keys are missing. Please reload the app and login again";
-      return;
-    }
     try {
-      this.entries = await find(this.keys);
+      const start = performance.now();
+      const lines = await find(this.keys!);
+      const requestFinished = performance.now();
+      this.entries = await this.encryptionPool!.decryptAll(lines, this.keys!);
+      const decrypted = performance.now();
+      log(
+        `Entries loaded in ${Math.floor(decrypted - start)}. API=${Math.floor(
+          requestFinished - start
+        )} Decryption=${Math.floor(decrypted - requestFinished)}`
+      );
     } catch (ex: any) {
       this.error = ex as any;
     }
@@ -42,7 +51,7 @@ export class ProgressPage extends LitElement {
   render() {
     return html`
       <q-logo-block>
-        <h1>Progress</h1>        
+        <h1>Progress</h1>
         <q-journal .entries=${this.entries}></q-journal>
         ${this.error && html`<p>Error ${this.error}</p>`}
       </q-logo-block>
