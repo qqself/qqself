@@ -52,7 +52,7 @@ lint() {
   log "Linting all the Rust projects"
   cargo clippy --all-targets --all-features -- -D warnings
   log "Linting all TypeScript projects"
-  (cd client-web && $(npm bin)/prettier --check "**/*.ts")
+  (cd client-web && $(npm bin)/prettier --check "src/**/*.ts")
 }
 
 # Build a new Docker container and push to the registry

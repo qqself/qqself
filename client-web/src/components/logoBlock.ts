@@ -1,10 +1,10 @@
-import { css, html, LitElement } from "lit";
-import { customElement } from "lit/decorators.js";
-import "../controls/logo";
+import { css, html, LitElement } from "lit"
+import { customElement } from "lit/decorators.js"
+import "../controls/logo"
 
 declare global {
   interface HTMLElementTagNameMap {
-    "q-logo-block": LogoBlock;
+    "q-logo-block": LogoBlock
   }
 }
 
@@ -20,7 +20,7 @@ export class LogoBlock extends LitElement {
     .content {
       text-align: center;
     }
-  `;
+  `
 
   render() {
     return html`<div class="root">
@@ -28,6 +28,6 @@ export class LogoBlock extends LitElement {
         <q-logo></q-logo>
         <slot></slot>
       </div>
-    </div>`;
+    </div>`
   }
 }
