@@ -2,6 +2,8 @@ import { Keys } from "../core/pkg/qqself_client_web_core"
 import * as API from "./api"
 
 describe("API", () => {
+  jest.setTimeout(10 * 1000)
+
   test("Create new keys", async () => {
     const keys = Keys.createNewKeys()
     expect(keys).toBeTruthy()
@@ -20,6 +22,7 @@ describe("API", () => {
     // Get those back
     const got = await API.find(keys)
     const plaintext = got.map((v) => keys.decrypt(v))
-    expect(plaintext).toEqual(["msg1", "msg2"])
+    // Sort order of items with the same timestamp is not defined
+    expect(plaintext.sort()).toEqual(["msg1", "msg2"])
   })
 })

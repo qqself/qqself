@@ -2,10 +2,10 @@
 FROM rust:1.64.0-slim-buster
 WORKDIR /app
 COPY . .
-RUN cargo build --frozen --release --package qqself-api-sync && \
-    cargo test  --frozen --release --package qqself-api-sync
+RUN cargo build --frozen --release --package qqself-api-sync --features storage-dynamodb
 
 FROM debian:buster-slim
+RUN apt-get update && apt-get install -y ca-certificates
 COPY --from=0 /app/target/release/qqself-api-sync /app
 CMD ["/app"]
 
