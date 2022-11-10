@@ -78,7 +78,7 @@ impl FSPayloadStorage {
                 continue; // Some invalid file
             }
             let file_time_prefix = name[..prefix_time.len()].to_string();
-            if file_time_prefix <= prefix_time {
+            if file_time_prefix < prefix_time {
                 continue; // File older than what we find
             }
             let data = std::fs::read(file.path())

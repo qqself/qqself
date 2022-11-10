@@ -13,6 +13,7 @@ use qqself_core::{
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord)]
 pub enum StorageErr {
     Err(&'static str),
+    IOError(String),
 }
 
 #[async_trait]
@@ -78,12 +79,17 @@ mod tests {
             .collect()
     }
 
-    fn payload(keys: &Keys, value: u64, previous: Option<PayloadId>) -> Payload {
-        let plaintext = value.to_string();
+    fn payload(
+        keys: &Keys,
+        timestamp: u64,
+        plaintext: u64,
+        previous: Option<PayloadId>,
+    ) -> Payload {
+        let plaintext = plaintext.to_string();
         let encrypted = PayloadBytes::encrypt(
             &keys.public,
             &keys.private,
-            Timestamp::new(value),
+            Timestamp::new(timestamp),
             &plaintext,
             previous,
         )
@@ -99,27 +105,33 @@ mod tests {
         assert!(items(keys1, &storage, None).await.is_empty());
 
         // Search all
-        storage.set(payload(keys1, 1, None)).await.unwrap();
-        storage.set(payload(keys1, 2, None)).await.unwrap();
-        storage.set(payload(keys1, 3, None)).await.unwrap();
+        storage.set(payload(keys1, 1, 1, None)).await.unwrap();
+        storage.set(payload(keys1, 2, 2, None)).await.unwrap();
+        storage.set(payload(keys1, 3, 3, None)).await.unwrap();
         assert_eq!(items(keys1, &storage, None).await, vec!["1", "2", "3"]);
         assert!(items(keys2, &storage, None).await.is_empty());
 
         // Return items after timestamp
-        assert_eq!(items(keys1, &storage, Some(1)).await, vec!["2", "3"]);
+        assert_eq!(items(keys1, &storage, Some(2)).await, vec!["2", "3"]);
 
-        // Add keys for other keys
-        storage.set(payload(keys2, 1, None)).await.unwrap();
+        // Add entires for other keys
+        storage.set(payload(keys2, 1, 1, None)).await.unwrap();
         assert_eq!(items(keys1, &storage, None).await, vec!["1", "2", "3"]);
         assert_eq!(items(keys2, &storage, None).await, vec!["1"]);
 
         // Reset value
         let existing = items_raw(keys1, &storage, None).await;
         storage
-            .set(payload(keys1, 4, Some(existing[0].id().clone())))
+            .set(payload(keys1, 4, 4, Some(existing[0].id().clone())))
             .await
             .unwrap();
         assert_eq!(items(keys1, &storage, None).await, vec!["2", "3", "4"]);
+
+        // Additional entry with the same timestamp should be appended and not overwrite the existing entry
+        storage.set(payload(keys1, 4, 5, None)).await.unwrap();
+        let mut got = items(keys1, &storage, Some(4)).await;
+        got.sort(); // Storages returns items sorted by timestamp but for enrties with the same timestamp order is not defined
+        assert_eq!(got, vec!["4", "5"]);
     }
 
     #[tokio::test]
@@ -130,5 +142,12 @@ mod tests {
     #[tokio::test]
     async fn fs_storage() {
         test_storage(FSPayloadStorage::new_temp()).await;
+    }
+
+    #[cfg(feature = "storage-dynamodb")]
+    #[tokio::test]
+    async fn dynamo_storage() {
+        use crate::storage::payload_dynamodb::DynamoDBStorage;
+        test_storage(DynamoDBStorage::new().await).await;
     }
 }

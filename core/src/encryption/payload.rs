@@ -1,3 +1,6 @@
+use core::fmt;
+use std::fmt::Write;
+
 use crate::{binary_text::BinaryToText, datetime::Timestamp};
 
 use super::{
@@ -38,6 +41,14 @@ impl PayloadId {
     }
     pub fn hash(&self) -> &StableHash {
         &self.hash
+    }
+}
+
+impl fmt::Display for PayloadId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.timestamp().to_string())?;
+        f.write_char('|')?;
+        f.write_str(&self.hash().to_string())
     }
 }
 
