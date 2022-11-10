@@ -55,7 +55,7 @@ impl PayloadStorage for MemoryPayloadStorage {
             if v.public_key() != public_key {
                 continue;
             }
-            if v.id().timestamp() <= &timestamp {
+            if v.id().timestamp() < &timestamp {
                 continue;
             }
             found.push(Ok(v.data()));

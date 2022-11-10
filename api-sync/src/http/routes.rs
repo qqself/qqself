@@ -370,7 +370,7 @@ mod tests {
         )
         .unwrap();
         let resp = test::call_and_read_body(&app, req_find(body).to_request()).await;
-        assert_eq!(extract_plaintext(resp), vec!["3"]);
+        assert_eq!(extract_plaintext(resp), vec!["2", "3"]);
 
         // Another key
         let (public_key, private_key) = keys(PUBLIC_KEY_2, PRIVATE_KEY_2);

@@ -30,7 +30,7 @@ deps() {
 # Builds everything
 build() {
   log "Building all Rust projects"
-  cargo build --frozen
+  cargo build --all-features --frozen
   log "Building client-web - core"
   (cd client-web && yarn build)
 }
