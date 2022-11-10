@@ -148,6 +148,6 @@ mod tests {
     #[tokio::test]
     async fn dynamo_storage() {
         use crate::storage::payload_dynamodb::DynamoDBStorage;
-        test_storage(DynamoDBStorage::new().await).await;
+        test_storage(DynamoDBStorage::new("qqself_entries").await).await;
     }
 }

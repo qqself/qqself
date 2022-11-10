@@ -14,17 +14,18 @@ use qqself_core::encryption::payload::{Payload, PayloadBytes, PayloadId};
 
 use super::payload::{PayloadStorage, StorageErr};
 
-const TABLE: &str = "qqself_entries"; // TODO Should be configurable and coming from the environment
+
 
 pub struct DynamoDBStorage {
     client: Client,
+    table: &'static str,
 }
 
 impl DynamoDBStorage {
-    pub async fn new() -> Self {
+    pub async fn new(table: &'static str) -> Self {
         let shared_config = aws_config::load_from_env().await;
         let client = Client::new(&shared_config);
-        Self { client }
+        Self { client, table }
     }
 
     async fn dynamo_put_item(
@@ -40,7 +41,7 @@ impl DynamoDBStorage {
         let res = self
             .client
             .put_item()
-            .table_name(TABLE)
+            .table_name(self.table)
             .item("pk", AttributeValue::S(public_key.to_string()))
             .item("id", AttributeValue::S(payload_id.to_string()))
             .item("payload", payload)
@@ -91,7 +92,7 @@ impl PayloadStorage for DynamoDBStorage {
         let res = self
             .client
             .query()
-            .table_name(TABLE)
+            .table_name(self.table)
             .key_condition_expression(filter)
             .filter_expression("attribute_type(payload,:payloadType)")
             .set_expression_attribute_values(Some(attributes));
