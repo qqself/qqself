@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::{datetime::TimeDuration, db::Selector, record::Entry};
+use crate::{date_time::datetime::Duration, db::Selector, record::Entry};
 
 /*
 Skill - activity where we can become better by practicing.
@@ -21,12 +21,12 @@ pub struct Skill {
     selector: Selector,
     kind: String,
     title: String,
-    duration_minutes: usize,
+    duration_minutes: u64,
 }
 
 pub struct SkillProgress {
-    pub level: usize,
-    pub minutes_till_next: usize,
+    pub level: u64,
+    pub minutes_till_next: u64,
 }
 
 impl Skill {
@@ -73,8 +73,8 @@ impl Skill {
         &self.title
     }
 
-    pub fn add_duration(&mut self, duration: TimeDuration) {
-        self.duration_minutes += duration.measure1 * 60 + duration.measure2;
+    pub fn add_duration(&mut self, duration: Duration) {
+        self.duration_minutes += duration.minutes();
     }
 
     pub fn merge_selector(&mut self, mut another: Skill) {
@@ -113,17 +113,17 @@ impl Display for Skill {
 // Calculates skill level and time left before the next level
 // Created in way to produce level 100 around 10_000 hours
 // Levelling is fast at start, but higher levels require more time
-fn skill_level(minutes: usize) -> (usize, usize) {
+fn skill_level(minutes: u64) -> (u64, u64) {
     let factor = 1.0673005;
     let mut level = 0;
     let mut total_minutes = 0.0;
     let mut hours_per_level = 1.0;
-    while minutes >= total_minutes as usize {
+    while minutes >= total_minutes as u64 {
         level += 1;
         hours_per_level *= factor;
         total_minutes += hours_per_level * 60.0;
     }
-    (level, total_minutes as usize - minutes)
+    (level, total_minutes as u64 - minutes)
 }
 
 #[cfg(test)]

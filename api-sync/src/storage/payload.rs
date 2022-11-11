@@ -3,7 +3,7 @@ use std::pin::Pin;
 use async_trait::async_trait;
 use futures::Stream;
 use qqself_core::{
-    datetime::Timestamp,
+    date_time::timestamp::Timestamp,
     encryption::{
         keys::PublicKey,
         payload::{Payload, PayloadBytes},
@@ -60,7 +60,7 @@ mod tests {
         s: &S,
         after_timestamp: Option<u64>,
     ) -> Vec<Payload> {
-        s.find(&keys.public, after_timestamp.map(Timestamp::new))
+        s.find(&keys.public, after_timestamp.map(Timestamp::from_u64))
             .map(|v| v.unwrap())
             .map(|v| v.validated(None).unwrap())
             .collect::<Vec<_>>()
@@ -89,7 +89,7 @@ mod tests {
         let encrypted = PayloadBytes::encrypt(
             &keys.public,
             &keys.private,
-            Timestamp::new(timestamp),
+            Timestamp::from_u64(timestamp),
             &plaintext,
             previous,
         )

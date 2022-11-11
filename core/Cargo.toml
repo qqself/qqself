@@ -13,6 +13,7 @@ regex = "1.6.0"
 rsa = "0.6.1"
 serde = { version = "1.0", optional = true, features = ["derive"] }
 thiserror = "1.0.35"
+time = { version = "0.3.17", features = ["wasm-bindgen"] }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.33"

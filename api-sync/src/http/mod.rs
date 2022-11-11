@@ -1,7 +1,7 @@
 pub mod routes;
 
 use actix_web::{http::header::ContentType, HttpResponse};
-use qqself_core::datetime::Timestamp;
+use qqself_core::date_time::timestamp::Timestamp;
 use serde::{Deserialize, Serialize};
 
 use thiserror::Error;

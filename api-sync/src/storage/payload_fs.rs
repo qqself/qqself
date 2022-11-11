@@ -8,7 +8,7 @@ use async_trait::async_trait;
 use futures::{stream, Stream, StreamExt};
 use qqself_core::{
     binary_text::BinaryToText,
-    datetime::Timestamp,
+    date_time::timestamp::Timestamp,
     encryption::{
         keys::PublicKey,
         payload::{Payload, PayloadBytes, PayloadId},
@@ -62,7 +62,7 @@ impl FSPayloadStorage {
     ) -> Result<Vec<PayloadBytes>, StorageErr> {
         let mut found = Vec::new();
         let listing = read_dir(&self.path).map_err(|_| StorageErr::Err("Failed to read_dir"))?;
-        let timestamp = after_timestamp.unwrap_or_else(Timestamp::zero);
+        let timestamp = after_timestamp.unwrap_or_default();
         for file in listing {
             let file = file.map_err(|_| StorageErr::Err("Failed to read folder file"))?;
             let name = file

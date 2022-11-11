@@ -13,11 +13,11 @@ macro_rules! item {
     };
 }
 
-#[cfg(feature = "serde-well-known")]
+#[cfg(any(feature = "formatting", feature = "parsing"))]
 pub mod iso8601;
-#[cfg(feature = "serde-well-known")]
+#[cfg(any(feature = "formatting", feature = "parsing"))]
 pub mod rfc2822;
-#[cfg(feature = "serde-well-known")]
+#[cfg(any(feature = "formatting", feature = "parsing"))]
 pub mod rfc3339;
 pub mod timestamp;
 mod visitor;
@@ -45,28 +45,47 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 ///
 /// # Examples
 ///
-/// ```
+/// ```rust,no_run
 /// # use time::OffsetDateTime;
-/// # use ::serde::{Serialize, Deserialize};
+#[cfg_attr(
+    all(feature = "formatting", feature = "parsing"),
+    doc = "use ::serde::{Serialize, Deserialize};"
+)]
+#[cfg_attr(
+    all(feature = "formatting", not(feature = "parsing")),
+    doc = "use ::serde::Serialize;"
+)]
+#[cfg_attr(
+    all(not(feature = "formatting"), feature = "parsing"),
+    doc = "use ::serde::Deserialize;"
+)]
 /// use time::serde;
 ///
 /// // Makes a module `mod my_format { ... }`.
 /// serde::format_description!(my_format, OffsetDateTime, "hour=[hour], minute=[minute]");
-///
-/// #[derive(Serialize, Deserialize)]
+#[cfg_attr(
+    all(feature = "formatting", feature = "parsing"),
+    doc = "#[derive(Serialize, Deserialize)]"
+)]
+#[cfg_attr(
+    all(feature = "formatting", not(feature = "parsing")),
+    doc = "#[derive(Serialize)]"
+)]
+#[cfg_attr(
+    all(not(feature = "formatting"), feature = "parsing"),
+    doc = "#[derive(Deserialize)]"
+)]
+/// # #[allow(dead_code)]
 /// struct SerializesWithCustom {
 ///     #[serde(with = "my_format")]
 ///     dt: OffsetDateTime,
 ///     #[serde(with = "my_format::option")]
 ///     maybe_dt: Option<OffsetDateTime>,
 /// }
-/// #
-/// # // otherwise rustdoc tests don't work because we put a module in `main()`
-/// # fn main() {}
 /// ```
-///
+/// 
 /// [`format_description::parse()`]: crate::format_description::parse()
-#[cfg(all(feature = "macros", feature = "serde-human-readable"))]
+#[cfg(all(feature = "macros", any(feature = "formatting", feature = "parsing"),))]
 pub use time_macros::serde_format_description as format_description;
 
 use self::visitor::Visitor;

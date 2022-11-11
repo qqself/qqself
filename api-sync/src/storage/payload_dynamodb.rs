@@ -8,13 +8,11 @@ use aws_sdk_dynamodb::types::SdkError;
 use aws_sdk_dynamodb::Client;
 use futures::{Stream, StreamExt};
 use qqself_core::binary_text::BinaryToText;
-use qqself_core::datetime::Timestamp;
+use qqself_core::date_time::timestamp::Timestamp;
 use qqself_core::encryption::keys::PublicKey;
 use qqself_core::encryption::payload::{Payload, PayloadBytes, PayloadId};
 
 use super::payload::{PayloadStorage, StorageErr};
-
-
 
 pub struct DynamoDBStorage {
     client: Client,

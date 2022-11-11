@@ -1,4 +1,4 @@
-use crate::{binary_text::BinaryToText, datetime::Timestamp};
+use crate::{binary_text::BinaryToText, date_time::timestamp::Timestamp};
 
 use super::{
     hash::StableHash,
@@ -66,7 +66,7 @@ impl SearchToken {
         let search_timestamp = if bytes.timestamp_search == 0 {
             None
         } else {
-            Some(Timestamp::new(bytes.timestamp_search))
+            Some(Timestamp::from_u64(bytes.timestamp_search))
         };
         Ok(SearchToken {
             public_key,
@@ -93,7 +93,7 @@ impl SearchToken {
             public_key,
             SearchToken::VERSION,
             timestamp_created.as_u64(),
-            timestamp_search.unwrap_or_else(Timestamp::zero).as_u64(),
+            timestamp_search.unwrap_or_default().as_u64(),
         )
         .ok_or(SearchTokenErr::ValidationError(
             "Failed encoding a search token",
@@ -210,14 +210,14 @@ mod tests {
     #[test]
     #[wasm_bindgen_test]
     fn encode_decode() {
-        let timestamp_search = Timestamp::new(100);
-        let timestamp_created = Timestamp::new(200);
+        let timestamp_search = Timestamp::from_u64(100);
+        let timestamp_created = Timestamp::from_u64(200);
         let (public_key, private_key) = keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
         let encoded = SearchToken::encode(
             &public_key,
             &private_key,
             timestamp_created,
-            Some(timestamp_search.clone()),
+            Some(timestamp_search),
         )
         .unwrap();
         let decoded = SearchToken::new_from_encoded(encoded, None).unwrap();
@@ -236,8 +236,8 @@ mod tests {
         );
 
         // Too old token
-        let timestamp_search = Timestamp::new(100);
-        let timestamp_created = Timestamp::new(200);
+        let timestamp_search = Timestamp::from_u64(100);
+        let timestamp_created = Timestamp::from_u64(200);
         let (public_key, private_key) = keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
         let encoded = SearchToken::encode(
             &public_key,
@@ -246,7 +246,8 @@ mod tests {
             Some(timestamp_search),
         )
         .unwrap();
-        let decoded = SearchToken::new_from_encoded(encoded.clone(), Some(Timestamp::new(300)));
+        let decoded =
+            SearchToken::new_from_encoded(encoded.clone(), Some(Timestamp::from_u64(300)));
         assert_eq!(decoded.unwrap_err(), SearchTokenErr::TimestampIsTooOld);
 
         // Broken signature
