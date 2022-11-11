@@ -1,7 +1,12 @@
 use std::fmt::{Display, Formatter};
 
-use crate::datetime::{Date, DateTime, DateTimeRange, DayTime};
-use crate::record::{Entry, Prop, PropOperator, PropVal, Tag};
+use crate::{
+    date_time::{
+        datetime::{Date, DateTime, Time},
+        datetime_range::DateTimeRange,
+    },
+    record::{Entry, Prop, PropOperator, PropVal, Tag},
+};
 
 /*
     Grammar:
@@ -177,9 +182,9 @@ impl<'a> Parser<'a> {
     fn parse_date_range(
         &mut self,
         base_date: Option<Date>,
-        prev_time: Option<DayTime>,
+        prev_time: Option<Time>,
     ) -> Result<DateTimeRange, ParseError> {
-        let parsed_date = match self.parse_date_time(base_date.clone())? {
+        let parsed_date = match self.parse_date_time(base_date)? {
             Some(parsed) => parsed,
             None => {
                 return Err(ParseError::BadDateTime(
@@ -191,7 +196,7 @@ impl<'a> Parser<'a> {
         // Separators in case of two date/time specified
         self.consume_char('-');
         self.consume_char(' ');
-        match self.parse_date_time(Some(parsed_date.clone().date))? {
+        match self.parse_date_time(Some(parsed_date.date()))? {
             Some(date_to) => Ok(DateTimeRange {
                 start: parsed_date,
                 end: date_to,
@@ -208,7 +213,7 @@ impl<'a> Parser<'a> {
                     })
                 } else {
                     Ok(DateTimeRange {
-                        start: parsed_date.clone(),
+                        start: parsed_date,
                         end: parsed_date,
                     })
                 }
@@ -234,7 +239,7 @@ impl<'a> Parser<'a> {
             None => return Ok(None),
             Some(time) => time,
         };
-        Ok(Some(DateTime { date, time }))
+        Ok(Some(DateTime::new(date, time)))
     }
 
     // DATE -> \d\d\d\d'-'\d\d'-'\d\d
@@ -253,12 +258,12 @@ impl<'a> Parser<'a> {
     }
 
     // TIME -> \d\d':'\d\d
-    fn parse_time(&mut self) -> Option<DayTime> {
+    fn parse_time(&mut self) -> Option<Time> {
         let time_len = 5;
         if self.pos + time_len >= self.input.len() {
             return None;
         }
-        match self.input[self.pos..self.pos + time_len].parse::<DayTime>() {
+        match self.input[self.pos..self.pos + time_len].parse::<Time>() {
             Err(_) => None,
             Ok(time) => {
                 self.pos += time_len;
@@ -317,7 +322,7 @@ impl<'a> Parser<'a> {
     pub fn parse_date_record(
         &mut self,
         date: Option<Date>,
-        time: Option<DayTime>,
+        time: Option<Time>,
     ) -> Result<Entry, ParseError> {
         let date_range = self.parse_date_range(date, time)?;
         let tags = self.parse_tags()?;
@@ -348,20 +353,25 @@ impl<'a> Parser<'a> {
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use wasm_bindgen_test::wasm_bindgen_test;
 
-    use crate::datetime::TimeDuration;
+    use crate::date_time::datetime::Duration;
 
     use super::*;
+    use lazy_static::lazy_static;
 
-    const BASE_DATE: Date = Date::new(2000, 1, 1);
+    lazy_static! {
+        static ref BASE_DATE: Date = Date::new(2000, 1, 1);
+    }
 
     #[test]
     #[wasm_bindgen_test]
     fn entry_parsing() {
         let dr = |hours: u8, minutes: u8| DateTimeRange {
-            start: DateTime::new(BASE_DATE.clone(), DayTime::new(hours, minutes)),
-            end: DateTime::new(BASE_DATE.clone(), DayTime::new(hours, minutes)),
+            start: DateTime::new(*BASE_DATE, Time::new(hours, minutes)),
+            end: DateTime::new(*BASE_DATE, Time::new(hours, minutes)),
         };
         let prop = |name: &str, val: PropVal| Prop {
             name: name.to_string(),
@@ -485,15 +495,15 @@ mod tests {
                     vec![tag(
                         "tag1",
                         vec![
-                            prop("prop1", PropVal::Time(TimeDuration::new(12, 22))),
-                            prop("prop2", PropVal::Time(TimeDuration::new(0, 1))),
+                            prop("prop1", PropVal::Time(Duration::new(12, 22))),
+                            prop("prop2", PropVal::Time(Duration::new(0, 1))),
                         ],
                     )],
                 ),
             ),
         ];
         for (input, want) in cases {
-            match Entry::parse(input, BASE_DATE.clone(), None) {
+            match Entry::parse(input, *BASE_DATE, None) {
                 Ok(entry) => {
                     assert_eq!(entry, want);
                 }
@@ -522,8 +532,8 @@ mod tests {
             "tag1 tagref=#tag2",
         ];
         for input in cases {
-            let input = format!("{} 02:02 - {} 02:02 {}", BASE_DATE, BASE_DATE, input);
-            let entry = Entry::parse(&input, BASE_DATE, None).unwrap();
+            let input = format!("{} 02:02 - {} 02:02 {}", *BASE_DATE, *BASE_DATE, input);
+            let entry = Entry::parse(&input, *BASE_DATE, None).unwrap();
             let decoded = entry.to_string();
             assert_eq!(decoded, input);
         }
@@ -556,7 +566,7 @@ mod tests {
             ),
         ];
         for (input, normalized) in cases {
-            let entry = Entry::parse(input, BASE_DATE, None).unwrap();
+            let entry = Entry::parse(input, *BASE_DATE, None).unwrap();
             assert_eq!(entry.to_string(), normalized);
         }
     }
@@ -580,7 +590,7 @@ mod tests {
             ),
         ];
         for (input, expected) in cases {
-            let got = Entry::parse(input, BASE_DATE, None).err().unwrap();
+            let got = Entry::parse(input, *BASE_DATE, None).err().unwrap();
             assert_eq!(got, expected);
         }
     }
@@ -589,14 +599,22 @@ mod tests {
     #[wasm_bindgen_test]
     fn parse_datetime_relevance() {
         // First record of the day, no prev time known, record will be of zero duration
-        let entry = Entry::parse("07:00 foo", BASE_DATE, None).unwrap();
-        assert_eq!(entry.date_range.duration(), TimeDuration::new(0, 0));
+        let entry = Entry::parse("07:00 foo", *BASE_DATE, None).unwrap();
+        assert_eq!(entry.date_range.duration(), Duration::new(0, 0));
         // Following records duration calculated relevant to previous record end time
-        let entry = Entry::parse("07:00 foo", BASE_DATE, Some(DayTime::new(6, 30))).unwrap();
-        assert_eq!(entry.date_range.duration(), TimeDuration::new(0, 30));
+        let entry = Entry::parse(
+            "07:00 foo",
+            *BASE_DATE,
+            Some(Time::from_str("06:30").unwrap()),
+        )
+        .unwrap();
+        assert_eq!(entry.date_range.duration(), Duration::new(0, 30));
         // Short daterange notation: Date Time Time
-        let entry = Entry::parse("2011-11-21 07:00 08:10 foo", BASE_DATE, None).unwrap();
-        assert_eq!(entry.date_range.start.date, Date::new(2011, 11, 21));
-        assert_eq!(entry.date_range.duration(), TimeDuration::new(1, 10));
+        let entry = Entry::parse("2011-11-21 07:00 08:10 foo", *BASE_DATE, None).unwrap();
+        assert_eq!(
+            entry.date_range.start.date(),
+            Date::from_str("2011-11-21").unwrap()
+        );
+        assert_eq!(entry.date_range.duration(), Duration::new(1, 10));
     }
 }

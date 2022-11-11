@@ -1,7 +1,7 @@
 use core::fmt;
 use std::fmt::Write;
 
-use crate::{binary_text::BinaryToText, datetime::Timestamp};
+use crate::{binary_text::BinaryToText, date_time::timestamp::Timestamp};
 
 use super::{
     aes::Aes,
@@ -251,11 +251,14 @@ impl<'a> PayloadBinary<'a> {
                 let (timestamp, idx) = PayloadBinary::read_u64(data, idx)?;
                 let (hash_bytes, idx) = PayloadBinary::read_bytes(data, idx, 16)?;
                 let hash = StableHash::new_from_bytes(hash_bytes.try_into().ok()?);
-                (Some(PayloadId::new(Timestamp::new(timestamp), hash)), idx)
+                (
+                    Some(PayloadId::new(Timestamp::from_u64(timestamp), hash)),
+                    idx,
+                )
             }
         };
         let (timestamp, idx) = PayloadBinary::read_u64(data, idx)?;
-        let timestamp = Timestamp::new(timestamp);
+        let timestamp = Timestamp::from_u64(timestamp);
         let (public_key_len, idx) = PayloadBinary::read_u64(data, idx)?;
         let (aes_key_len, idx) = PayloadBinary::read_u64(data, idx)?;
         let (aes_payload_len, idx) = PayloadBinary::read_u64(data, idx)?;
@@ -379,8 +382,10 @@ mod tests {
     fn binary_data() {
         // No previous
         let (public_key, private_key) = keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
-        let previous_id =
-            PayloadId::new(Timestamp::new(TIMESTAMP), StableHash::hash_string("entry"));
+        let previous_id = PayloadId::new(
+            Timestamp::from_u64(TIMESTAMP),
+            StableHash::hash_string("entry"),
+        );
 
         let bytes = PayloadBinary::to_bytes(
             &private_key,
@@ -395,7 +400,7 @@ mod tests {
         let data = PayloadBinary::from_bytes(&bytes).unwrap();
 
         assert_eq!(data.version, 1);
-        assert_eq!(data.timestamp, Timestamp::new(TIMESTAMP));
+        assert_eq!(data.timestamp, Timestamp::from_u64(TIMESTAMP));
         assert_eq!(data.public_key, public_key.to_string().as_bytes());
         assert_eq!(data.aes_key, &vec![3; 30]);
         assert_eq!(data.aes_payload, &vec![4; 40]);
@@ -412,7 +417,7 @@ mod tests {
         let encrypted = PayloadBytes::encrypt(
             &public_key,
             &private_key,
-            Timestamp::new(TIMESTAMP),
+            Timestamp::from_u64(TIMESTAMP),
             data,
             None,
         )
@@ -421,7 +426,7 @@ mod tests {
         assert_eq!(payload.public_key(), &public_key);
         let decrypted = payload.decrypt(&private_key).unwrap();
         assert_eq!(decrypted.text, data.to_string());
-        assert_eq!(decrypted.id().timestamp(), &Timestamp::new(TIMESTAMP));
+        assert_eq!(decrypted.id().timestamp(), &Timestamp::from_u64(TIMESTAMP));
 
         // Can't decrypt with another key
         let (_, private_key2) = keys(PUBLIC_KEY_2, PRIVATE_KEY_2);
@@ -447,14 +452,14 @@ mod tests {
         let payload = PayloadBytes::encrypt(
             &public_key1,
             &private_key1,
-            Timestamp::new(TIMESTAMP),
+            Timestamp::from_u64(TIMESTAMP),
             data,
             None,
         )
         .unwrap();
         assert_eq!(
             payload
-                .validated(Some(Timestamp::new(u64::MAX)))
+                .validated(Some(Timestamp::from_u64(u64::MAX)))
                 .unwrap_err(),
             PayloadError::TimestampIsTooOld
         );
@@ -462,7 +467,7 @@ mod tests {
         let payload = PayloadBytes::encrypt(
             &public_key1,
             &private_key1,
-            Timestamp::new(TIMESTAMP),
+            Timestamp::from_u64(TIMESTAMP),
             data,
             None,
         )

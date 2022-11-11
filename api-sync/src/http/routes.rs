@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use crate::storage::{account::AccountStorage, payload::PayloadStorage};
 
 use super::{HttpErrorType, Timestamp};
@@ -11,6 +9,7 @@ use actix_web::{
 use futures::{StreamExt, TryStreamExt};
 use qqself_core::{
     binary_text::BinaryToText,
+    date_time::datetime::Duration,
     encryption::{
         keys::PublicKey,
         payload::{Payload, PayloadBytes, PayloadError},
@@ -19,7 +18,7 @@ use qqself_core::{
 };
 use serde::{Deserialize, Serialize};
 
-const MAX_PAYLOAD_AGE: Duration = Duration::from_secs(60 * 60);
+const MAX_PAYLOAD_AGE: Duration = Duration::new(1, 0);
 
 async fn health() -> impl Responder {
     "OK"
@@ -245,9 +244,14 @@ mod tests {
         let (_, _, configure) = test_app();
         let app = test::init_service(App::new().configure(configure)).await;
         let (public_key, private_key) = keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
-        let encrypted =
-            PayloadBytes::encrypt(&public_key, &private_key, Timestamp::zero(), "entry", None)
-                .unwrap();
+        let encrypted = PayloadBytes::encrypt(
+            &public_key,
+            &private_key,
+            Timestamp::default(),
+            "entry",
+            None,
+        )
+        .unwrap();
         let resp: HttpError =
             test::call_and_read_body_json(&app, req_set(encrypted.data()).to_request()).await;
         assert_eq!(resp.error, "OutdatedPayload. Payload was created too long time ago - create a new one with up to date timestamp, check /info endpoint for server timestamp".to_string());
@@ -280,7 +284,7 @@ mod tests {
             let encrypted = PayloadBytes::encrypt(
                 &public_key,
                 &private_key,
-                Timestamp::new(Timestamp::now().as_u64() + ts),
+                Timestamp::from_u64(Timestamp::now().as_u64() + ts),
                 &ts.to_string(),
                 None,
             )
@@ -308,7 +312,7 @@ mod tests {
             let encrypted = PayloadBytes::encrypt(
                 &public_key,
                 &private_key,
-                Timestamp::new(Timestamp::now().as_u64() + ts),
+                Timestamp::from_u64(Timestamp::now().as_u64() + ts),
                 &ts.to_string(),
                 previous_version,
             )
@@ -334,7 +338,7 @@ mod tests {
             let encrypted = PayloadBytes::encrypt(
                 &public_key,
                 &private_key,
-                Timestamp::new(time_start.as_u64() + ts),
+                Timestamp::from_u64(time_start.as_u64() + ts),
                 &ts.to_string(),
                 None,
             )
@@ -356,8 +360,7 @@ mod tests {
         };
 
         // Return all
-        let body =
-            SearchToken::encode(&public_key, &private_key, time_start.clone(), None).unwrap();
+        let body = SearchToken::encode(&public_key, &private_key, time_start, None).unwrap();
         let resp = test::call_and_read_body(&app, req_find(body).to_request()).await;
         assert_eq!(extract_plaintext(resp), vec!["1", "2", "3"]);
 
@@ -366,7 +369,7 @@ mod tests {
             &public_key,
             &private_key,
             Timestamp::now(),
-            Some(Timestamp::new(time_start.as_u64() + 2)),
+            Some(Timestamp::from_u64(time_start.as_u64() + 2)),
         )
         .unwrap();
         let resp = test::call_and_read_body(&app, req_find(body).to_request()).await;

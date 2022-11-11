@@ -4,7 +4,7 @@ use std::rc::Weak;
 use std::vec;
 
 use crate::data_views::skills::SkillsView;
-use crate::datetime::DateTimeRange;
+use crate::date_time::datetime_range::DateTimeRange;
 use crate::parser::{ParseError, Parser};
 use crate::progress::skill::Skill;
 use crate::record::{Entry, Tag};
@@ -36,8 +36,8 @@ pub enum RecordValue {
 impl RecordValue {
     fn date_range(&self) -> DateTimeRange {
         match self {
-            RecordValue::Entry(v) => v.entry.date_range.clone(),
-            RecordValue::Empty(v) => v.date_range.clone(),
+            RecordValue::Entry(v) => v.entry.date_range,
+            RecordValue::Empty(v) => v.date_range,
         }
     }
     fn revision(&self) -> usize {
@@ -322,10 +322,17 @@ pub enum QueryError {
 
 #[cfg(test)]
 mod tests {
+    use crate::date_time::datetime::Date;
+
     use super::DBSubscriber;
     use super::*;
-    use crate::datetime::Date;
     use std::{rc::Rc, sync::Mutex};
+
+    use lazy_static::lazy_static;
+
+    lazy_static! {
+        static ref BASE_DATE: Date = Date::new(2000, 1, 1);
+    }
 
     fn new_conflict(revision: usize, records: Vec<&Record>) -> RecordConflict {
         let entries: BTreeSet<_> = records
@@ -362,10 +369,9 @@ mod tests {
     }
 
     fn parse_entry(text: &str, revision: usize) -> Record {
-        const BASE_DATE: Date = Date::new(2000, 1, 1);
         let entry = Entry::parse(
-            &format!("{} 00:00 {} {}", BASE_DATE, BASE_DATE, text),
-            BASE_DATE.clone(),
+            &format!("{} 00:00 {} {}", *BASE_DATE, *BASE_DATE, text),
+            *BASE_DATE,
             None,
         )
         .unwrap();
@@ -397,7 +403,7 @@ mod tests {
                 .db
                 .entries
                 .iter()
-                .map(|(date_range, record)| (date_range.clone(), record))
+                .map(|(date_range, record)| (*date_range, record))
                 .collect();
             let want: Vec<(DateTimeRange, &Record)> =
                 want.into_iter().map(|v| (v.daterange(), v)).collect();

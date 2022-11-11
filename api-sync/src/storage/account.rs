@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use async_trait::async_trait;
-use qqself_core::{datetime::Timestamp, encryption::keys::PublicKey};
+use qqself_core::{date_time::timestamp::Timestamp, encryption::keys::PublicKey};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

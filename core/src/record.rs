@@ -1,8 +1,8 @@
 use std::cmp::Ordering;
 use std::fmt::{Debug, Display, Formatter, Write};
-use std::ops::AddAssign;
 
-use crate::datetime::{Date, DateTimeRange, DayTime, TimeDuration};
+use crate::date_time::datetime::{Date, Duration, Time};
+use crate::date_time::datetime_range::DateTimeRange;
 use crate::parser::{ParseError, Parser};
 
 #[derive(Clone, Eq, PartialEq)]
@@ -38,11 +38,12 @@ impl Entry {
         }
     }
 
+    // TODO Not sure if we need it
     #[allow(dead_code)]
     pub(crate) fn parse(
         input: &str,
         date: Date,
-        start_time: Option<DayTime>,
+        start_time: Option<Time>,
     ) -> Result<Entry, ParseError> {
         let mut parser = Parser::new(input);
         parser.parse_date_record(Some(date), start_time)
@@ -195,10 +196,10 @@ impl Display for PropOperator {
 
 #[derive(PartialEq, Clone)]
 pub enum PropVal {
-    None,               // No value for property
-    Number(f32),        // For simplicity we use f32 for both floats and integers
-    Time(TimeDuration), // Time duration with unknown hours or minutes scale
-    String(String),     // Anything else
+    None,           // No value for property
+    Number(f32),    // For simplicity we use f32 for both floats and integers
+    Time(Duration), // Time duration with unknown hours or minutes scale
+    String(String), // Anything else
 }
 
 impl PropVal {
@@ -209,7 +210,7 @@ impl PropVal {
         if let Ok(v) = s.parse::<f32>() {
             return PropVal::Number(v);
         }
-        if let Ok(time) = s.parse::<TimeDuration>() {
+        if let Ok(time) = s.parse::<Duration>() {
             return PropVal::Time(time);
         }
         PropVal::String(s.to_string())
@@ -246,13 +247,3 @@ impl PartialOrd for PropVal {
 }
 
 impl Eq for PropVal {}
-
-impl AddAssign for PropVal {
-    fn add_assign(&mut self, rhs: Self) {
-        match (self, rhs) {
-            (PropVal::Number(v1), PropVal::Number(v2)) => *v1 += v2,
-            (PropVal::Time(t1), PropVal::Time(t2)) => *t1 += t2,
-            _ => (), // Not sure if it should be considered an error in all other cases
-        }
-    }
-}
