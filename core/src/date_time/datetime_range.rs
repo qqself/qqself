@@ -7,13 +7,23 @@ use super::datetime::{DateTime, Duration};
 
 #[derive(Debug, PartialEq, Clone, Copy, Eq)]
 pub struct DateTimeRange {
-    pub start: DateTime,
-    pub end: DateTime,
+    start: DateTime,
+    end: DateTime,
 }
 
 impl DateTimeRange {
-    pub fn new(start: DateTime, end: DateTime) -> Self {
-        Self { start, end }
+    /// Creates new DateTimeRange, returns error when end is less than start
+    pub fn new(start: DateTime, end: DateTime) -> Result<Self, &'static str> {
+        if end < start {
+            return Err("end time cannot be before the start");
+        }
+        Ok(Self { start, end })
+    }
+    pub fn start(&self) -> DateTime {
+        self.start
+    }
+    pub fn end(&self) -> DateTime {
+        self.end
     }
     pub fn duration(&self) -> Duration {
         self.end - self.start
@@ -50,7 +60,7 @@ mod tests {
     fn datetimerange_format() {
         let start = DateTime::new(Date::new(2022, 11, 23), Time::new(12, 49));
         let end = DateTime::new(Date::new(2022, 11, 23), Time::new(12, 55));
-        let range = DateTimeRange::new(start, end);
+        let range = DateTimeRange::new(start, end).unwrap();
         assert_eq!(range.to_string(), "2022-11-23 12:49 2022-11-23 12:55");
     }
 
@@ -58,7 +68,7 @@ mod tests {
     fn datetimerange_duration() {
         let from = DateTime::new(Date::new(2022, 11, 23), Time::new(12, 49));
         let to = DateTime::new(Date::new(2022, 11, 23), Time::new(12, 55));
-        let range = DateTimeRange::new(from, to);
+        let range = DateTimeRange::new(from, to).unwrap();
         assert_eq!(range.duration(), Duration::new(0, 6));
     }
 }

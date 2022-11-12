@@ -66,7 +66,7 @@ fn export_journal(journal_path: &Path, keys: KeyFile) {
             }
             // Parse the record to see if it's a valid one
             qqself_core::parser::Parser::new(&line)
-                .parse_date_record(None, None)
+                .parse_date_record()
                 .unwrap();
             let req = ApiRequest::new_set_request(keys.keys(), line).unwrap();
             let tx = &send_channels[idx % send_channels.len()];

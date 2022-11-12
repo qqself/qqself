@@ -41,7 +41,7 @@ test() {
   cargo test --frozen
 
   log "Testing WebAssembly"
-  (cd core && wasm-pack test --node)
+  (cd core && wasm-pack test --release --node --features wasm)
 
   log "Testing all Typescript projects"
   (cd client-web && yarn test)

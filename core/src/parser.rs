@@ -1,4 +1,4 @@
-use std::fmt::{Display, Formatter};
+use thiserror::Error;
 
 use crate::{
     date_time::{
@@ -11,7 +11,7 @@ use crate::{
 /*
     Grammar:
       ENTRY -> DATES TAGS COMMENT?
-      DATES -> DATETIME '-'? DATETIME?
+      DATES -> DATETIME '-'? (DATETIME / TIME)
       DATETIME -> (DATE)? TIME
       DATE -> \d\d\d\d'-'\d\d'-'\d\d
       TIME -> \d\d':'\d\d
@@ -25,21 +25,16 @@ use crate::{
       PROPVALUE -> (\w|\W)+
 */
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Error, Debug, PartialEq, Eq)]
 pub enum ParseError {
+    #[error("No tags were found in an entry")]
     NoTags,
+    #[error("Duplicate {0} at position {1}")]
     Duplicate(String, usize),
+    #[error("Bad datetime: {0} at position {1}")]
     BadDateTime(String, usize),
+    #[error("Bad operator: {0} at position {1}")]
     BadOperator(String, usize),
-    MissingProperty(String, usize),
-    BadValue(String, usize),
-    BadQuery(String, usize),
-}
-
-impl Display for ParseError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:#?}", self)
-    }
 }
 
 pub struct Parser<'a> {
@@ -164,7 +159,7 @@ impl<'a> Parser<'a> {
         while let Some(prop) = self.parse_prop() {
             if props.iter().any(|t| t.name == prop.name) {
                 return Err(ParseError::Duplicate(
-                    format!("Duplicate prop: {}", prop.name),
+                    format!("property {}", prop.name),
                     self.pos,
                 ));
             }
@@ -178,47 +173,17 @@ impl<'a> Parser<'a> {
     }
 
     // DATETIMES -> DATETIME '-'? DATETIME?
-    // TODO Simplify it, and before think if we actually need all this functionality
-    fn parse_date_range(
-        &mut self,
-        base_date: Option<Date>,
-        prev_time: Option<Time>,
-    ) -> Result<DateTimeRange, ParseError> {
-        let parsed_date = match self.parse_date_time(base_date)? {
-            Some(parsed) => parsed,
-            None => {
-                return Err(ParseError::BadDateTime(
-                    "Entry should start with date/time".to_string(),
-                    self.pos,
-                ));
-            }
-        };
+    fn parse_date_range(&mut self) -> Result<DateTimeRange, ParseError> {
+        let start = self.parse_date_time(None)?.ok_or_else(|| {
+            ParseError::BadDateTime("missing start datetime".to_string(), self.pos)
+        })?;
         // Separators in case of two date/time specified
         self.consume_char('-');
         self.consume_char(' ');
-        match self.parse_date_time(Some(parsed_date.date()))? {
-            Some(date_to) => Ok(DateTimeRange {
-                start: parsed_date,
-                end: date_to,
-            }),
-            None => {
-                // No second date found. If we know time when previous record has ended via
-                // prev_time use that as a start of a new record. If not known we assume it's
-                // a first record of the day with same start and end
-                if let Some(prev_time) = prev_time {
-                    Ok(DateTimeRange {
-                        // TODO Looks like all this logic of handling records without datetime ranges is too complex
-                        start: DateTime::new(base_date.unwrap(), prev_time),
-                        end: parsed_date,
-                    })
-                } else {
-                    Ok(DateTimeRange {
-                        start: parsed_date,
-                        end: parsed_date,
-                    })
-                }
-            }
-        }
+        let end = self
+            .parse_date_time(Some(start.date()))?
+            .ok_or_else(|| ParseError::BadDateTime("missing end datetime".to_string(), self.pos))?;
+        DateTimeRange::new(start, end).map_err(|v| ParseError::BadDateTime(v.to_string(), self.pos))
     }
 
     // DATETIME -> (DATE' ')? TIME
@@ -279,10 +244,7 @@ impl<'a> Parser<'a> {
             match self.parse_tag()? {
                 Some(tag) => {
                     if tags.iter().any(|t| t.name == tag.name) {
-                        return Err(ParseError::Duplicate(
-                            format!("Duplicate tag: {}", tag.name),
-                            self.pos,
-                        ));
+                        return Err(ParseError::Duplicate(format!("tag {}", tag.name), self.pos));
                     }
                     tags.push(tag)
                 }
@@ -310,6 +272,7 @@ impl<'a> Parser<'a> {
         return match comment.chars().next() {
             Some(first) => {
                 if !first.is_uppercase() {
+                    // TODO Parser should never panic incase of invalid input, convert it to an error
                     unreachable!("it's not a comment but a tag: {:?}", self.input);
                 }
                 Some(String::from(comment))
@@ -319,12 +282,8 @@ impl<'a> Parser<'a> {
     }
 
     // ENTRY -> TAGS COMMENT?
-    pub fn parse_date_record(
-        &mut self,
-        date: Option<Date>,
-        time: Option<Time>,
-    ) -> Result<Entry, ParseError> {
-        let date_range = self.parse_date_range(date, time)?;
+    pub fn parse_date_record(&mut self) -> Result<Entry, ParseError> {
+        let date_range = self.parse_date_range()?;
         let tags = self.parse_tags()?;
         let comment = self.parse_comment();
         for tag in &tags {
@@ -353,8 +312,6 @@ impl<'a> Parser<'a> {
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
-
     use wasm_bindgen_test::wasm_bindgen_test;
 
     use crate::date_time::datetime::Duration;
@@ -369,9 +326,12 @@ mod tests {
     #[test]
     #[wasm_bindgen_test]
     fn entry_parsing() {
-        let dr = |hours: u8, minutes: u8| DateTimeRange {
-            start: DateTime::new(*BASE_DATE, Time::new(hours, minutes)),
-            end: DateTime::new(*BASE_DATE, Time::new(hours, minutes)),
+        let dr = |hours: u8, minutes: u8| {
+            DateTimeRange::new(
+                DateTime::new(*BASE_DATE, Time::new(hours, minutes)),
+                DateTime::new(*BASE_DATE, Time::new(hours, minutes)),
+            )
+            .unwrap()
         };
         let prop = |name: &str, val: PropVal| Prop {
             name: name.to_string(),
@@ -384,12 +344,12 @@ mod tests {
         let cases = vec![
             (
                 // Simple tag
-                "01:01 tag1",
+                "2000-01-01 01:01 01:01 tag1",
                 Entry::new(dr(1, 1), None, vec![tag("tag1", vec![])]),
             ),
             (
                 // Simple tag, simple prop
-                "01:01 tag1 prop1",
+                "2000-01-01 01:01 01:01 tag1 prop1",
                 Entry::new(
                     dr(1, 1),
                     None,
@@ -398,7 +358,7 @@ mod tests {
             ),
             (
                 // Simple tag, simple prop and val
-                "01:01 tag1 prop1 val1",
+                "2000-01-01 01:01 01:01 tag1 prop1 val1",
                 Entry::new(
                     dr(1, 1),
                     None,
@@ -410,7 +370,7 @@ mod tests {
             ),
             (
                 // Multiple tags
-                "01:01 tag1 prop1. tag2",
+                "2000-01-01 01:01 01:01 tag1 prop1. tag2",
                 Entry::new(
                     dr(1, 1),
                     None,
@@ -422,7 +382,7 @@ mod tests {
             ),
             (
                 // Multiple tags with props and vals
-                "01:01 tag1 prop1. tag2 prop2=val2",
+                "2000-01-01 01:01 01:01 tag1 prop1. tag2 prop2=val2",
                 Entry::new(
                     dr(1, 1),
                     None,
@@ -437,7 +397,7 @@ mod tests {
             ),
             (
                 // Spaces are ignored and results are trimmed
-                "  01:01  tag1  prop1 =   val2  .    tag2  . Comment    ",
+                "2000-01-01 01:01  01:01  tag1  prop1 =   val2  .    tag2  . Comment    ",
                 Entry::new(
                     dr(1, 1),
                     Some("Comment".to_string()),
@@ -452,7 +412,7 @@ mod tests {
             ),
             (
                 // Special handling of floats with dot as a separator
-                "01:01 tag1 prop1=9.5 prop2=6.33.tag2",
+                "2000-01-01 01:01 01:01 tag1 prop1=9.5 prop2=6.33.tag2",
                 Entry::new(
                     dr(1, 1),
                     None,
@@ -470,7 +430,7 @@ mod tests {
             ),
             (
                 // Simple tag, simple prop and a comment
-                "01:01 tag1 prop1. Comment",
+                "2000-01-01 01:01 01:01 tag1 prop1. Comment",
                 Entry::new(
                     dr(1, 1),
                     Some("Comment".to_string()),
@@ -479,7 +439,7 @@ mod tests {
             ),
             (
                 // Simple tag, simple prop and a multiline comment
-                "01:01 tag1 prop1. Line1\nLine2",
+                "2000-01-01 01:01 01:01 tag1 prop1. Line1\nLine2",
                 Entry::new(
                     dr(1, 1),
                     Some("Line1\nLine2".to_string()),
@@ -488,7 +448,7 @@ mod tests {
             ),
             (
                 // Prop value duration
-                "01:01 tag1 prop1=12:22 prop2=0:01",
+                "2000-01-01 01:01 01:01 tag1 prop1=12:22 prop2=0:01",
                 Entry::new(
                     dr(1, 1),
                     None,
@@ -503,7 +463,7 @@ mod tests {
             ),
         ];
         for (input, want) in cases {
-            match Entry::parse(input, *BASE_DATE, None) {
+            match Entry::parse(input) {
                 Ok(entry) => {
                     assert_eq!(entry, want);
                 }
@@ -529,11 +489,10 @@ mod tests {
             "tag1 Prop1=Val1 Prop2",
             "tag1 Prop1=Val1 Prop2",
             "tag1 Prop1=Val1. Comment And More Text",
-            "tag1 tagref=#tag2",
         ];
         for input in cases {
-            let input = format!("{} 02:02 - {} 02:02 {}", *BASE_DATE, *BASE_DATE, input);
-            let entry = Entry::parse(&input, *BASE_DATE, None).unwrap();
+            let input = format!("2000-01-01 02:02 - 2000-01-01 02:02 {input}");
+            let entry = Entry::parse(&input).unwrap();
             let decoded = entry.to_string();
             assert_eq!(decoded, input);
         }
@@ -544,29 +503,32 @@ mod tests {
     fn normalizing() {
         let cases = vec![
             // Spaces trimmed and collapsed
-            ("01:01  tag1  ", "2000-01-01 01:01 - 2000-01-01 01:01 tag1"),
             (
-                "01:01 tag1  prop1   ",
-                "2000-01-01 01:01 - 2000-01-01 01:01 tag1 prop1",
+                "2000-01-01 01:01 01:03 tag1  ",
+                "2000-01-01 01:01 - 2000-01-01 01:03 tag1",
+            ),
+            (
+                "2000-01-01 01:01 01:02 tag1  prop1   ",
+                "2000-01-01 01:01 - 2000-01-01 01:02 tag1 prop1",
             ),
             // Comments are trimmed but comment content is not touched
             (
-                "01:01 tag1  prop1  . Comment >>  |  <<  ",
+                "2000-01-01 01:01 01:01 tag1  prop1  . Comment >>  |  <<  ",
                 "2000-01-01 01:01 - 2000-01-01 01:01 tag1 prop1. Comment >>  |  <<",
             ),
             // Properties values has equal signs
             (
-                "01:01 tag1 prop1 val1 prop2 val2 prop3",
+                "2000-01-01 01:01 01:01 tag1 prop1 val1 prop2 val2 prop3",
                 "2000-01-01 01:01 - 2000-01-01 01:01 tag1 prop1=val1 prop2=val2 prop3",
             ),
             // Multiline strings
             (
-                "01:01 tag1. Multiline\n- Some1\n\n-Some2 ",
+                "2000-01-01 01:01 01:01 tag1. Multiline\n- Some1\n\n-Some2 ",
                 "2000-01-01 01:01 - 2000-01-01 01:01 tag1. Multiline\\n- Some1\\n\\n-Some2",
             ),
         ];
         for (input, normalized) in cases {
-            let entry = Entry::parse(input, *BASE_DATE, None).unwrap();
+            let entry = Entry::parse(input).unwrap();
             assert_eq!(entry.to_string(), normalized);
         }
     }
@@ -575,46 +537,27 @@ mod tests {
     #[wasm_bindgen_test]
     fn parsing_errors() {
         let cases = vec![
-            ("01:01  .", ParseError::NoTags),
+            ("2010-01-01 01:01 01:01 .", ParseError::NoTags),
             (
-                "01:01 tag1. tag1",
-                ParseError::Duplicate("Duplicate tag: tag1".to_string(), 16),
+                "2010-01-01 01:01 01:01 tag1. tag1",
+                ParseError::Duplicate("tag tag1".to_string(), 33),
             ),
             (
-                "01:01 tag1 prop1=a prop1=b",
-                ParseError::Duplicate("Duplicate prop: prop1".to_string(), 26),
+                "2010-01-01 01:01 01:01 tag1 prop1=a prop1=b",
+                ParseError::Duplicate("property prop1".to_string(), 43),
             ),
             (
                 "tag1 prop1=a prop1=b",
-                ParseError::BadDateTime("Entry should start with date/time".to_string(), 0),
+                ParseError::BadDateTime("Failed to parse the date".to_string(), 0),
+            ),
+            (
+                "2010-01-01 10:00 09:00 tag1 prop1=a prop1=b",
+                ParseError::BadDateTime("end time cannot be before the start".to_string(), 22),
             ),
         ];
         for (input, expected) in cases {
-            let got = Entry::parse(input, *BASE_DATE, None).err().unwrap();
+            let got = Entry::parse(input).err().unwrap();
             assert_eq!(got, expected);
         }
-    }
-
-    #[test]
-    #[wasm_bindgen_test]
-    fn parse_datetime_relevance() {
-        // First record of the day, no prev time known, record will be of zero duration
-        let entry = Entry::parse("07:00 foo", *BASE_DATE, None).unwrap();
-        assert_eq!(entry.date_range.duration(), Duration::new(0, 0));
-        // Following records duration calculated relevant to previous record end time
-        let entry = Entry::parse(
-            "07:00 foo",
-            *BASE_DATE,
-            Some(Time::from_str("06:30").unwrap()),
-        )
-        .unwrap();
-        assert_eq!(entry.date_range.duration(), Duration::new(0, 30));
-        // Short daterange notation: Date Time Time
-        let entry = Entry::parse("2011-11-21 07:00 08:10 foo", *BASE_DATE, None).unwrap();
-        assert_eq!(
-            entry.date_range.start.date(),
-            Date::from_str("2011-11-21").unwrap()
-        );
-        assert_eq!(entry.date_range.duration(), Duration::new(1, 10));
     }
 }
