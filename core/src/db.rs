@@ -3,7 +3,9 @@ use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::rc::Weak;
 use std::vec;
 
+use crate::data_views::journal::{JournalDay, JournalView};
 use crate::data_views::skills::SkillsView;
+use crate::date_time::datetime::Date;
 use crate::date_time::datetime_range::DateTimeRange;
 use crate::parser::{ParseError, Parser};
 use crate::progress::skill::Skill;
@@ -16,6 +18,9 @@ pub struct RecordEntry {
 }
 
 impl RecordEntry {
+    pub fn new(revision: usize, entry: Entry) -> Self {
+        Self { revision, entry }
+    }
     pub fn entry(&self) -> &Entry {
         &self.entry
     }
@@ -113,6 +118,7 @@ pub struct DB {
     subscribers: Vec<Weak<dyn DBSubscriber>>,
     sync_queue: VecDeque<ChangeEvent>,
     view_skills: SkillsView,
+    view_journal: JournalView,
 }
 
 impl DB {
@@ -122,6 +128,7 @@ impl DB {
             subscribers: vec![],
             sync_queue: VecDeque::new(),
             view_skills: SkillsView::default(),
+            view_journal: JournalView::default(),
         }
     }
 
@@ -129,8 +136,16 @@ impl DB {
         self.view_skills.data()
     }
 
+    pub fn journal(&self) -> &BTreeMap<Date, JournalDay> {
+        self.view_journal.data()
+    }
+
     pub fn add(&mut self, record: Record) {
         if let Some(event) = self.merge(record) {
+            // TODO Shouldn't views be subscribers?
+            self.view_skills.update(self.entries.iter(), &event);
+            self.view_journal.update(self.entries.iter(), &event);
+
             // Inform all subscribers about new entry
             let mut cleanup = false;
             for s in self.subscribers.iter() {
@@ -140,7 +155,6 @@ impl DB {
                     cleanup = true;
                 }
             }
-            self.view_skills.update(self.entries.iter(), &event);
             if cleanup {
                 self.subscribers.retain(|s| s.upgrade().is_some());
             }
@@ -306,7 +320,7 @@ impl Query {
     pub fn matched_tags(&self, entry: &Entry) -> Vec<Tag> {
         // Check first for date limits
         if let Some(filter) = &self.date_filter {
-            if entry.date_range.start < filter.start || entry.date_range.end > filter.end {
+            if entry.date_range.start() < filter.start() || entry.date_range.end() > filter.end() {
                 return vec![];
             }
         }
@@ -369,12 +383,7 @@ mod tests {
     }
 
     fn parse_entry(text: &str, revision: usize) -> Record {
-        let entry = Entry::parse(
-            &format!("{} 00:00 {} {}", *BASE_DATE, *BASE_DATE, text),
-            *BASE_DATE,
-            None,
-        )
-        .unwrap();
+        let entry = Entry::parse(&format!("{} 00:00 {} {}", *BASE_DATE, *BASE_DATE, text)).unwrap();
         Record::Value(RecordValue::Entry(RecordEntry { revision, entry }))
     }
 

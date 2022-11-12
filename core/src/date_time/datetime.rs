@@ -9,6 +9,12 @@ use std::{
 pub struct DateTime(time::PrimitiveDateTime);
 
 impl DateTime {
+    // There is no way to get local timezone using `time` on Unix/Mac https://github.com/time-rs/time/issues/325
+    #[cfg(feature = "wasm")]
+    pub fn now() -> Self {
+        let now = time::OffsetDateTime::now_local().unwrap();
+        DateTime::new(Date(now.date()), Time(now.time()))
+    }
     pub fn new(date: Date, time: Time) -> Self {
         let datetime = time::PrimitiveDateTime::new(date.0, time.0);
         Self(datetime)
@@ -38,7 +44,9 @@ impl Sub<DateTime> for DateTime {
 }
 
 /// Date, format YYYY-MM-DD
-#[derive(Debug, PartialEq, Clone, Copy, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Clone, Copy, Eq, PartialOrd, Ord, Hash)]
+// TODO wasm_pack refuses to export it: "cannot shadow already defined class `Date`". Should we rename it? Wrap it?
+// #[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
 pub struct Date(time::Date);
 
 impl Date {
@@ -47,6 +55,10 @@ impl Date {
         let month = time::Month::try_from(month).expect("invalid month number");
         let date = time::Date::from_calendar_date(year, month, day).expect("invalid date");
         Date(date)
+    }
+    pub fn remove_days(&self, days: usize) -> Date {
+        let res = self.0.saturating_add(time::Duration::days(-(days as i64)));
+        Self(res)
     }
 }
 
@@ -85,6 +97,12 @@ impl Time {
     pub(crate) fn new(hours: u8, minutes: u8) -> Self {
         let time = time::Time::from_hms(hours, minutes, 0).expect("invalid time");
         Time(time)
+    }
+    pub fn day_start() -> Self {
+        Time::new(0, 0)
+    }
+    pub fn day_end() -> Self {
+        Time::new(23, 59)
     }
 }
 
@@ -197,6 +215,28 @@ mod tests {
     use super::*;
 
     #[test]
+    fn datetime_format() {
+        let datetime = DateTime::new(Date::new(2022, 11, 23), Time::new(12, 49));
+        assert_eq!(datetime.to_string(), "2022-11-23 12:49")
+    }
+
+    #[test]
+    fn datetime_compare() {
+        let datetime = DateTime::new(Date::new(2022, 11, 23), Time::new(12, 49));
+        let datetime_time = DateTime::new(Date::new(2022, 11, 23), Time::new(12, 50));
+        assert!(datetime < datetime_time);
+        let datetime_date = DateTime::new(Date::new(2022, 12, 23), Time::new(12, 49));
+        assert!(datetime < datetime_date);
+    }
+
+    #[cfg(feature = "wasm")]
+    #[wasm_bindgen_test::wasm_bindgen_test]
+    fn date_now() {
+        let date = DateTime::now();
+        assert_eq!(date.to_string().len(), 16);
+    }
+
+    #[test]
     fn date_format() {
         assert_eq!(Date::new(2022, 5, 9).to_string(), "2022-05-09")
     }
@@ -242,20 +282,5 @@ mod tests {
         let time = Time::new(10, 10);
         assert!(time < Time::new(10, 11));
         assert!(time < Time::new(20, 0));
-    }
-
-    #[test]
-    fn datetime_format() {
-        let datetime = DateTime::new(Date::new(2022, 11, 23), Time::new(12, 49));
-        assert_eq!(datetime.to_string(), "2022-11-23 12:49")
-    }
-
-    #[test]
-    fn datetime_compare() {
-        let datetime = DateTime::new(Date::new(2022, 11, 23), Time::new(12, 49));
-        let datetime_time = DateTime::new(Date::new(2022, 11, 23), Time::new(12, 50));
-        assert!(datetime < datetime_time);
-        let datetime_date = DateTime::new(Date::new(2022, 12, 23), Time::new(12, 49));
-        assert!(datetime < datetime_date);
     }
 }

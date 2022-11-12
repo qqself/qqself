@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use std::fmt::{Debug, Display, Formatter, Write};
 
-use crate::date_time::datetime::{Date, Duration, Time};
+use crate::date_time::datetime::Duration;
 use crate::date_time::datetime_range::DateTimeRange;
 use crate::parser::{ParseError, Parser};
 
@@ -11,6 +11,74 @@ pub struct Entry {
     pub(crate) tags: Vec<Tag>,
     pub(crate) comment: Option<String>,
     pub(crate) date_range: DateTimeRange,
+}
+
+impl Entry {
+    #[allow(dead_code)]
+    pub(crate) fn new(date_range: DateTimeRange, comment: Option<String>, tags: Vec<Tag>) -> Self {
+        Entry {
+            date_range,
+            comment,
+            tags,
+        }
+    }
+    // TODO Not sure if we need it
+    #[allow(dead_code)]
+    pub(crate) fn parse(input: &str) -> Result<Entry, ParseError> {
+        let mut parser = Parser::new(input);
+        parser.parse_date_record()
+    }
+    pub fn comment(&self) -> &Option<String> {
+        &self.comment
+    }
+    pub fn date_range(&self) -> &DateTimeRange {
+        &self.date_range
+    }
+    /// Returns string representation of an entry but used only time for datetime ranges
+    /// Useful for rendering data when date is visible via other means e.g. journal view
+    pub fn to_string_short(&self) -> String {
+        self.serialize(true)
+    }
+    fn serialize(&self, omit_dates: bool) -> String {
+        let tags: Vec<String> = self.tags.iter().map(|t| format!("{}", t)).collect();
+        let mut s = String::new();
+        let start = if omit_dates {
+            self.date_range.start().time().to_string()
+        } else {
+            self.date_range.start().to_string()
+        };
+        s.push_str(&start);
+        s.push(' ');
+        s.push('-');
+        s.push(' ');
+        let end = if omit_dates {
+            self.date_range.end().time().to_string()
+        } else {
+            self.date_range.end().to_string()
+        };
+        s.push_str(&end);
+        s.push(' ');
+        s.push_str(&tags.join(". "));
+        if let Some(comment) = &self.comment {
+            s.push_str(". ");
+            // Escape line breaks in the comment
+            let escaped = comment.replace('\n', "\\n");
+            s.push_str(&escaped);
+        }
+        s
+    }
+}
+
+impl Display for Entry {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.serialize(false))
+    }
+}
+
+impl Debug for Entry {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.to_string())
+    }
 }
 
 impl Ord for Entry {
@@ -25,54 +93,6 @@ impl Ord for Entry {
 impl PartialOrd for Entry {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
-    }
-}
-
-impl Entry {
-    #[allow(dead_code)]
-    pub(crate) fn new(date_range: DateTimeRange, comment: Option<String>, tags: Vec<Tag>) -> Self {
-        Entry {
-            date_range,
-            comment,
-            tags,
-        }
-    }
-
-    // TODO Not sure if we need it
-    #[allow(dead_code)]
-    pub(crate) fn parse(
-        input: &str,
-        date: Date,
-        start_time: Option<Time>,
-    ) -> Result<Entry, ParseError> {
-        let mut parser = Parser::new(input);
-        parser.parse_date_record(Some(date), start_time)
-    }
-}
-
-impl Display for Entry {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let tags: Vec<String> = self.tags.iter().map(|t| format!("{}", t)).collect();
-        let mut s = String::new();
-        s.push_str(&self.date_range.start.to_string());
-        s.push_str(" - ");
-        s.push_str(&self.date_range.end.to_string());
-        s.push(' ');
-        s.push_str(&tags.join(". "));
-        if self.comment.is_some() {
-            s.push_str(". ");
-            // Escape line breaks in the comment
-            let comment = self.comment.as_ref().unwrap();
-            let escaped = comment.replace('\n', "\\n");
-            s.push_str(&escaped);
-        }
-        write!(f, "{}", s)
-    }
-}
-
-impl Debug for Entry {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.to_string())
     }
 }
 
@@ -91,7 +111,6 @@ impl Tag {
             start_pos,
         }
     }
-
     pub fn matches(&self, query: &Tag) -> bool {
         if self.name != query.name {
             return false;
@@ -171,12 +190,6 @@ impl Display for Prop {
     }
 }
 
-impl Debug for Prop {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.to_string())
-    }
-}
-
 #[derive(Debug, PartialEq, Clone, Eq, PartialOrd, Ord)]
 pub enum PropOperator {
     Eq,
@@ -198,7 +211,7 @@ impl Display for PropOperator {
 pub enum PropVal {
     None,           // No value for property
     Number(f32),    // For simplicity we use f32 for both floats and integers
-    Time(Duration), // Time duration with unknown hours or minutes scale
+    Time(Duration), // Time duration
     String(String), // Anything else
 }
 
@@ -225,12 +238,6 @@ impl Display for PropVal {
             PropVal::Time(time) => f.write_str(&time.to_string()),
             PropVal::String(s) => f.write_str(s),
         }
-    }
-}
-
-impl Debug for PropVal {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.to_string())
     }
 }
 
