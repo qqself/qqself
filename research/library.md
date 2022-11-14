@@ -1,6 +1,6 @@
 # Library
 
-Set of sources about long-term skill development with small notes about ideas we may use in `qqself`. Notes are mostly for things that can be used in our apps, those books are much more than that and I recommend to read it fully.
+Set of sources about long-term skill development with small notes about ideas we may use in `qqself`. Notes are mostly for things that can be used in our apps or future `Knowledge Base` articles. Those books are much more than that and I recommend to read it fully.
 
 ## Contents
 
@@ -11,6 +11,7 @@ Books:
 - [Expert In A Year](#expert-in-a-year)
 - [The Long Game](#the-long-game)
 - [Atomic Habits](#atomic-habits)
+- [Make It Stick](#make-it-stick)
 
 Papers:
 
@@ -110,6 +111,18 @@ https://www.amazon.com/Atomic-Habits-Proven-Build-Break-ebook/dp/B01N5AX61W
 - Bad habits, no matter how small, accumulates over time
 - Building habits focusing on what we want to achieve often fails. Focus on who you want to become instead
 - The behavior change is identity change: It's not about learning an instrument; the goal is to become a musician
+
+### Make It Stick
+
+Peter C Brown, Mark A. McDaniel, Henry L. Roediger III
+https://www.amazon.com/Make-Stick-Peter-C-Brown-ebook/dp/B00JQ3FN7M
+
+- Interleaved practice - switching between two or more subjects of skills produces better results than learning those sequentially like learning skill 1 for long time, then switch to skill 2. Although it may feel like overall it's slower and much harder but actual knowledge and skills will be more durable
+- Small cycles - planning, practicing specific parts of the skill with full performance at the end of the cycle
+- Failures are not the sign of inability, but the marker of learning and trying
+- Performance goals are about validating our ability, showing off the skill where we confident in the result, it's about avoiding risk. While learning goals are about expanding our abilities, setting ever-increasing challenges and seeing failures as a feedback that helps us to correct our mistakes and become better
+- Idea that outcome depends on effort gives us control. Otherwise it's about natural talent or genes that we hardly impact, so no need to work harder, keep pushing or recover after the failure
+- For writing you have to start with the draft - we start with something and start working on improving it. We can't improve something that doesn't exists, neither we can't create a perfect result from the first try
 
 ## Papers
 
