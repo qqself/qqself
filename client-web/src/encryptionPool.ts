@@ -102,6 +102,9 @@ export class EncryptionPool {
   }
 
   async decryptAll(msgs: string[], keys: Keys): Promise<string[]> {
+    if (!msgs.length) {
+      return Promise.resolve([])
+    }
     await this.ensureInitialized(keys)
     const finished: string[] = []
     return new Promise((resolve, reject) => {

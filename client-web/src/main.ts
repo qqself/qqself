@@ -1,20 +1,20 @@
 import { html, LitElement } from "lit"
 import { customElement, state } from "lit/decorators.js"
-
 import "./pages/loading"
 import "./pages/register"
 import "./pages/login"
 import "./pages/progress"
-import { Keys } from "../core/pkg/qqself_client_web_core"
+import { App, Keys } from "../core/pkg/qqself_client_web_core"
 import { EncryptionPool } from "./encryptionPool"
 
-type Page = "login" | "register" | "progress"
+type Page = "login" | "register" | "progress" | "devcards"
 
 interface State {
   initComplete: boolean
   page: Page
   keys: Keys | null
   encryptionPool: EncryptionPool | null
+  app: App | null
 }
 
 const defaultState: State = {
@@ -22,6 +22,7 @@ const defaultState: State = {
   page: "login",
   keys: null,
   encryptionPool: null,
+  app: null,
 }
 
 @customElement("q-main")
@@ -29,8 +30,7 @@ export class Main extends LitElement {
   @state()
   state = defaultState
 
-  constructor() {
-    super()
+  async firstUpdated() {
     const availablePages = ["login", "register", "progress"]
     const page = window.location.hash.slice(1)
     if (availablePages.includes(page)) {
@@ -38,6 +38,13 @@ export class Main extends LitElement {
         this.state.page = page as Page // Show progress only when keys are available
       } else {
         this.moveToPage("login")
+      }
+    }
+    if (import.meta.env.DEV) {
+      // devcards enabled only in dev
+      if (page.startsWith("devcards")) {
+        await import("./pages/devcards")
+        this.state.page = "devcards"
       }
     }
   }
@@ -67,7 +74,8 @@ export class Main extends LitElement {
           .encryptionPool=${this.state.encryptionPool}
           @loggedIn=${(sender: any) => {
             const keys = sender.detail.keys as Keys
-            this.state = { ...this.state, keys }
+            const app = App.new(keys)
+            this.state = { ...this.state, keys, app }
             this.moveToPage("progress")
           }}
           @register=${() => this.moveToPage("register")}
@@ -82,8 +90,20 @@ export class Main extends LitElement {
       case "progress": {
         return html`<q-progress-page
           .keys=${this.state.keys}
+          .app=${this.state.app}
           .encryptionPool=${this.state.encryptionPool}
         />`
+      }
+      case "devcards": {
+        {
+          if (import.meta.env.DEV) {
+            return html`<q-devcards-page
+              .encryptionPool=${this.state.encryptionPool}
+            ></q-devcards-page>`
+          } else {
+            throw new Error("Devcards should not be available in production")
+          }
+        }
       }
     }
   }

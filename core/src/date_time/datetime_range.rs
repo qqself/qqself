@@ -52,22 +52,22 @@ impl PartialOrd for DateTimeRange {
 
 #[cfg(test)]
 mod tests {
-    use crate::date_time::datetime::{Date, Time};
+    use crate::date_time::datetime::{DateDay, Time};
 
     use super::*;
 
     #[test]
     fn datetimerange_format() {
-        let start = DateTime::new(Date::new(2022, 11, 23), Time::new(12, 49));
-        let end = DateTime::new(Date::new(2022, 11, 23), Time::new(12, 55));
+        let start = DateTime::new(DateDay::new(2022, 11, 23), Time::new(12, 49));
+        let end = DateTime::new(DateDay::new(2022, 11, 23), Time::new(12, 55));
         let range = DateTimeRange::new(start, end).unwrap();
         assert_eq!(range.to_string(), "2022-11-23 12:49 2022-11-23 12:55");
     }
 
     #[test]
     fn datetimerange_duration() {
-        let from = DateTime::new(Date::new(2022, 11, 23), Time::new(12, 49));
-        let to = DateTime::new(Date::new(2022, 11, 23), Time::new(12, 55));
+        let from = DateTime::new(DateDay::new(2022, 11, 23), Time::new(12, 49));
+        let to = DateTime::new(DateDay::new(2022, 11, 23), Time::new(12, 55));
         let range = DateTimeRange::new(from, to).unwrap();
         assert_eq!(range.duration(), Duration::new(0, 6));
     }

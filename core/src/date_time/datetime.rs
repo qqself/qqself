@@ -13,14 +13,14 @@ impl DateTime {
     #[cfg(feature = "wasm")]
     pub fn now() -> Self {
         let now = time::OffsetDateTime::now_local().unwrap();
-        DateTime::new(Date(now.date()), Time(now.time()))
+        DateTime::new(DateDay(now.date()), Time(now.time()))
     }
-    pub fn new(date: Date, time: Time) -> Self {
+    pub fn new(date: DateDay, time: Time) -> Self {
         let datetime = time::PrimitiveDateTime::new(date.0, time.0);
         Self(datetime)
     }
-    pub fn date(&self) -> Date {
-        Date(self.0.date())
+    pub fn date(&self) -> DateDay {
+        DateDay(self.0.date())
     }
     pub fn time(&self) -> Time {
         Time(self.0.time())
@@ -29,7 +29,7 @@ impl DateTime {
 
 impl Display for DateTime {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let date = Date(self.0.date());
+        let date = DateDay(self.0.date());
         let time = Time(self.0.time());
         f.write_fmt(format_args!("{} {}", date, time))
     }
@@ -45,24 +45,53 @@ impl Sub<DateTime> for DateTime {
 
 /// Date, format YYYY-MM-DD
 #[derive(Debug, PartialEq, Clone, Copy, Eq, PartialOrd, Ord, Hash)]
-// TODO wasm_pack refuses to export it: "cannot shadow already defined class `Date`". Should we rename it? Wrap it?
-// #[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
-pub struct Date(time::Date);
+// HACK wasm_pack refuses to export `Date` because of name conflict with existing `Date` in JS
+//      https://github.com/rustwasm/wasm-bindgen/issues/2798, so using slightly different name
+#[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
+pub struct DateDay(time::Date);
 
-impl Date {
+#[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
+impl DateDay {
+    #[cfg(feature = "wasm")]
+    #[allow(non_snake_case)]
+    pub fn fromDate(date: &js_sys::Date) -> Self {
+        let month = (date.get_month() + 1).try_into().expect("invalid month");
+        let year = date.get_full_year() as i32;
+        let day = date.get_date().try_into().expect("invalid day");
+        Self::new(year, month, day)
+    }
+    #[cfg(feature = "wasm")]
+    #[allow(non_snake_case)]
+    pub fn toString(&self) -> String {
+        self.to_string()
+    }
+
     #[allow(unused)]
     pub(crate) fn new(year: i32, month: u8, day: u8) -> Self {
         let month = time::Month::try_from(month).expect("invalid month number");
         let date = time::Date::from_calendar_date(year, month, day).expect("invalid date");
-        Date(date)
+        DateDay(date)
     }
-    pub fn remove_days(&self, days: usize) -> Date {
+    pub fn remove_days(&self, days: usize) -> DateDay {
         let res = self.0.saturating_add(time::Duration::days(-(days as i64)));
         Self(res)
     }
+    pub fn add_days(&self, days: usize) -> DateDay {
+        let res = self.0.saturating_add(time::Duration::days(days as i64));
+        Self(res)
+    }
+    pub fn year(&self) -> usize {
+        self.0.year() as usize
+    }
+    pub fn month(&self) -> usize {
+        self.0.month() as usize
+    }
+    pub fn day(&self) -> usize {
+        self.0.day() as usize
+    }
 }
 
-impl Display for Date {
+impl Display for DateDay {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!(
             "{:04}-{:02}-{:02}",
@@ -73,7 +102,7 @@ impl Display for Date {
     }
 }
 
-impl FromStr for Date {
+impl FromStr for DateDay {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -84,7 +113,7 @@ impl FromStr for Date {
         let day: u8 = parse_number(&s[8..10], 1, 31)?;
         let date = time::Date::from_calendar_date(year, month, day)
             .map_err(|err| format!("invalid date: {}", err))?;
-        Ok(Date(date))
+        Ok(DateDay(date))
     }
 }
 
@@ -216,16 +245,16 @@ mod tests {
 
     #[test]
     fn datetime_format() {
-        let datetime = DateTime::new(Date::new(2022, 11, 23), Time::new(12, 49));
+        let datetime = DateTime::new(DateDay::new(2022, 11, 23), Time::new(12, 49));
         assert_eq!(datetime.to_string(), "2022-11-23 12:49")
     }
 
     #[test]
     fn datetime_compare() {
-        let datetime = DateTime::new(Date::new(2022, 11, 23), Time::new(12, 49));
-        let datetime_time = DateTime::new(Date::new(2022, 11, 23), Time::new(12, 50));
+        let datetime = DateTime::new(DateDay::new(2022, 11, 23), Time::new(12, 49));
+        let datetime_time = DateTime::new(DateDay::new(2022, 11, 23), Time::new(12, 50));
         assert!(datetime < datetime_time);
-        let datetime_date = DateTime::new(Date::new(2022, 12, 23), Time::new(12, 49));
+        let datetime_date = DateTime::new(DateDay::new(2022, 12, 23), Time::new(12, 49));
         assert!(datetime < datetime_date);
     }
 
@@ -238,30 +267,36 @@ mod tests {
 
     #[test]
     fn date_format() {
-        assert_eq!(Date::new(2022, 5, 9).to_string(), "2022-05-09")
+        assert_eq!(DateDay::new(2022, 5, 9).to_string(), "2022-05-09")
     }
 
     #[test]
     fn date_parse() {
-        assert_eq!("2022-05-09".parse::<Date>().unwrap(), Date::new(2022, 5, 9));
-        assert_eq!("2022-01-01".parse::<Date>().unwrap(), Date::new(2022, 1, 1));
         assert_eq!(
-            "2022-12-31".parse::<Date>().unwrap(),
-            Date::new(2022, 12, 31)
+            "2022-05-09".parse::<DateDay>().unwrap(),
+            DateDay::new(2022, 5, 9)
         );
-        assert!("2022-13-31".parse::<Date>().is_err());
-        assert!("2022-12-32".parse::<Date>().is_err());
-        assert!("2022-00-09".parse::<Date>().is_err());
-        assert!("2022-13-09".parse::<Date>().is_err());
-        assert!("2022-09-32".parse::<Date>().is_err());
+        assert_eq!(
+            "2022-01-01".parse::<DateDay>().unwrap(),
+            DateDay::new(2022, 1, 1)
+        );
+        assert_eq!(
+            "2022-12-31".parse::<DateDay>().unwrap(),
+            DateDay::new(2022, 12, 31)
+        );
+        assert!("2022-13-31".parse::<DateDay>().is_err());
+        assert!("2022-12-32".parse::<DateDay>().is_err());
+        assert!("2022-00-09".parse::<DateDay>().is_err());
+        assert!("2022-13-09".parse::<DateDay>().is_err());
+        assert!("2022-09-32".parse::<DateDay>().is_err());
     }
 
     #[test]
     fn date_compare() {
-        let date = Date::new(2022, 5, 5);
-        assert!(date < Date::new(2022, 5, 6));
-        assert!(date < Date::new(2022, 6, 1));
-        assert!(date < Date::new(2023, 1, 1));
+        let date = DateDay::new(2022, 5, 5);
+        assert!(date < DateDay::new(2022, 5, 6));
+        assert!(date < DateDay::new(2022, 6, 1));
+        assert!(date < DateDay::new(2023, 1, 1));
     }
 
     #[test]

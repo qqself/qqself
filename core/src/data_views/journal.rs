@@ -1,7 +1,7 @@
 use std::collections::{btree_map::Iter, BTreeMap};
 
 use crate::{
-    date_time::{datetime::Date, datetime_range::DateTimeRange},
+    date_time::{datetime::DateDay, datetime_range::DateTimeRange},
     db::{ChangeEvent, Record, RecordValue},
     record::Entry,
 };
@@ -9,11 +9,11 @@ use crate::{
 #[derive(Clone, Debug)]
 pub struct JournalDay {
     pub entries: Vec<Entry>,
-    pub day: Date,
+    pub day: DateDay,
 }
 
 impl JournalDay {
-    pub fn new(day: Date) -> Self {
+    pub fn new(day: DateDay) -> Self {
         Self {
             day,
             entries: vec![],
@@ -23,7 +23,7 @@ impl JournalDay {
 
 #[derive(Default)]
 pub struct JournalView {
-    data: BTreeMap<Date, JournalDay>,
+    data: BTreeMap<DateDay, JournalDay>,
 }
 
 impl JournalView {
@@ -66,7 +66,7 @@ impl JournalView {
         }
     }
 
-    pub fn data(&self) -> &BTreeMap<Date, JournalDay> {
+    pub fn data(&self) -> &BTreeMap<DateDay, JournalDay> {
         &self.data
     }
 }
