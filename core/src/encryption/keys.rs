@@ -52,7 +52,7 @@ pub type PrivateKey = Key<4096>;
 /// Contains both public and private keys. We have custom [de]/serialization logic as key files are
 /// rather simple structures and reading/writing it should work cross-platform in the reliable
 /// way and preferably without any dependencies
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Keys {
     pub public_key: PublicKey,
     pub private_key: PrivateKey,

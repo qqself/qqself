@@ -2,7 +2,7 @@ use thiserror::Error;
 
 use crate::{
     date_time::{
-        datetime::{Date, DateTime, Time},
+        datetime::{DateDay, DateTime, Time},
         datetime_range::DateTimeRange,
     },
     record::{Entry, Prop, PropOperator, PropVal, Tag},
@@ -187,7 +187,10 @@ impl<'a> Parser<'a> {
     }
 
     // DATETIME -> (DATE' ')? TIME
-    fn parse_date_time(&mut self, base_date: Option<Date>) -> Result<Option<DateTime>, ParseError> {
+    fn parse_date_time(
+        &mut self,
+        base_date: Option<DateDay>,
+    ) -> Result<Option<DateTime>, ParseError> {
         let date = match (self.parse_date(), base_date) {
             (None, None) => {
                 return Err(ParseError::BadDateTime(
@@ -208,12 +211,12 @@ impl<'a> Parser<'a> {
     }
 
     // DATE -> \d\d\d\d'-'\d\d'-'\d\d
-    fn parse_date(&mut self) -> Option<Date> {
+    fn parse_date(&mut self) -> Option<DateDay> {
         let date_len = 10;
         if self.pos + date_len >= self.input.len() {
             return None;
         }
-        match self.input[self.pos..self.pos + date_len].parse::<Date>() {
+        match self.input[self.pos..self.pos + date_len].parse::<DateDay>() {
             Err(_) => None,
             Ok(date) => {
                 self.pos += date_len;
@@ -320,7 +323,7 @@ mod tests {
     use lazy_static::lazy_static;
 
     lazy_static! {
-        static ref BASE_DATE: Date = Date::new(2000, 1, 1);
+        static ref BASE_DATE: DateDay = DateDay::new(2000, 1, 1);
     }
 
     #[test]

@@ -5,7 +5,7 @@ use std::vec;
 
 use crate::data_views::journal::{JournalDay, JournalView};
 use crate::data_views::skills::SkillsView;
-use crate::date_time::datetime::Date;
+use crate::date_time::datetime::DateDay;
 use crate::date_time::datetime_range::DateTimeRange;
 use crate::parser::{ParseError, Parser};
 use crate::progress::skill::Skill;
@@ -136,7 +136,7 @@ impl DB {
         self.view_skills.data()
     }
 
-    pub fn journal(&self) -> &BTreeMap<Date, JournalDay> {
+    pub fn journal(&self) -> &BTreeMap<DateDay, JournalDay> {
         self.view_journal.data()
     }
 
@@ -336,7 +336,7 @@ pub enum QueryError {
 
 #[cfg(test)]
 mod tests {
-    use crate::date_time::datetime::Date;
+    use crate::date_time::datetime::DateDay;
 
     use super::DBSubscriber;
     use super::*;
@@ -345,7 +345,7 @@ mod tests {
     use lazy_static::lazy_static;
 
     lazy_static! {
-        static ref BASE_DATE: Date = Date::new(2000, 1, 1);
+        static ref BASE_DATE: DateDay = DateDay::new(2000, 1, 1);
     }
 
     fn new_conflict(revision: usize, records: Vec<&Record>) -> RecordConflict {

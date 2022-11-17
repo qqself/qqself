@@ -7,7 +7,7 @@ use std::{
 };
 
 use qqself_core::{
-    date_time::datetime::Date,
+    date_time::datetime::DateDay,
     db::{Record, DB},
 };
 use structopt::{clap::arg_enum, StructOpt};
@@ -75,9 +75,9 @@ pub fn report(opts: ReportOpts) {
     }
 }
 
-fn journal_range(period: TimePeriod) -> (Date, Date) {
+fn journal_range(period: TimePeriod) -> (DateDay, DateDay) {
     let now = chrono::Local::now();
-    let end = Date::from_str(&now.date_naive().to_string()).unwrap();
+    let end = DateDay::from_str(&now.date_naive().to_string()).unwrap();
     let start = end.remove_days(match period {
         TimePeriod::Day => 0,
         TimePeriod::Week => 7,

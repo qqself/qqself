@@ -30,7 +30,7 @@ deps() {
 # Builds everything
 build() {
   log "Building all Rust projects"
-  cargo build --all-features --frozen
+  cargo build --release --all-features --frozen
   log "Building client-web - core"
   (cd client-web && yarn build)
 }
@@ -38,7 +38,7 @@ build() {
 # Run all the tests
 test() {
   log "Testing all Rust projects"
-  cargo test --frozen
+  cargo test --release --frozen
 
   log "Testing WebAssembly"
   (cd core && wasm-pack test --release --node --features wasm)
@@ -50,7 +50,7 @@ test() {
 # Run linters and other static checkers
 lint() {
   log "Linting all the Rust projects"
-  cargo clippy --all-targets --all-features -- -D warnings
+  cargo clippy --release --all-targets --all-features -- -D warnings
   log "Linting all TypeScript projects"
   (cd client-web && $(npm bin)/prettier --check "src/**/*.ts")
 }

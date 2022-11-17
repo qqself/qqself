@@ -3,11 +3,17 @@
 use qqself_core::{
     api::{ApiRequest, RequestCreateErr},
     binary_text::BinaryToText,
+    data_views::journal::JournalDay,
+    date_time::datetime::DateDay,
+    db::{Record, DB},
     encryption::{self, payload::PayloadBytes},
+    parser::Parser,
 };
 use wasm_bindgen::prelude::wasm_bindgen;
+mod util;
 
 #[wasm_bindgen]
+#[derive(Clone)] // TODO Keys shouldn't be Clone - it should be generated/got from cache and then moved to the App and never be used
 pub struct Keys(encryption::keys::Keys);
 
 #[wasm_bindgen]
@@ -72,7 +78,7 @@ pub struct Request {
 }
 
 // TODO Temporary here, after all we should move API IO to core as well
-#[wasm_bindgen(getter_with_clone)]
+#[wasm_bindgen]
 pub struct API {}
 
 #[wasm_bindgen]
@@ -92,5 +98,51 @@ impl API {
             payload: req.payload,
             contentType: req.content_type.to_string(),
         })
+    }
+}
+
+#[wasm_bindgen(getter_with_clone)]
+pub struct AppJournalDay {
+    pub day: DateDay,
+    // TODO For now simply join all Entry.to_string() with '\n'
+    pub entries: String,
+}
+
+#[wasm_bindgen]
+pub struct App {
+    #[allow(unused)]
+    keys: Keys,
+    db: DB,
+}
+
+#[wasm_bindgen]
+impl App {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            keys: keys.clone(),
+            db: DB::default(),
+        }
+    }
+
+    pub fn add_entry(&mut self, input: &str) {
+        let entry = Parser::new(input)
+            .parse_date_record()
+            .expect("input should be parsable");
+        let record = Record::from_entry(entry, 1);
+        self.db.add(record);
+    }
+
+    pub fn journal_day(&self, day: DateDay) -> AppJournalDay {
+        let journal_day = self
+            .db
+            .journal()
+            .get(&day)
+            .cloned()
+            .unwrap_or_else(|| JournalDay::new(day));
+        let mut entries = String::new();
+        for entry in &journal_day.entries {
+            entries.push_str(&format!("{}\n", entry.to_string_short()));
+        }
+        AppJournalDay { day, entries }
     }
 }
