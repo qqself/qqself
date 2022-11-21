@@ -7,7 +7,7 @@ use crate::data_views::journal::{JournalDay, JournalView};
 use crate::data_views::skills::SkillsView;
 use crate::date_time::datetime::DateDay;
 use crate::date_time::datetime_range::DateTimeRange;
-use crate::parser::{ParseError, Parser};
+use crate::parsing::parser::{ParseError, Parser};
 use crate::progress::skill::Skill;
 use crate::record::{Entry, Tag};
 

@@ -3,7 +3,7 @@ use std::fmt::{Debug, Display, Formatter, Write};
 
 use crate::date_time::datetime::Duration;
 use crate::date_time::datetime_range::DateTimeRange;
-use crate::parser::{ParseError, Parser};
+use crate::parsing::parser::{ParseError, Parser};
 
 #[derive(Clone, Eq, PartialEq)]
 pub struct Entry {

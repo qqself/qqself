@@ -7,7 +7,7 @@ use qqself_core::{
     date_time::datetime::DateDay,
     db::{Record, DB},
     encryption::{self, payload::PayloadBytes},
-    parser::Parser,
+    parsing::parser::Parser,
 };
 use wasm_bindgen::prelude::wasm_bindgen;
 mod util;
