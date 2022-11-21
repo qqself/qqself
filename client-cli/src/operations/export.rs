@@ -6,7 +6,7 @@ use std::{
     thread::{self, JoinHandle},
 };
 
-use qqself_core::api::ApiRequest;
+use qqself_core::{api::ApiRequest, parsing::parser::Parser};
 use rayon::prelude::{ParallelBridge, ParallelIterator};
 use structopt::StructOpt;
 use tokio::sync::mpsc;
@@ -65,9 +65,7 @@ fn export_journal(journal_path: &Path, keys: KeyFile) {
                 return; // Skip empty lines
             }
             // Parse the record to see if it's a valid one
-            qqself_core::parser::Parser::new(&line)
-                .parse_date_record()
-                .unwrap();
+            Parser::new(&line).parse_date_record().unwrap();
             let req = ApiRequest::new_set_request(keys.keys(), line).unwrap();
             let tx = &send_channels[idx % send_channels.len()];
             tx.blocking_send(req).unwrap();
