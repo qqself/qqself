@@ -1,8 +1,7 @@
 use std::cmp::Ordering;
 use std::fmt::{Debug, Display, Formatter, Write};
 
-use crate::date_time::datetime::Duration;
-use crate::date_time::datetime_range::DateTimeRange;
+use crate::date_time::datetime::{DateTimeRange, Duration};
 use crate::parsing::parser::{ParseError, Parser};
 
 #[derive(Clone, Eq, PartialEq)]
@@ -22,9 +21,7 @@ impl Entry {
             tags,
         }
     }
-    // TODO Not sure if we need it
-    #[allow(dead_code)]
-    pub(crate) fn parse(input: &str) -> Result<Entry, ParseError> {
+    pub fn parse(input: &str) -> Result<Entry, ParseError> {
         let mut parser = Parser::new(input);
         parser.parse_date_record()
     }
@@ -34,29 +31,21 @@ impl Entry {
     pub fn date_range(&self) -> &DateTimeRange {
         &self.date_range
     }
-    /// Returns string representation of an entry but used only time for datetime ranges
+    /// Returns string representation of an entry but uses only time for datetime ranges
     /// Useful for rendering data when date is visible via other means e.g. journal view
     pub fn to_string_short(&self) -> String {
         self.serialize(true)
     }
     fn serialize(&self, omit_dates: bool) -> String {
-        let tags: Vec<String> = self.tags.iter().map(|t| format!("{}", t)).collect();
+        let tags: Vec<String> = self.tags.iter().map(|t| t.to_string()).collect();
         let mut s = String::new();
-        let start = if omit_dates {
-            self.date_range.start().time().to_string()
+        if omit_dates {
+            s.push_str(&self.date_range.start().time().to_string());
+            s.push(' ');
+            s.push_str(&self.date_range.end().time().to_string());
         } else {
-            self.date_range.start().to_string()
-        };
-        s.push_str(&start);
-        s.push(' ');
-        s.push('-');
-        s.push(' ');
-        let end = if omit_dates {
-            self.date_range.end().time().to_string()
-        } else {
-            self.date_range.end().to_string()
-        };
-        s.push_str(&end);
+            s.push_str(&self.date_range().to_string());
+        }
         s.push(' ');
         s.push_str(&tags.join(". "));
         if let Some(comment) = &self.comment {
@@ -100,7 +89,7 @@ impl PartialOrd for Entry {
 pub struct Tag {
     pub name: String,
     pub props: Vec<Prop>,
-    pub start_pos: usize,
+    pub start_pos: usize, // TODO Remove all start_pos as now it's handled by tokenizer
 }
 
 impl Tag {
@@ -216,7 +205,7 @@ pub enum PropVal {
 }
 
 impl PropVal {
-    pub(crate) fn parse(s: &str) -> PropVal {
+    pub(crate) fn parse(s: String) -> PropVal {
         if s.is_empty() {
             return PropVal::None;
         }
@@ -226,7 +215,7 @@ impl PropVal {
         if let Ok(time) = s.parse::<Duration>() {
             return PropVal::Time(time);
         }
-        PropVal::String(s.to_string())
+        PropVal::String(s)
     }
 }
 

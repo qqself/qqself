@@ -1,29 +1,19 @@
+use std::{
+    iter::{Peekable, Zip},
+    slice::Iter,
+    str::Chars,
+};
+
 use thiserror::Error;
 
 use crate::{
-    date_time::{
-        datetime::{DateDay, DateTime, Time},
-        datetime_range::DateTimeRange,
-    },
+    date_time::datetime::DateTimeRange,
     record::{Entry, Prop, PropOperator, PropVal, Tag},
 };
 
-/*
-    Grammar:
-      ENTRY -> DATES TAGS COMMENT?
-      DATES -> DATETIME '-'? (DATETIME / TIME)
-      DATETIME -> (DATE)? TIME
-      DATE -> \d\d\d\d'-'\d\d'-'\d\d
-      TIME -> \d\d':'\d\d
-      TAGS -> TAG ('.' TAGS)*
-      TAG -> TAGNAME (PROP)*
-      PROP_OP -> '=' / '<' / '>'
-      PROP -> PROPNAME (PROP_OP? PROPVALUE)?
-      COMMENT -> \W \w*
-      TAGNAME -> \w+
-      PROPNAME -> (\w\W)+
-      PROPVALUE -> (\w|\W)+
-*/
+use super::tokenizer::{Token, Tokenizer};
+
+type InputIterator<'a> = Peekable<Zip<Chars<'a>, Iter<'a, Token>>>;
 
 #[derive(Error, Debug, PartialEq, Eq)]
 pub enum ParseError {
@@ -42,274 +32,135 @@ pub struct Parser<'a> {
     pos: usize,
 }
 
+// TODO TokenParser error handling is shallow intentionally to follow the legacy `Parser`
+//      Once we fully migrate to the new parser we will improve error reporting a lot
 impl<'a> Parser<'a> {
-    pub fn new(input: &'a str) -> Self {
+    pub(crate) fn new(input: &'a str) -> Self {
         Self { input, pos: 0 }
     }
 
-    fn read_string(&self) -> (usize, String) {
-        let sep = &[' ', '.', '=', '<', '>'];
-        let mut str_end = 0;
-        let mut spaces = 0;
-        let mut skip_spaces = true;
-        for c in self.input.chars().skip(self.pos) {
-            if c.is_whitespace() && skip_spaces {
-                spaces += 1;
-                continue;
+    pub(crate) fn parse_date_record(&mut self) -> Result<Entry, ParseError> {
+        let tokens = Tokenizer::new(self.input, true);
+        if let Some(err) = tokens.error {
+            match err {
+                super::tokenizer::TokenizingError::TagsNotFound(_) => {
+                    return Err(ParseError::NoTags)
+                }
+                super::tokenizer::TokenizingError::Expected(_, _, _) => {}
+                super::tokenizer::TokenizingError::DateOrTimeExpected(_) => {}
             }
-            skip_spaces = false;
-            if sep.contains(&c) {
-                break;
-            }
-            str_end += 1;
         }
-        let s: String = self
-            .input
-            .chars()
-            .skip(self.pos + spaces)
-            .take(str_end)
-            .collect();
-        (spaces + str_end, s)
+        self.entry_from_tokens(&tokens.tokens)
     }
 
-    fn consume_char(&mut self, expected: char) -> bool {
-        for c in self.input.chars().skip(self.pos) {
-            if c.is_whitespace() {
-                self.pos += 1;
-                continue;
-            } else if c == expected {
-                self.pos += 1;
-                return true;
-            } else {
-                return false;
-            }
-        }
-        false
+    pub(crate) fn parse_record(&mut self) -> Result<(Vec<Tag>, Option<String>), ParseError> {
+        todo!()
     }
 
-    // PROP -> PROPNAME (' ' PROPVALUE)?
-    fn parse_prop(&mut self) -> Option<Prop> {
-        let start_pos = self.pos;
-        let (read, name) = self.read_string();
-        self.pos += read;
-        if name.is_empty() {
-            return None;
-        }
-        let operator = if self.consume_char('>') {
-            PropOperator::More
-        } else if self.consume_char('<') {
-            PropOperator::Less
-        } else {
-            // TODO Return error in case of invalid symbol
-            self.consume_char('='); // It's optional, but if exists go to next char
-            PropOperator::Eq
-        };
-        let (read, mut val) = self.read_string();
-        self.pos += read;
+    fn entry_from_tokens(&mut self, tokens: &[Token]) -> Result<Entry, ParseError> {
+        let mut iter = self.input.chars().zip(tokens).peekable();
+        let date_range = self.parse_daterange(&mut iter)?;
+        let tags = self.parse_tags(&mut iter)?;
+        let comment = self.parse_comment(&mut iter);
+        Ok(Entry::new(date_range, comment, tags))
+    }
 
-        // Prop values could be a float written with dot as a separator
-        // Dot is used as a tag separator, so such floats wouldn't be parsed correctly
-        // To make UX better treat such cases in a special way. It's safe to assume
-        // that no tags would start with a digit
-        let mut chars = self.input.chars().skip(self.pos);
-        if chars
-            .next()
-            .filter(|c| *c == '.')
-            .and_then(|_| chars.next())
-            .filter(|c| c.is_ascii_digit())
-            .is_some()
+    fn parse_daterange(&mut self, iter: &mut InputIterator) -> Result<DateTimeRange, ParseError> {
+        let date_range_input = self.read_while(
+            iter,
+            &[
+                Token::Date,
+                Token::DateSeparator,
+                Token::Space,
+                Token::Time,
+                Token::TimeSeparator,
+            ],
+        );
+        // Plus/Minus one is for the extra space at the end
+        if date_range_input.len() != DateTimeRange::SIZE_LONG + 1
+            && date_range_input.len() != DateTimeRange::SIZE_SHORT + 1
         {
-            self.consume_char('.');
-            let (read_more, val_more) = self.read_string();
-            val = format!("{}.{}", val, val_more);
-            self.pos += read_more;
+            return Err(ParseError::BadDateTime(
+                "Failed to parse the date because of unexpected string length".to_string(),
+                date_range_input.len(),
+            ));
         }
-        Some(Prop {
-            name,
-            val: PropVal::parse(&val),
-            operator,
-            start_pos,
-        })
+        date_range_input[0..date_range_input.len() - 1]
+            .parse::<DateTimeRange>()
+            .map_err(|err| ParseError::BadDateTime(err, date_range_input.len()))
     }
 
-    // TAGNAME -> \w+
-    fn tagname(&mut self) -> Option<String> {
-        let (read, name) = self.read_string();
-        self.pos += read;
-        if name.is_empty() {
-            return None;
-        }
-        if name.to_lowercase() == name {
-            Some(name)
-        } else {
-            // Read ahead until the comment, step back
-            self.pos -= read;
-            None
-        }
-    }
-
-    // TAG -> TAGNAME (TAGPROP)*
-    fn parse_tag(&mut self) -> Result<Option<Tag>, ParseError> {
-        let start_pos = self.pos;
-        let name = self.tagname();
-        if name.is_none() {
-            return Ok(None);
-        }
-        let mut props: Vec<Prop> = Vec::new();
-        while let Some(prop) = self.parse_prop() {
-            if props.iter().any(|t| t.name == prop.name) {
-                return Err(ParseError::Duplicate(
-                    format!("property {}", prop.name),
-                    self.pos,
-                ));
-            }
-            props.push(prop)
-        }
-        Ok(Some(Tag {
-            name: name.unwrap(),
-            props,
-            start_pos,
-        }))
-    }
-
-    // DATETIMES -> DATETIME '-'? DATETIME?
-    fn parse_date_range(&mut self) -> Result<DateTimeRange, ParseError> {
-        let start = self.parse_date_time(None)?.ok_or_else(|| {
-            ParseError::BadDateTime("missing start datetime".to_string(), self.pos)
-        })?;
-        // Separators in case of two date/time specified
-        self.consume_char('-');
-        self.consume_char(' ');
-        let end = self
-            .parse_date_time(Some(start.date()))?
-            .ok_or_else(|| ParseError::BadDateTime("missing end datetime".to_string(), self.pos))?;
-        DateTimeRange::new(start, end).map_err(|v| ParseError::BadDateTime(v.to_string(), self.pos))
-    }
-
-    // DATETIME -> (DATE' ')? TIME
-    fn parse_date_time(
-        &mut self,
-        base_date: Option<DateDay>,
-    ) -> Result<Option<DateTime>, ParseError> {
-        let date = match (self.parse_date(), base_date) {
-            (None, None) => {
-                return Err(ParseError::BadDateTime(
-                    "Failed to parse the date".to_string(),
-                    self.pos,
-                ))
-            }
-            (None, Some(v)) => v,
-            (Some(v), None) => v,
-            (Some(v), Some(_)) => v,
-        };
-        self.consume_char(' '); // Date and Time separator
-        let time = match self.parse_time() {
-            None => return Ok(None),
-            Some(time) => time,
-        };
-        Ok(Some(DateTime::new(date, time)))
-    }
-
-    // DATE -> \d\d\d\d'-'\d\d'-'\d\d
-    fn parse_date(&mut self) -> Option<DateDay> {
-        let date_len = 10;
-        if self.pos + date_len >= self.input.len() {
-            return None;
-        }
-        match self.input[self.pos..self.pos + date_len].parse::<DateDay>() {
-            Err(_) => None,
-            Ok(date) => {
-                self.pos += date_len;
-                Some(date)
-            }
-        }
-    }
-
-    // TIME -> \d\d':'\d\d
-    fn parse_time(&mut self) -> Option<Time> {
-        let time_len = 5;
-        if self.pos + time_len >= self.input.len() {
-            return None;
-        }
-        match self.input[self.pos..self.pos + time_len].parse::<Time>() {
-            Err(_) => None,
-            Ok(time) => {
-                self.pos += time_len;
-                Some(time)
-            }
-        }
-    }
-
-    // TAGS -> TAG ('.' TAGS)*
-    fn parse_tags(&mut self) -> Result<Vec<Tag>, ParseError> {
-        let mut tags: Vec<Tag> = Vec::new();
+    fn parse_tags(&mut self, iter: &mut InputIterator) -> Result<Vec<Tag>, ParseError> {
+        let mut tags = Vec::new();
+        let mut names = Vec::new();
         loop {
-            match self.parse_tag()? {
-                Some(tag) => {
-                    if tags.iter().any(|t| t.name == tag.name) {
-                        return Err(ParseError::Duplicate(format!("tag {}", tag.name), self.pos));
-                    }
-                    tags.push(tag)
-                }
-                None => {
-                    if tags.is_empty() {
-                        return Err(ParseError::NoTags);
-                    }
-                    break;
-                }
-            }
-            if !self.consume_char('.') {
+            self.read_while(iter, &[Token::Space, Token::TagSeparator]);
+            let name = self.read_while(iter, &[Token::TagName]);
+            if name.is_empty() {
                 break;
             }
+            if names.contains(&name) {
+                return Err(ParseError::Duplicate(format!("tag '{}'", name), self.pos));
+            }
+            names.push(name.clone());
+            let props = self.parse_props(iter)?;
+            tags.push(Tag {
+                name,
+                props,
+                start_pos: 0,
+            })
         }
         Ok(tags)
     }
 
-    // COMMENT -> \W \w*
-    fn parse_comment(&mut self) -> Option<String> {
-        let comment: String = self.input.chars().skip(self.pos).collect();
-        let comment = comment.trim();
+    fn parse_props(&mut self, iter: &mut InputIterator) -> Result<Vec<Prop>, ParseError> {
+        let mut props = Vec::new();
+        let mut names = Vec::new();
+        loop {
+            self.read_while(iter, &[Token::Space]);
+            let name = self.read_while(iter, &[Token::PropertyName]);
+            if name.is_empty() {
+                break;
+            }
+            if names.contains(&name) {
+                return Err(ParseError::Duplicate(
+                    format!("property '{}'", name),
+                    self.pos,
+                ));
+            }
+            names.push(name.clone());
+            self.read_while(iter, &[Token::Space, Token::PropertyOperator]);
+            let val = self.read_while(iter, &[Token::PropertyValue]);
+            // Property value may be surrounded with the quotes, remove those as unnecessary noise
+            let val = val.trim_matches('"').to_string();
+            props.push(Prop {
+                name,
+                val: PropVal::parse(val),
+                operator: PropOperator::Eq,
+                start_pos: 0, // TODO Remove
+            })
+        }
+        Ok(props)
+    }
+
+    fn parse_comment(&mut self, iter: &mut InputIterator) -> Option<String> {
+        self.read_while(iter, &[Token::Space]);
+        let comment = self.read_while(iter, &[Token::Comment]);
         if comment.is_empty() {
-            return None;
+            None
+        } else {
+            Some(comment)
         }
-        return match comment.chars().next() {
-            Some(first) => {
-                if !first.is_uppercase() {
-                    // TODO Parser should never panic incase of invalid input, convert it to an error
-                    unreachable!("it's not a comment but a tag: {:?}", self.input);
-                }
-                Some(String::from(comment))
-            }
-            None => None,
-        };
     }
 
-    // ENTRY -> TAGS COMMENT?
-    pub fn parse_date_record(&mut self) -> Result<Entry, ParseError> {
-        let date_range = self.parse_date_range()?;
-        let tags = self.parse_tags()?;
-        let comment = self.parse_comment();
-        for tag in &tags {
-            for prop in &tag.props {
-                if prop.operator != PropOperator::Eq {
-                    let err = "Only `=` is supported in entry or additional `goal` tag is missed"
-                        .to_string();
-                    return Err(ParseError::BadOperator(err, self.pos));
-                }
-            }
+    /// Similar to standard take_while which consumes first non match, while this one doesn't via peekable check
+    fn read_while(&mut self, iter: &mut InputIterator, predicate: &[Token]) -> String {
+        let mut out = String::new();
+        while iter.peek().filter(|v| predicate.contains(v.1)).is_some() {
+            out.push(iter.next().unwrap().0);
+            self.pos += 1;
         }
-        Ok(Entry {
-            date_range,
-            tags,
-            comment,
-        })
-    }
-
-    // Parse record without a date prefix
-    pub fn parse_record(&mut self) -> Result<(Vec<Tag>, Option<String>), ParseError> {
-        let tags = self.parse_tags()?;
-        let comment = self.parse_comment();
-        Ok((tags, comment))
+        out
     }
 }
 
@@ -317,7 +168,10 @@ impl<'a> Parser<'a> {
 mod tests {
     use wasm_bindgen_test::wasm_bindgen_test;
 
-    use crate::date_time::datetime::Duration;
+    use crate::{
+        date_time::datetime::{DateDay, DateTime, Duration, Time},
+        record::{PropOperator, PropVal},
+    };
 
     use super::*;
     use lazy_static::lazy_static;
@@ -346,9 +200,14 @@ mod tests {
 
         let cases = vec![
             (
-                // Simple tag
-                "2000-01-01 01:01 01:01 tag1",
-                Entry::new(dr(1, 1), None, vec![tag("tag1", vec![])]),
+                // Short date range, simple tag
+                "2000-01-01 01:01 01:01 abc",
+                Entry::new(dr(1, 1), None, vec![tag("abc", vec![])]),
+            ),
+            (
+                // Long date range, simple tag
+                "2000-01-01 01:01 - 2000-01-01 01:01 foo",
+                Entry::new(dr(1, 1), None, vec![tag("foo", vec![])]),
             ),
             (
                 // Simple tag, simple prop
@@ -400,7 +259,7 @@ mod tests {
             ),
             (
                 // Spaces are ignored and results are trimmed
-                "2000-01-01 01:01  01:01  tag1  prop1 =   val2  .    tag2  . Comment    ",
+                "2000-01-01 01:01 01:01 tag1  prop1 =   val2  .    tag2  . Comment",
                 Entry::new(
                     dr(1, 1),
                     Some("Comment".to_string()),
@@ -450,7 +309,7 @@ mod tests {
                 ),
             ),
             (
-                // Prop value duration
+                // Duration in property values
                 "2000-01-01 01:01 01:01 tag1 prop1=12:22 prop2=0:01",
                 Entry::new(
                     dr(1, 1),
@@ -464,14 +323,22 @@ mod tests {
                     )],
                 ),
             ),
+            (
+                // Quoted values
+                "2000-01-01 01:01 01:01 tag1 prop1=\"Hello.World\". Comment",
+                Entry::new(
+                    dr(1, 1),
+                    Some("Comment".to_string()),
+                    vec![tag(
+                        "tag1",
+                        vec![prop("prop1", PropVal::String("Hello.World".to_string()))],
+                    )],
+                ),
+            ),
         ];
         for (input, want) in cases {
-            match Entry::parse(input) {
-                Ok(entry) => {
-                    assert_eq!(entry, want);
-                }
-                _ => unreachable!(),
-            }
+            let mut parser = Parser::new(input);
+            assert_eq!(parser.parse_date_record().unwrap(), want);
         }
     }
 
@@ -487,15 +354,11 @@ mod tests {
             "tag1 prop1=val1 prop2=val2. tag2",
             "tag1. Comment",
             "tag1. tag2. Comment And More Text",
-            "tag1 Prop1",
-            "tag1 Prop1=Val1",
-            "tag1 Prop1=Val1 Prop2",
-            "tag1 Prop1=Val1 Prop2",
-            "tag1 Prop1=Val1. Comment And More Text",
         ];
         for input in cases {
-            let input = format!("2000-01-01 02:02 - 2000-01-01 02:02 {input}");
-            let entry = Entry::parse(&input).unwrap();
+            let input = format!("2000-01-01 02:02 - 2000-01-02 02:02 {input}");
+            let mut parser = Parser::new(&input);
+            let entry = parser.parse_date_record().unwrap();
             let decoded = entry.to_string();
             assert_eq!(decoded, input);
         }
@@ -507,31 +370,28 @@ mod tests {
         let cases = vec![
             // Spaces trimmed and collapsed
             (
-                "2000-01-01 01:01 01:03 tag1  ",
-                "2000-01-01 01:01 - 2000-01-01 01:03 tag1",
-            ),
-            (
                 "2000-01-01 01:01 01:02 tag1  prop1   ",
-                "2000-01-01 01:01 - 2000-01-01 01:02 tag1 prop1",
+                "2000-01-01 01:01 01:02 tag1 prop1",
             ),
             // Comments are trimmed but comment content is not touched
             (
-                "2000-01-01 01:01 01:01 tag1  prop1  . Comment >>  |  <<  ",
-                "2000-01-01 01:01 - 2000-01-01 01:01 tag1 prop1. Comment >>  |  <<",
+                "2000-01-01 01:01 01:01 tag1  prop1  . Comment >>  |  <<",
+                "2000-01-01 01:01 01:01 tag1 prop1. Comment >>  |  <<",
             ),
             // Properties values has equal signs
             (
                 "2000-01-01 01:01 01:01 tag1 prop1 val1 prop2 val2 prop3",
-                "2000-01-01 01:01 - 2000-01-01 01:01 tag1 prop1=val1 prop2=val2 prop3",
+                "2000-01-01 01:01 01:01 tag1 prop1=val1 prop2=val2 prop3",
             ),
             // Multiline strings
             (
-                "2000-01-01 01:01 01:01 tag1. Multiline\n- Some1\n\n-Some2 ",
-                "2000-01-01 01:01 - 2000-01-01 01:01 tag1. Multiline\\n- Some1\\n\\n-Some2",
+                "2000-01-01 01:01 01:01 tag1. Multiline\n- Some1\n\n-Some2",
+                "2000-01-01 01:01 01:01 tag1. Multiline\\n- Some1\\n\\n-Some2",
             ),
         ];
         for (input, normalized) in cases {
-            let entry = Entry::parse(input).unwrap();
+            let mut parser = Parser::new(input);
+            let entry = parser.parse_date_record().unwrap();
             assert_eq!(entry.to_string(), normalized);
         }
     }
@@ -543,23 +403,27 @@ mod tests {
             ("2010-01-01 01:01 01:01 .", ParseError::NoTags),
             (
                 "2010-01-01 01:01 01:01 tag1. tag1",
-                ParseError::Duplicate("tag tag1".to_string(), 33),
+                ParseError::Duplicate("tag 'tag1'".to_string(), 33),
             ),
             (
                 "2010-01-01 01:01 01:01 tag1 prop1=a prop1=b",
-                ParseError::Duplicate("property prop1".to_string(), 43),
+                ParseError::Duplicate("property 'prop1'".to_string(), 41),
             ),
             (
                 "tag1 prop1=a prop1=b",
-                ParseError::BadDateTime("Failed to parse the date".to_string(), 0),
+                ParseError::BadDateTime(
+                    "Failed to parse the date because of unexpected string length".to_string(),
+                    0,
+                ),
             ),
             (
                 "2010-01-01 10:00 09:00 tag1 prop1=a prop1=b",
-                ParseError::BadDateTime("end time cannot be before the start".to_string(), 22),
+                ParseError::BadDateTime("end time cannot be before the start".to_string(), 23),
             ),
         ];
         for (input, expected) in cases {
-            let got = Entry::parse(input).err().unwrap();
+            let mut parser = Parser::new(input);
+            let got = parser.parse_date_record().err().unwrap();
             assert_eq!(got, expected);
         }
     }

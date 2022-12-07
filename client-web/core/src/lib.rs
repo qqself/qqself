@@ -7,7 +7,7 @@ use qqself_core::{
     date_time::datetime::DateDay,
     db::{Record, DB},
     encryption::{self, payload::PayloadBytes},
-    parsing::parser::Parser,
+    record::Entry,
 };
 use wasm_bindgen::prelude::wasm_bindgen;
 mod util;
@@ -125,9 +125,7 @@ impl App {
     }
 
     pub fn add_entry(&mut self, input: &str) {
-        let entry = Parser::new(input)
-            .parse_date_record()
-            .expect("input should be parsable");
+        let entry = Entry::parse(input).expect("input should be parsable");
         let record = Record::from_entry(entry, 1);
         self.db.add(record);
     }

@@ -1,14 +1,95 @@
 use std::{
-    fmt::{Display, Formatter},
+    cmp::Ordering,
+    fmt::{Debug, Display, Formatter},
     ops::Sub,
     str::FromStr,
 };
+
+/// Date time range with start and end, format YYYY-MM-DD HH:MM - YYYY-MM-DD HH:MM
+/// If day is the same then short notation format is supported: YYYY-MM-DD HH:MM HH:MM
+#[derive(PartialEq, Clone, Copy, Eq)]
+pub struct DateTimeRange {
+    start: DateTime,
+    end: DateTime,
+}
+
+impl DateTimeRange {
+    pub const SIZE_LONG: usize = 35;
+    pub const SIZE_SHORT: usize = 22;
+    pub const SIZE_SEPARATOR: usize = 3;
+
+    /// Creates new DateTimeRange, returns error when end is less than start
+    pub fn new(start: DateTime, end: DateTime) -> Result<Self, &'static str> {
+        if end < start {
+            return Err("end time cannot be before the start");
+        }
+        Ok(Self { start, end })
+    }
+    pub fn start(&self) -> DateTime {
+        self.start
+    }
+    pub fn end(&self) -> DateTime {
+        self.end
+    }
+    pub fn duration(&self) -> Duration {
+        self.end - self.start
+    }
+}
+
+impl Display for DateTimeRange {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        if self.start.date() == self.end.date() {
+            f.write_fmt(format_args!("{} {}", self.start, self.end.time()))
+        } else {
+            f.write_fmt(format_args!("{} - {}", self.start, self.end))
+        }
+    }
+}
+
+impl Debug for DateTimeRange {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.to_string())
+    }
+}
+
+impl Ord for DateTimeRange {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.start
+            .cmp(&other.start)
+            .then_with(|| self.end.cmp(&other.end))
+    }
+}
+
+impl PartialOrd for DateTimeRange {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl FromStr for DateTimeRange {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let start = s[0..DateTime::SIZE].parse::<DateTime>()?;
+        if s.len() == Self::SIZE_LONG {
+            let end = s[DateTime::SIZE + Self::SIZE_SEPARATOR..].parse::<DateTime>()?;
+            Self::new(start, end).map_err(|v| v.to_string())
+        } else if s.len() == Self::SIZE_SHORT {
+            let time = s[DateTime::SIZE + 1..].parse::<Time>()?;
+            let end = DateTime::new(start.date(), time);
+            Self::new(start, end).map_err(|v| v.to_string())
+        } else {
+            Err("Not supported date time range length of the string".to_string())
+        }
+    }
+}
 
 // Date and time, format YYYY-MM-DD HH:MM
 #[derive(Debug, PartialEq, Clone, Copy, Eq, PartialOrd, Ord)]
 pub struct DateTime(time::PrimitiveDateTime);
 
 impl DateTime {
+    pub const SIZE: usize = 16;
     // There is no way to get local timezone using `time` on Unix/Mac https://github.com/time-rs/time/issues/325
     #[cfg(feature = "wasm")]
     pub fn now() -> Self {
@@ -32,6 +113,16 @@ impl Display for DateTime {
         let date = DateDay(self.0.date());
         let time = Time(self.0.time());
         f.write_fmt(format_args!("{} {}", date, time))
+    }
+}
+
+impl FromStr for DateTime {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let date = s[0..10].parse::<DateDay>()?;
+        let time = s[11..].parse::<Time>()?;
+        Ok(DateTime::new(date, time))
     }
 }
 
@@ -122,6 +213,7 @@ impl FromStr for DateDay {
 pub struct Time(time::Time);
 
 impl Time {
+    pub const SIZE: usize = 5;
     #[allow(unused)]
     pub(crate) fn new(hours: u8, minutes: u8) -> Self {
         let time = time::Time::from_hms(hours, minutes, 0).expect("invalid time");
@@ -250,6 +342,14 @@ mod tests {
     }
 
     #[test]
+    fn datetime_parse() {
+        assert_eq!(
+            "2022-11-23 12:49".parse::<DateTime>().unwrap(),
+            DateTime::new(DateDay::new(2022, 11, 23), Time::new(12, 49))
+        );
+    }
+
+    #[test]
     fn datetime_compare() {
         let datetime = DateTime::new(DateDay::new(2022, 11, 23), Time::new(12, 49));
         let datetime_time = DateTime::new(DateDay::new(2022, 11, 23), Time::new(12, 50));
@@ -317,5 +417,58 @@ mod tests {
         let time = Time::new(10, 10);
         assert!(time < Time::new(10, 11));
         assert!(time < Time::new(20, 0));
+    }
+
+    #[test]
+    fn datetimerange_parse_short() {
+        let got = "2022-11-23 12:49 18:32".parse::<DateTimeRange>().unwrap();
+        assert_eq!(
+            got.start,
+            DateTime::new(DateDay::new(2022, 11, 23), Time::new(12, 49))
+        );
+        assert_eq!(
+            got.end,
+            DateTime::new(DateDay::new(2022, 11, 23), Time::new(18, 32))
+        );
+    }
+
+    #[test]
+    fn datetimerange_parse_long() {
+        let got = "2022-11-23 12:49 - 2022-11-24 18:32"
+            .parse::<DateTimeRange>()
+            .unwrap();
+        assert_eq!(
+            got.start,
+            DateTime::new(DateDay::new(2022, 11, 23), Time::new(12, 49))
+        );
+        assert_eq!(
+            got.end,
+            DateTime::new(DateDay::new(2022, 11, 24), Time::new(18, 32))
+        );
+    }
+
+    #[test]
+    fn datetimerange_format_long() {
+        // Long notation
+        let start = DateTime::new(DateDay::new(2022, 11, 23), Time::new(12, 49));
+        let end = DateTime::new(DateDay::new(2022, 11, 24), Time::new(12, 55));
+        let range = DateTimeRange::new(start, end).unwrap();
+        assert_eq!(range.to_string(), "2022-11-23 12:49 - 2022-11-24 12:55");
+    }
+
+    #[test]
+    fn datetimerange_format_short() {
+        let start = DateTime::new(DateDay::new(2022, 11, 23), Time::new(12, 49));
+        let end = start;
+        let range = DateTimeRange::new(start, end).unwrap();
+        assert_eq!(range.to_string(), "2022-11-23 12:49 12:49");
+    }
+
+    #[test]
+    fn datetimerange_duration() {
+        let from = DateTime::new(DateDay::new(2022, 11, 23), Time::new(12, 49));
+        let to = DateTime::new(DateDay::new(2022, 11, 23), Time::new(12, 55));
+        let range = DateTimeRange::new(from, to).unwrap();
+        assert_eq!(range.duration(), Duration::new(0, 6));
     }
 }

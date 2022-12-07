@@ -5,8 +5,7 @@ use std::vec;
 
 use crate::data_views::journal::{JournalDay, JournalView};
 use crate::data_views::skills::SkillsView;
-use crate::date_time::datetime::DateDay;
-use crate::date_time::datetime_range::DateTimeRange;
+use crate::date_time::datetime::{DateDay, DateTimeRange};
 use crate::parsing::parser::{ParseError, Parser};
 use crate::progress::skill::Skill;
 use crate::record::{Entry, Tag};
@@ -383,7 +382,8 @@ mod tests {
     }
 
     fn parse_entry(text: &str, revision: usize) -> Record {
-        let entry = Entry::parse(&format!("{} 00:00 {} {}", *BASE_DATE, *BASE_DATE, text)).unwrap();
+        let entry =
+            Entry::parse(&format!("{} 00:00 - {} {}", *BASE_DATE, *BASE_DATE, text)).unwrap();
         Record::Value(RecordValue::Entry(RecordEntry { revision, entry }))
     }
 

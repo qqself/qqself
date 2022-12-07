@@ -44,7 +44,7 @@ pub enum Token {
     PropertyOperator,  // =
     PropertyValue,     // Small letters
     Space,             // Space, tabs, etc.
-    TagName,           // Small letters
+    TagName,           // Small letters or digits
     TagSeparator,      // .
     Time,              // HH:MM
     TimeSeparator,     // :
@@ -65,7 +65,8 @@ pub enum Char {
     Digit,
     Dot,
     Eq,
-    Lowercase,
+    LowercaseDigit,
+    LowercaseDigitColon,
     Quote,
     Space,
     Uppercase,
@@ -80,10 +81,11 @@ impl Display for Char {
             Char::Digit => "digit",
             Char::Dot => "dot",
             Char::Eq => "equal",
-            Char::Lowercase => "lowercase letter",
+            Char::LowercaseDigit => "lowercase letter or digit",
             Char::Quote => "quote",
             Char::Space => "space",
             Char::Uppercase => "uppercase letter",
+            Char::LowercaseDigitColon => "lowercase letter or digit or colon",
         })
     }
 }
@@ -97,10 +99,11 @@ impl Char {
             Char::Digit => c.is_ascii_digit(),
             Char::Dot => *c == '.',
             Char::Eq => *c == '=',
-            Char::Lowercase => c.is_lowercase(),
+            Char::LowercaseDigit => c.is_lowercase() || c.is_ascii_digit(),
             Char::Quote => *c == '"',
             Char::Space => c.is_ascii_whitespace(),
             Char::Uppercase => c.is_uppercase(),
+            Char::LowercaseDigitColon => c.is_lowercase() || c.is_ascii_digit() || *c == ':',
         }
     }
 }
@@ -119,7 +122,7 @@ enum TokenizingResult {
 /// Tokens are essentially array of bytes which can be transferred from WebAssembly in the most efficient way
 pub struct Tokenizer<'a> {
     /// Input tokens, one for each input character. May be smaller in case of an error
-    pub tokens: Vec<u8>,
+    pub tokens: Vec<Token>,
     /// Set of expected tokens that tokenizer expects next, could be used for autocomplete logic. Multiple Tokens may be expected
     pub expected_next: Vec<Token>,
     /// Error if tokenizer failed to parse the input
@@ -168,7 +171,7 @@ impl<'a> Tokenizer<'a> {
 
     fn tokenize_datetimes(&mut self) -> Result<(), TokenizingResult> {
         self.tokenize_datetime()?;
-        
+
         // We are here now ↓ After first read datetime either we have another datetime (prefixed with datetime separator) or just time in short notation
         //  2020-01-11 23:23 - 2022-01:12 00:12 activity
         //  2022-01-11 15:00 18:00 activity
@@ -227,7 +230,7 @@ impl<'a> Tokenizer<'a> {
     }
 
     fn tokenize_tag(&mut self) -> Result<Option<()>, TokenizingResult> {
-        match self.read(Token::TagName, Char::Lowercase, 1..usize::MAX, true) {
+        match self.read(Token::TagName, Char::LowercaseDigit, 1..usize::MAX, true) {
             Ok(read) => {
                 if read > 0 {
                     self.expected_next = vec![Token::TagName];
@@ -269,7 +272,12 @@ impl<'a> Tokenizer<'a> {
         if self.read(Token::Space, Char::Space, 0..usize::MAX, true)? > 0 {
             self.expected_next = vec![Token::PropertyName];
         }
-        match self.read(Token::PropertyName, Char::Lowercase, 1..usize::MAX, true) {
+        match self.read(
+            Token::PropertyName,
+            Char::LowercaseDigit,
+            1..usize::MAX,
+            true,
+        ) {
             Ok(read) => {
                 if read > 0 {
                     self.expected_next = vec![Token::PropertyName];
@@ -288,7 +296,7 @@ impl<'a> Tokenizer<'a> {
             // Property value is expected when operator was used
             return Err(TokenizingResult::Expected(
                 Token::PropertyValue,
-                Char::Lowercase,
+                Char::LowercaseDigit,
                 self.tokens.len(),
             ));
         }
@@ -327,7 +335,7 @@ impl<'a> Tokenizer<'a> {
                 } else {
                     // Failed to read digits after the dot, so dot was a tag separator instead, recover
                     if let Some(v) = self.tokens.last_mut() {
-                        *v = Token::TagSeparator as u8;
+                        *v = Token::TagSeparator;
                     }
                     return Ok(Some(()));
                 }
@@ -341,7 +349,12 @@ impl<'a> Tokenizer<'a> {
         }
 
         // Normal property value, read as is
-        match self.read(Token::PropertyValue, Char::Lowercase, 1..usize::MAX, true) {
+        match self.read(
+            Token::PropertyValue,
+            Char::LowercaseDigitColon,
+            1..usize::MAX,
+            true,
+        ) {
             Ok(read) => {
                 if read > 0 {
                     self.expected_next = vec![Token::PropertyValue];
@@ -383,7 +396,7 @@ impl<'a> Tokenizer<'a> {
             };
             if char.matches(next) {
                 self.input.next();
-                self.tokens.push(token as u8);
+                self.tokens.push(token);
                 chars_read += 1;
                 if chars_read == range.end {
                     return Ok(chars_read); // Token successfully read - return
@@ -393,7 +406,7 @@ impl<'a> Tokenizer<'a> {
                 }
             } else if space_prefix && Char::Space.matches(next) {
                 self.input.next();
-                self.tokens.push(Token::Space as u8);
+                self.tokens.push(Token::Space);
                 continue; // Spaces are ignored, continue
             } else {
                 if chars_read >= range.start {
@@ -406,7 +419,7 @@ impl<'a> Tokenizer<'a> {
 
     fn read_until(&mut self, token: Token, char: Char) -> Result<(), TokenizingResult> {
         for c in self.input.by_ref() {
-            self.tokens.push(token as u8);
+            self.tokens.push(token);
             if char.matches(&c) {
                 return Ok(());
             }
@@ -426,13 +439,6 @@ impl<'a> Tokenizer<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    // Tokenizer returns tokens as Vec<u8>, failed assert logs are ugly if test fails, so unsafe way to convert it back to tokens
-    // to make test debugging more pleasant. Used only in tests, so safe to do that here. Alternative is using `num_enum` crate but
-    // that is too much for such a small problem
-    fn nums_to_tokens(value: &[u8]) -> &[Token] {
-        unsafe { std::mem::transmute(value) }
-    }
 
     #[test]
     fn tokenizing_datetime() {
@@ -517,12 +523,18 @@ mod tests {
                 vec![Token::Date],
                 Some(TokenizingError::Expected(Token::Date, Char::Digit, 20)),
             ),
+            // (
+            //     " 2022-01-02 23:11 - 2", // TODO Date formats should be strict with no spaces allowed
+            //     vec![s],
+            //     vec![Token::Date],
+            //     Some(TokenizingError::Expected(Token::Date, Char::Digit, 0)),
+            // ),
         ];
         for (input, tokens, next, error) in cases {
             let got = Tokenizer::new(input, true);
-            assert_eq!(got.error, error, "input {input}");
-            assert_eq!(got.expected_next, next, "input {input}");
-            assert_eq!(nums_to_tokens(&got.tokens), tokens, "input {input}");
+            assert_eq!(got.error, error, "input |{input}|");
+            assert_eq!(got.expected_next, next, "input |{input}|");
+            assert_eq!(got.tokens, tokens, "input |{input}|");
         }
     }
 
@@ -605,7 +617,7 @@ mod tests {
                 vec![Token::PropertyValue],
                 Some(TokenizingError::Expected(
                     Token::PropertyValue,
-                    Char::Lowercase,
+                    Char::LowercaseDigit,
                     27,
                 )),
             ),
@@ -673,6 +685,12 @@ mod tests {
                 vec![Token::Comment],
                 None,
             ),
+            (
+                "tag1. Cc",
+                vec![tn, tn, tn, tn, ts, s, c, c],
+                vec![Token::Comment],
+                None,
+            ),
         ];
         for (input, tokens, next, error) in cases {
             let input = format!("{datetime_prefix}{input}");
@@ -681,15 +699,10 @@ mod tests {
             assert_eq!(got.expected_next, next, "wrong next, input {input}");
             let (date_tokens, tags_tokens) = got.tokens.split_at(datetime_tokens.len());
             assert_eq!(
-                nums_to_tokens(date_tokens),
-                datetime_tokens,
+                date_tokens, datetime_tokens,
                 "wrong date tokens, input {input}"
             );
-            assert_eq!(
-                nums_to_tokens(tags_tokens),
-                tokens,
-                "wrong tokens, input {input}"
-            );
+            assert_eq!(tags_tokens, tokens, "wrong tokens, input {input}");
         }
     }
 }

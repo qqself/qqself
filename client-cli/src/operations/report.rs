@@ -9,7 +9,7 @@ use std::{
 use qqself_core::{
     date_time::datetime::DateDay,
     db::{Record, DB},
-    parsing::parser::Parser,
+    record::Entry,
 };
 use structopt::{clap::arg_enum, StructOpt};
 use tracing::error;
@@ -55,8 +55,7 @@ pub fn report(opts: ReportOpts) {
             return; // Skip empty lines
         }
         // Parse the record to see if it's a valid one
-        let entry = Parser::new(&line)
-            .parse_date_record()
+        let entry = Entry::parse(&line)
             .unwrap_or_else(|err| panic!("error parsing the line '{line}' - {err}"));
         db.add(Record::from_entry(entry, 0))
     });
