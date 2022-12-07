@@ -1,7 +1,7 @@
 use std::collections::btree_map::Iter;
 
 use crate::{
-    date_time::datetime_range::DateTimeRange,
+    date_time::datetime::DateTimeRange,
     db::{ChangeEvent, Record, RecordValue},
     progress::skill::Skill,
 };
