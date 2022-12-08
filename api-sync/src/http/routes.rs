@@ -27,10 +27,26 @@ async fn health() -> impl Responder {
 #[derive(Serialize, Deserialize)]
 struct InfoResp {
     pub timestamp: Timestamp,
+    pub build: String,
+    pub commit: String,
+    pub hash: String,
+    pub host: String,
+    pub profile: String,
+    pub rust: String,
+    pub target: String,
+    pub version: String,
 }
 async fn info() -> impl Responder {
     web::Json(InfoResp {
         timestamp: Timestamp::now(),
+        build: env!("VERGEN_BUILD_TIMESTAMP").to_string(),
+        commit: env!("VERGEN_GIT_COMMIT_MESSAGE").to_string(),
+        hash: env!("VERGEN_GIT_SHA").to_string(),
+        host: env!("VERGEN_RUSTC_HOST_TRIPLE").to_string(),
+        profile: env!("VERGEN_CARGO_PROFILE").to_string(),
+        rust: env!("VERGEN_RUSTC_SEMVER").to_string(),
+        target: env!("VERGEN_CARGO_TARGET_TRIPLE").to_string(),
+        version: env!("VERGEN_BUILD_SEMVER").to_string(),
     })
 }
 
