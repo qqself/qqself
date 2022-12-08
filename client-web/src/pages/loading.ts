@@ -1,6 +1,6 @@
 import { html, LitElement } from "lit"
 import { customElement, state } from "lit/decorators.js"
-import init from "../../core/pkg"
+import init, { initialize } from "../../core/pkg"
 import { log } from "../logger"
 import "../components/logoBlock"
 import { EncryptionPool } from "../encryptionPool"
@@ -30,7 +30,8 @@ export class LoadingPage extends LitElement {
       await init()
       setTimeout(() => {
         this.loaded = true
-        log("Initialized")
+        const config = initialize()
+        log(`Initialized:\n${config}`)
         const encryptionPool = new EncryptionPool()
         this.dispatchEvent(
           new CustomEvent("loaded", {

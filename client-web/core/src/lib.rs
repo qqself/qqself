@@ -1,5 +1,7 @@
 #![allow(non_snake_case)] // Use camelCase for everything exported as it's convention that TypeScript is using
 
+use std::panic;
+
 use qqself_core::{
     api::{ApiRequest, RequestCreateErr},
     binary_text::BinaryToText,
@@ -10,7 +12,26 @@ use qqself_core::{
     record::Entry,
 };
 use wasm_bindgen::prelude::wasm_bindgen;
+
 mod util;
+
+/// Initialize the library, for now only sets panic hooks and returns build info
+#[wasm_bindgen]
+pub fn initialize() -> String {
+    panic::set_hook(Box::new(console_error_panic_hook::hook));
+    [
+        ("Build", env!("VERGEN_BUILD_TIMESTAMP")),
+        ("Commit", env!("VERGEN_GIT_COMMIT_MESSAGE")),
+        ("Hash", env!("VERGEN_GIT_SHA")),
+        ("Host", env!("VERGEN_RUSTC_HOST_TRIPLE")),
+        ("Profile", env!("VERGEN_CARGO_PROFILE")),
+        ("Rust", env!("VERGEN_RUSTC_SEMVER")),
+        ("Target", env!("VERGEN_CARGO_TARGET_TRIPLE")),
+        ("Version", env!("VERGEN_BUILD_SEMVER")),
+    ]
+    .map(|(k, v)| format!("{k}: {v}"))
+    .join("\n")
+}
 
 #[wasm_bindgen]
 #[derive(Clone)] // TODO Keys shouldn't be Clone - it should be generated/got from cache and then moved to the App and never be used
