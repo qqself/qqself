@@ -12,18 +12,23 @@ use qqself_core::{
 
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord)]
 pub enum StorageErr {
-    Err(&'static str),
+    ValidationError(&'static str),
     IOError(String),
 }
 
 #[async_trait]
 pub trait PayloadStorage {
+    /// Perists the given payload
     async fn set(&self, payload: Payload) -> Result<(), StorageErr>;
+    /// Find payloads for the given public key. If `after_timestamp` is set, then only payloads with creation timestamp equal or older are returned
     fn find(
         &self,
         public_key: &PublicKey,
         after_timestamp: Option<Timestamp>,
     ) -> Pin<Box<dyn Stream<Item = Result<PayloadBytes, StorageErr>>>>;
+
+    /// Delete all payloads for the given public key
+    async fn delete(&self, public_key: &PublicKey) -> Result<(), StorageErr>;
 }
 
 #[cfg(test)]
@@ -101,8 +106,11 @@ mod tests {
         let keys1 = &keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
         let keys2 = &keys(PUBLIC_KEY_2, PRIVATE_KEY_2);
 
-        // Default is empty
+        // Start from empty
+        storage.delete(&keys1.public).await.unwrap();
+        storage.delete(&keys2.public).await.unwrap();
         assert!(items(keys1, &storage, None).await.is_empty());
+        assert!(items(keys2, &storage, None).await.is_empty());
 
         // Search all
         storage.set(payload(keys1, 1, 1, None)).await.unwrap();
@@ -132,6 +140,12 @@ mod tests {
         let mut got = items(keys1, &storage, Some(4)).await;
         got.sort(); // Storages returns items sorted by timestamp but for enrties with the same timestamp order is not defined
         assert_eq!(got, vec!["4", "5"]);
+
+        // Delete all
+        storage.delete(&keys1.public).await.unwrap();
+        storage.delete(&keys2.public).await.unwrap();
+        assert!(items(keys1, &storage, None).await.is_empty());
+        assert!(items(keys2, &storage, None).await.is_empty());
     }
 
     #[tokio::test]
@@ -144,6 +158,7 @@ mod tests {
         test_storage(FSPayloadStorage::new_temp()).await;
     }
 
+    /// To run test locally use appropriate environment variables e.g. AWS_PROFILE=test-dynamo
     #[cfg(feature = "storage-dynamodb")]
     #[tokio::test]
     async fn dynamo_storage() {
