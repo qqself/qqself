@@ -1,5 +1,5 @@
 use std::{
-    fs::read_dir,
+    fs::{self, read_dir},
     path::{Path, PathBuf},
     pin::Pin,
 };
@@ -49,9 +49,10 @@ impl FSPayloadStorage {
         );
         match data {
             Some(data) => std::fs::write(self.path.join(name), data)
-                .map_err(|_| StorageErr::Err("Failed to write payload")),
-            None => std::fs::remove_file(self.path.join(name))
-                .map_err(|_| StorageErr::Err("Failed to delete previous payload")),
+                .map_err(|err| StorageErr::IOError(format!("Failed to write payload: {err}"))),
+            None => std::fs::remove_file(self.path.join(name)).map_err(|err| {
+                StorageErr::IOError(format!("Failed to delete previous payload: {}", err))
+            }),
         }
     }
 
@@ -61,14 +62,16 @@ impl FSPayloadStorage {
         after_timestamp: Option<Timestamp>,
     ) -> Result<Vec<PayloadBytes>, StorageErr> {
         let mut found = Vec::new();
-        let listing = read_dir(&self.path).map_err(|_| StorageErr::Err("Failed to read_dir"))?;
+        let listing = read_dir(&self.path)
+            .map_err(|_| StorageErr::IOError("Failed to read_dir".to_string()))?;
         let timestamp = after_timestamp.unwrap_or_default();
         for file in listing {
-            let file = file.map_err(|_| StorageErr::Err("Failed to read folder file"))?;
+            let file =
+                file.map_err(|_| StorageErr::IOError("Failed to read folder file".to_string()))?;
             let name = file
                 .file_name()
                 .into_string()
-                .map_err(|_| StorageErr::Err("Failed to get file name"))?;
+                .map_err(|_| StorageErr::IOError("Failed to get file name".to_string()))?;
             let prefix = format!("{}|", public_key.hash_string());
             if !name.starts_with(&prefix) {
                 continue; // File for other public_key
@@ -82,19 +85,41 @@ impl FSPayloadStorage {
                 continue; // File older than what we find
             }
             let data = std::fs::read(file.path())
-                .map_err(|_| StorageErr::Err("Failed to read file data"))?;
+                .map_err(|_| StorageErr::IOError("Failed to read file data".to_string()))?;
             let data_string = String::from_utf8(data)
-                .map_err(|_| StorageErr::Err("Failed to convert file data to string"))?;
-            let encoded = BinaryToText::new_from_encoded(data_string)
-                .ok_or(StorageErr::Err("Failed to read file as encoded data"))?;
-            let payload = PayloadBytes::new_from_encrypted(encoded)
-                .map_err(|_| StorageErr::Err("Failed to read file as payload bytes"))?;
+                .map_err(|_| StorageErr::IOError("Failed to convert file data to string".to_string()))?;
+            let encoded = BinaryToText::new_from_encoded(data_string).ok_or_else(|| {
+                StorageErr::IOError("Failed to read file as encoded data".to_string())
+            })?;
+            let payload = PayloadBytes::new_from_encrypted(encoded).map_err(|_| {
+                StorageErr::IOError("Failed to read file as payload bytes".to_string())
+            })?;
             found.push((file_time_prefix, payload))
         }
         // File system may return files in random order, sort it here
         found.sort_by(|a, b| a.0.cmp(&b.0));
         let found: Vec<_> = found.into_iter().map(|v| v.1).collect();
         Ok(found)
+    }
+
+    fn delete_files(&self, public_key: &PublicKey) -> Result<(), StorageErr> {
+        let listing = read_dir(&self.path)
+            .map_err(|_| StorageErr::IOError("Failed to read_dir".to_string()))?;
+        for file in listing {
+            let file =
+                file.map_err(|_| StorageErr::IOError("Failed to read folder file".to_string()))?;
+            let name = file
+                .file_name()
+                .into_string()
+                .map_err(|_| StorageErr::IOError("Failed to get file name".to_string()))?;
+            let prefix = format!("{}|", public_key.hash_string());
+            if name.starts_with(&prefix) {
+                fs::remove_file(file.path()).map_err(|err| {
+                    StorageErr::IOError(format!("Failed to delete the file: {}", err))
+                })?
+            }
+        }
+        Ok(())
     }
 }
 
@@ -124,5 +149,9 @@ impl PayloadStorage for FSPayloadStorage {
             Err(err) => return Box::pin(stream::iter(vec![Err(err)])),
         };
         Box::pin(stream::iter(files).map(Ok))
+    }
+
+    async fn delete(&self, public_key: &PublicKey) -> Result<(), StorageErr> {
+        self.delete_files(public_key)
     }
 }
