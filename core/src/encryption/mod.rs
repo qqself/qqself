@@ -4,4 +4,4 @@ mod rsa;
 pub mod hash;
 pub mod keys;
 pub mod payload;
-pub mod search_token;
+pub mod tokens;

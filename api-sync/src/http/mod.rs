@@ -18,8 +18,11 @@ pub enum HttpErrorType {
     PaymentRequired(String),
     #[error("AccountErr. {0}")]
     AccountErr(String),
+    #[error("Requested endpoint not found")]
+    NotFound,
     #[error("IOError. {0}")]
     IOError(String),
+    
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -38,6 +41,7 @@ impl actix_web::error::ResponseError for HttpErrorType {
             HttpErrorType::IOError(_) => 502,
             HttpErrorType::OutdatedPayload => 408,
             HttpErrorType::AccountErr(_) => 502,
+            HttpErrorType::NotFound => 404,
         })
         .unwrap()
     }

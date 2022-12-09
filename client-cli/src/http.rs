@@ -51,5 +51,10 @@ mod tests {
         let lines: Vec<_> = body.lines().collect();
         assert_eq!(lines.len(), 1);
         assert_eq!(payload, lines[0]);
+
+        // Delete it all
+        let req = ApiRequest::new_delete_request(&keys).unwrap();
+        let resp = http.send(req).await.unwrap();
+        assert_eq!(resp.status(), 200);
     }
 }
