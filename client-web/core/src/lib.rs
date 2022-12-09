@@ -120,6 +120,14 @@ impl API {
             contentType: req.content_type.to_string(),
         })
     }
+    pub fn createApiDeleteRequest(keys: &Keys) -> Result<Request, ApiError> {
+        let req = ApiRequest::new_delete_request(&keys.0)?;
+        Ok(Request {
+            url: req.url.to_string(),
+            payload: req.payload,
+            contentType: req.content_type.to_string(),
+        })
+    }
 }
 
 #[wasm_bindgen(getter_with_clone)]

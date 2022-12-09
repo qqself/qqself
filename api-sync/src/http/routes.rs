@@ -13,7 +13,7 @@ use qqself_core::{
     encryption::{
         keys::PublicKey,
         payload::{Payload, PayloadBytes, PayloadError},
-        search_token::SearchToken,
+        tokens::{DeleteToken, SearchToken},
     },
 };
 use serde::{Deserialize, Serialize};
@@ -66,7 +66,7 @@ async fn find(
     payload_storage: Data<Box<dyn PayloadStorage + Sync + Send>>,
     account_storage: Data<Box<dyn AccountStorage + Sync + Send>>,
 ) -> Result<HttpResponse, HttpErrorType> {
-    let search_token = validate_token(req)?;
+    let search_token = validate_search_token(req)?;
     validate_account(&account_storage, search_token.public_key()).await?;
     let items = payload_storage
         .find(
@@ -80,6 +80,23 @@ async fn find(
         .streaming(items))
 }
 
+async fn delete(
+    req: String,
+    payload_storage: Data<Box<dyn PayloadStorage + Sync + Send>>,
+    account_storage: Data<Box<dyn AccountStorage + Sync + Send>>,
+) -> Result<impl Responder, HttpErrorType> {
+    let delete_token = validate_delete_token(req)?;
+    validate_account(&account_storage, delete_token.public_key()).await?;
+    if let Err(err) = payload_storage.delete(delete_token.public_key()).await {
+        return Err(HttpErrorType::IOError(format!("{:#?}", err)));
+    }
+    Ok("")
+}
+
+async fn not_found() -> Result<String, HttpErrorType> {
+    Err(HttpErrorType::NotFound)
+}
+
 async fn validate_payload(payload_data: String) -> Result<Payload, HttpErrorType> {
     let encoded = BinaryToText::new_from_encoded(payload_data)
         .ok_or_else(|| HttpErrorType::BadInput("Error validating encoded payload".to_string()))?;
@@ -87,6 +104,7 @@ async fn validate_payload(payload_data: String) -> Result<Payload, HttpErrorType
         .map_err(|_| HttpErrorType::BadInput("Error validating encrypted payload".to_string()))?;
 
     // Validation is CPU heavy and may take about 2ms, use thread pool to avoid blocking event loop
+    // TODO What about SearchToken and DeleteToken, those are implicitly validated and blocks the event loop
     let payload = tokio::task::spawn_blocking(move || {
         payload_bytes.validated(Some(Timestamp::now() - MAX_PAYLOAD_AGE))
     })
@@ -98,9 +116,14 @@ async fn validate_payload(payload_data: String) -> Result<Payload, HttpErrorType
     })
 }
 
-fn validate_token(data: String) -> Result<SearchToken, HttpErrorType> {
+fn validate_search_token(data: String) -> Result<SearchToken, HttpErrorType> {
     SearchToken::new_from_encoded(data, Some(Timestamp::now() - MAX_PAYLOAD_AGE))
         .map_err(|err| HttpErrorType::BadInput(format!("Error encoding search token. {}", err)))
+}
+
+fn validate_delete_token(data: String) -> Result<DeleteToken, HttpErrorType> {
+    DeleteToken::new_from_encoded(data)
+        .map_err(|err| HttpErrorType::BadInput(format!("Error encoding delete token. {}", err)))
 }
 
 async fn validate_account(
@@ -137,7 +160,9 @@ pub fn http_config(
         .route("/health", web::get().to(health))
         .route("/info", web::get().to(info))
         .route("/set", web::post().to(set))
-        .route("/find", web::post().to(find));
+        .route("/find", web::post().to(find))
+        .route("/delete", web::post().to(delete))
+        .default_service(web::route().to(not_found));
     }
 }
 
@@ -200,6 +225,13 @@ mod tests {
             .set_payload(body)
     }
 
+    fn req_delete(body: String) -> test::TestRequest {
+        test::TestRequest::post()
+            .uri("/delete")
+            .insert_header((header::CONTENT_TYPE, "text/plain"))
+            .set_payload(body)
+    }
+
     fn req_find(body: String) -> test::TestRequest {
         test::TestRequest::post()
             .uri("/find")
@@ -253,6 +285,16 @@ mod tests {
         let resp: HttpError = test::call_and_read_body_json(&app, req).await;
         assert_eq!(resp.error_code, 422);
         assert_eq!(resp.error, "BadInput. Error validating encoded payload");
+    }
+
+    #[actix_web::test]
+    async fn test_not_found() {
+        let (_, _, configure) = test_app();
+        let app = test::init_service(App::new().configure(configure)).await;
+        let req = test::TestRequest::post().uri("/invalid").to_request();
+        let resp: HttpError = test::call_and_read_body_json(&app, req).await;
+        assert_eq!(resp.error_code, 404);
+        assert_eq!(resp.error, "Requested endpoint not found")
     }
 
     #[actix_web::test]
@@ -396,5 +438,32 @@ mod tests {
         let body = SearchToken::encode(&public_key, &private_key, time_start, None).unwrap();
         let resp = test::call_and_read_body(&app, req_find(body).to_request()).await;
         assert!(extract_plaintext(resp).is_empty());
+    }
+
+    // TODO For now this test acts as after all cleanup procedure, better make it explicit and more reliable
+    #[actix_web::test]
+    async fn test_delete() {
+        for (public_key, private_key) in &[
+            keys(PUBLIC_KEY_1, PRIVATE_KEY_1),
+            keys(PUBLIC_KEY_2, PRIVATE_KEY_2),
+        ] {
+            let (_, payload_storage, configure) = test_app();
+            let app = test::init_service(App::new().configure(configure)).await;
+            let time_start = Timestamp::now();
+            let encrypted = PayloadBytes::encrypt(
+                public_key,
+                private_key,
+                Timestamp::from_u64(time_start.as_u64()),
+                "foo",
+                None,
+            )
+            .unwrap();
+            let resp = test::call_service(&app, req_set(encrypted.data()).to_request()).await;
+            assert_eq!(resp.status(), 200);
+            let body = DeleteToken::encode(public_key, private_key, time_start).unwrap();
+            test::call_and_read_body(&app, req_delete(body).to_request()).await;
+            let got = items_plaintext(&payload_storage, public_key, private_key).await;
+            assert!(got.is_empty());
+        }
     }
 }

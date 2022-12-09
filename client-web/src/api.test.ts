@@ -22,7 +22,9 @@ describe("API", () => {
     // Get those back
     const got = await API.find(keys)
     const plaintext = got.map((v) => keys.decrypt(v))
-    // Sort order of items with the same timestamp is not defined
-    expect(plaintext.sort()).toEqual(["msg1", "msg2"])
+    expect(plaintext.sort()).toEqual(["msg1", "msg2"]) // Sort order of items with the same timestamp is not defined
+
+    // Delete it all
+    await API.deleteAccount(keys)
   })
 })

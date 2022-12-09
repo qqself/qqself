@@ -3,7 +3,7 @@ use crate::{
     encryption::{
         keys::Keys,
         payload::{PayloadBytes, PayloadError},
-        search_token::{SearchToken, SearchTokenErr},
+        tokens::{DeleteToken, SearchToken, TokenErr},
     },
 };
 use thiserror::Error;
@@ -11,12 +11,12 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum RequestCreateErr {
     #[error("encoding error during request creation {0}")]
-    EncodingError(#[from] SearchTokenErr),
+    EncodingError(#[from] TokenErr),
     #[error("encrypting error during request creation {0}")]
     EncryptingError(#[from] PayloadError),
 }
 
-// Helper struct for creating new requests for sync API. It only creates requests, no IO is performed
+/// Helper struct for creating new requests for sync API. It only creates requests, no IO performed
 #[derive(Debug)]
 pub struct ApiRequest {
     pub url: &'static str,
@@ -25,7 +25,7 @@ pub struct ApiRequest {
 }
 
 impl ApiRequest {
-    // Create new Find request for sync API
+    /// Create new Find request for sync API
     pub fn new_find_request(
         keys: &Keys,
         timestamp_search: Option<Timestamp>,
@@ -43,7 +43,7 @@ impl ApiRequest {
         })
     }
 
-    // Create new Set request for sync API
+    /// Create new Set request for sync API
     pub fn new_set_request(keys: &Keys, plaintext: String) -> Result<Self, RequestCreateErr> {
         let payload = PayloadBytes::encrypt(
             &keys.public_key,
@@ -55,6 +55,16 @@ impl ApiRequest {
         Ok(Self {
             url: "https://api.qqself.com/set",
             payload: payload.data(),
+            content_type: "text/plain",
+        })
+    }
+
+    /// Create new Delete request for sync API
+    pub fn new_delete_request(keys: &Keys) -> Result<Self, RequestCreateErr> {
+        let payload = DeleteToken::encode(&keys.public_key, &keys.private_key, Timestamp::now())?;
+        Ok(Self {
+            url: "https://api.qqself.com/delete",
+            payload,
             content_type: "text/plain",
         })
     }

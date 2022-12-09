@@ -8,58 +8,110 @@ use super::{
 };
 use thiserror::Error;
 
-// Signed search token for retrieving entries from backend services
+/// Signed search token for retrieving entries from backend services
 #[derive(Debug)]
 pub struct SearchToken {
     public_key: PublicKey,
     search_timestamp: Option<Timestamp>,
 }
 
+impl SearchToken {
+    pub fn new_from_encoded(
+        data: String,
+        min_timestamp: Option<Timestamp>,
+    ) -> Result<Self, TokenErr> {
+        let token = Token::new_from_encoded(data, min_timestamp)?;
+        Ok(Self {
+            public_key: token.key,
+            search_timestamp: token.payload,
+        })
+    }
+    pub fn encode(
+        public_key: &PublicKey,
+        private_key: &PrivateKey,
+        timestamp_created: Timestamp,
+        timestamp_search: Option<Timestamp>,
+    ) -> Result<String, TokenErr> {
+        Token::encode(public_key, private_key, timestamp_created, timestamp_search)
+    }
+    pub fn public_key(&self) -> &PublicKey {
+        &self.public_key
+    }
+    pub fn search_timestamp(&self) -> &Option<Timestamp> {
+        &self.search_timestamp
+    }
+}
+
+/// Signed delete token for deleting all entires from backend services
+#[derive(Debug)]
+pub struct DeleteToken {
+    public_key: PublicKey,
+}
+
+impl DeleteToken {
+    pub fn new_from_encoded(data: String) -> Result<Self, TokenErr> {
+        // TODO It's not exactly clean to use Token here as DeleteToken doesn't have any payload
+        let token = Token::new_from_encoded(data, None)?;
+        Ok(Self {
+            public_key: token.key,
+        })
+    }
+    pub fn encode(
+        public_key: &PublicKey,
+        private_key: &PrivateKey,
+        timestamp_created: Timestamp,
+    ) -> Result<String, TokenErr> {
+        Token::encode(public_key, private_key, timestamp_created, None)
+    }
+    pub fn public_key(&self) -> &PublicKey {
+        &self.public_key
+    }
+}
+
 #[derive(Error, Debug, PartialEq, Eq)]
-pub enum SearchTokenErr {
+pub enum TokenErr {
     #[error("Search token validation error. {0}")]
     ValidationError(&'static str),
     #[error("Search token timestamp is too old")]
     TimestampIsTooOld,
 }
 
-impl SearchToken {
+/// Common Token functionality
+struct Token {
+    key: PublicKey,
+    payload: Option<Timestamp>,
+}
+
+impl Token {
     const VERSION: u64 = 1;
 
-    pub fn new_from_encoded(
-        data: String,
-        min_timestamp: Option<Timestamp>,
-    ) -> Result<Self, SearchTokenErr> {
-        let encoded = BinaryToText::new_from_encoded(data).ok_or(
-            SearchTokenErr::ValidationError("Failed to validate encoded data"),
-        )?;
+    fn new_from_encoded(data: String, min_timestamp: Option<Timestamp>) -> Result<Self, TokenErr> {
+        let encoded = BinaryToText::new_from_encoded(data)
+            .ok_or(TokenErr::ValidationError("Failed to validate encoded data"))?;
         let decoded = encoded
             .decoded()
-            .ok_or(SearchTokenErr::ValidationError("Failed to decode data"))?;
-        let bytes = SearchTokenBinary::from_bytes(&decoded).ok_or(
-            SearchTokenErr::ValidationError("Failed to read binary data"),
-        )?;
-        if bytes.version != SearchToken::VERSION {
-            return Err(SearchTokenErr::ValidationError(
-                "Cannot handle such version",
-            ));
+            .ok_or(TokenErr::ValidationError("Failed to decode data"))?;
+        let bytes = TokenBinary::from_bytes(&decoded)
+            .ok_or(TokenErr::ValidationError("Failed to read binary data"))?;
+        if bytes.version != Token::VERSION {
+            return Err(TokenErr::ValidationError("Cannot handle such version"));
         }
         // Timestamp if we check for it
         if let Some(min_timestamp) = min_timestamp {
             if bytes.timestamp_created < min_timestamp.as_u64() {
-                return Err(SearchTokenErr::TimestampIsTooOld);
+                return Err(TokenErr::TimestampIsTooOld);
             }
         }
         // Validate public key
         let public_key_str = std::str::from_utf8(bytes.public_key)
-            .map_err(|_| SearchTokenErr::ValidationError("Public key string error"))?;
+            .map_err(|_| TokenErr::ValidationError("Public key string error"))?;
         let public_key_data = BinaryToText::new_from_encoded(public_key_str.to_string())
-            .ok_or(SearchTokenErr::ValidationError("Public key encoding error"))?;
+            .ok_or(TokenErr::ValidationError("Public key encoding error"))?;
         let public_key = PublicKey::new(public_key_data)
-            .map_err(|_| SearchTokenErr::ValidationError("Public key validation error"))?;
+            .map_err(|_| TokenErr::ValidationError("Public key validation error"))?;
         // Hash and RSA verify
         if Rsa::verify_signature(&public_key, bytes.signature, &bytes.hash).is_none() {
-            return Err(SearchTokenErr::ValidationError(
+            return Err(TokenErr::ValidationError(
                 "Payload signature validation failed",
             ));
         }
@@ -68,36 +120,26 @@ impl SearchToken {
         } else {
             Some(Timestamp::from_u64(bytes.timestamp_search))
         };
-        Ok(SearchToken {
-            public_key,
-            search_timestamp,
+        Ok(Token {
+            key: public_key,
+            payload: search_timestamp,
         })
     }
 
-    pub fn public_key(&self) -> &PublicKey {
-        &self.public_key
-    }
-
-    pub fn search_timestamp(&self) -> &Option<Timestamp> {
-        &self.search_timestamp
-    }
-
-    pub fn encode(
+    fn encode(
         public_key: &PublicKey,
         private_key: &PrivateKey,
         timestamp_created: Timestamp,
         timestamp_search: Option<Timestamp>,
-    ) -> Result<String, SearchTokenErr> {
-        let data = SearchTokenBinary::to_bytes(
+    ) -> Result<String, TokenErr> {
+        let data = TokenBinary::to_bytes(
             private_key,
             public_key,
-            SearchToken::VERSION,
+            Token::VERSION,
             timestamp_created.as_u64(),
             timestamp_search.unwrap_or_default().as_u64(),
         )
-        .ok_or(SearchTokenErr::ValidationError(
-            "Failed encoding a search token",
-        ))?;
+        .ok_or(TokenErr::ValidationError("Failed encoding a search token"))?;
         Ok(BinaryToText::new(&data).encoded())
     }
 }
@@ -110,7 +152,7 @@ impl SearchToken {
 [PUBLIC_KEY]         Dynamic size
 [SIGNATURE]          Dynamic size, rest of bytes
 */
-struct SearchTokenBinary<'a> {
+struct TokenBinary<'a> {
     version: u64,
     timestamp_created: u64,
     timestamp_search: u64,
@@ -121,22 +163,22 @@ struct SearchTokenBinary<'a> {
 
 // TODO There is a bit of repetition with PayloadBinary. Although formats are
 //      different maybe we can extract some common functions from both of those?
-impl<'a> SearchTokenBinary<'a> {
+impl<'a> TokenBinary<'a> {
     fn from_bytes(data: &'a [u8]) -> Option<Self> {
         // Read fixed size lengths first
-        let (version, idx) = SearchTokenBinary::read_u64(data, 0)?;
-        let (timestamp_created, idx) = SearchTokenBinary::read_u64(data, idx)?;
-        let (timestamp_search, idx) = SearchTokenBinary::read_u64(data, idx)?;
-        let (public_key_len, idx) = SearchTokenBinary::read_u64(data, idx)?;
+        let (version, idx) = TokenBinary::read_u64(data, 0)?;
+        let (timestamp_created, idx) = TokenBinary::read_u64(data, idx)?;
+        let (timestamp_search, idx) = TokenBinary::read_u64(data, idx)?;
+        let (public_key_len, idx) = TokenBinary::read_u64(data, idx)?;
         // Rest of the payload with dynamic sizes
-        let (public_key, idx) = SearchTokenBinary::read_bytes(data, idx, public_key_len)?;
+        let (public_key, idx) = TokenBinary::read_bytes(data, idx, public_key_len)?;
         let all_but_signature = &data[..idx];
         let hash = StableHash::hash_bytes(all_but_signature);
         let signature = &data[idx..];
         if signature.is_empty() {
             return None;
         }
-        Some(SearchTokenBinary {
+        Some(TokenBinary {
             version,
             timestamp_created,
             timestamp_search,
@@ -172,7 +214,7 @@ impl<'a> SearchTokenBinary<'a> {
     }
 
     fn read_u64(data: &'a [u8], idx: usize) -> Option<(u64, usize)> {
-        let (data, idx) = SearchTokenBinary::read_bytes(data, idx, 8)?;
+        let (data, idx) = TokenBinary::read_bytes(data, idx, 8)?;
         let u64_bytes: [u8; 8] = data.try_into().expect("read 8 bytes");
         Some((u64::from_le_bytes(u64_bytes), idx))
     }
@@ -232,7 +274,7 @@ mod tests {
         let decoded = SearchToken::new_from_encoded("AAABBCBABCBABCBA".to_string(), None);
         assert_eq!(
             decoded.unwrap_err(),
-            SearchTokenErr::ValidationError("Failed to read binary data")
+            TokenErr::ValidationError("Failed to read binary data")
         );
 
         // Too old token
@@ -248,7 +290,7 @@ mod tests {
         .unwrap();
         let decoded =
             SearchToken::new_from_encoded(encoded.clone(), Some(Timestamp::from_u64(300)));
-        assert_eq!(decoded.unwrap_err(), SearchTokenErr::TimestampIsTooOld);
+        assert_eq!(decoded.unwrap_err(), TokenErr::TimestampIsTooOld);
 
         // Broken signature
         let mut bad_data = encoded;
@@ -257,7 +299,7 @@ mod tests {
         let decoded = SearchToken::new_from_encoded(bad_data, None);
         assert_eq!(
             decoded.unwrap_err(),
-            SearchTokenErr::ValidationError("Payload signature validation failed")
+            TokenErr::ValidationError("Payload signature validation failed")
         )
     }
 }

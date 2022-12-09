@@ -17,7 +17,7 @@ const http = async (req: Request): Promise<Response> => {
   })
   if (resp.status != 200) {
     const err: ApiError = await resp.json()
-    throw new Error("API find error: " + err.error)
+    throw new Error("API error: " + err.error)
   }
   return resp
 }
@@ -38,4 +38,9 @@ export const find = async (keys: Keys): Promise<string[]> => {
     return [] // Find returned no lines
   }
   return lines.split("\n").filter((v) => v) // Filter out empty line
+}
+
+// Call Delete sync API endpoint
+export const deleteAccount = async (keys: Keys): Promise<void> => {
+  await http(API.createApiDeleteRequest(keys))
 }
