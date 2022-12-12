@@ -60,13 +60,13 @@ impl Display for Token {
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Char {
     Any,
+    AnyNonSeparator,
     Colon,
     Dash,
     Digit,
     Dot,
     Eq,
-    LowercaseDigit,
-    LowercaseDigitColon,
+    LowercaseOrDigit,
     Quote,
     Space,
     Uppercase,
@@ -76,16 +76,16 @@ impl Display for Char {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
             Char::Any => "any letter",
+            Char::AnyNonSeparator => "anything non space or dot",
             Char::Colon => "colon",
             Char::Dash => "dash",
             Char::Digit => "digit",
             Char::Dot => "dot",
             Char::Eq => "equal",
-            Char::LowercaseDigit => "lowercase letter or digit",
+            Char::LowercaseOrDigit => "lowercase letter or digit",
             Char::Quote => "quote",
             Char::Space => "space",
             Char::Uppercase => "uppercase letter",
-            Char::LowercaseDigitColon => "lowercase letter or digit or colon",
         })
     }
 }
@@ -94,16 +94,16 @@ impl Char {
     fn matches(&self, c: &char) -> bool {
         match self {
             Char::Any => true,
+            Char::AnyNonSeparator => !c.is_whitespace() && *c != '.',
             Char::Colon => *c == ':',
             Char::Dash => *c == '-',
             Char::Digit => c.is_ascii_digit(),
             Char::Dot => *c == '.',
             Char::Eq => *c == '=',
-            Char::LowercaseDigit => c.is_lowercase() || c.is_ascii_digit(),
+            Char::LowercaseOrDigit => c.is_lowercase() || c.is_ascii_digit(),
             Char::Quote => *c == '"',
             Char::Space => c.is_ascii_whitespace(),
             Char::Uppercase => c.is_uppercase(),
-            Char::LowercaseDigitColon => c.is_lowercase() || c.is_ascii_digit() || *c == ':',
         }
     }
 }
@@ -178,7 +178,10 @@ impl<'a> Tokenizer<'a> {
         // If first case we would read [SPACE][DASH][SPACE][DATE][SPACE][TIME], in second [SPACE][TIME]
         self.read_one(Token::Space, Char::Space)?;
         match self.read(Token::DateSeparator, Char::Dash, 1..1, false) {
-            Ok(_) => self.tokenize_datetime(),
+            Ok(_) => {
+                self.read_one(Token::Space, Char::Space)?;
+                self.tokenize_datetime()
+            }
             Err(TokenizingResult::EndOfLine(_)) => {
                 Err(TokenizingResult::DateOrTimeExpected(self.tokens.len()))
             }
@@ -193,12 +196,13 @@ impl<'a> Tokenizer<'a> {
 
     fn tokenize_datetime(&mut self) -> Result<(), TokenizingResult> {
         self.tokenize_date()?;
+        self.read_one(Token::Space, Char::Space)?;
         self.tokenize_time()
     }
 
-    /// Tokenize date in format: [SPACE]*[DIGIT]{4}[DASH]{1}[DIGIT]{2}[DASH]{1}[DIGIT]{2}
+    /// Tokenize date in format: [DIGIT]{4}[DASH]{1}[DIGIT]{2}[DASH]{1}[DIGIT]{2}
     fn tokenize_date(&mut self) -> Result<(), TokenizingResult> {
-        self.read(Token::Date, Char::Digit, 4..4, true)?;
+        self.read(Token::Date, Char::Digit, 4..4, false)?;
         self.read_one(Token::DateSeparator, Char::Dash)?;
         self.read(Token::Date, Char::Digit, 2..2, false)?;
         self.read_one(Token::DateSeparator, Char::Dash)?;
@@ -206,9 +210,9 @@ impl<'a> Tokenizer<'a> {
         Ok(())
     }
 
-    /// Tokenize time in format: [SPACE]*[DIGIT]{2}[SEMICOLON]{1}[DIGIT]{2}
+    /// Tokenize time in format: [DIGIT]{2}[COLON]{1}[DIGIT]{2}
     fn tokenize_time(&mut self) -> Result<(), TokenizingResult> {
-        self.read(Token::Time, Char::Digit, 2..2, true)?;
+        self.read(Token::Time, Char::Digit, 2..2, false)?;
         self.read_one(Token::TimeSeparator, Char::Colon)?;
         self.read(Token::Time, Char::Digit, 2..2, false)?;
         Ok(())
@@ -230,7 +234,7 @@ impl<'a> Tokenizer<'a> {
     }
 
     fn tokenize_tag(&mut self) -> Result<Option<()>, TokenizingResult> {
-        match self.read(Token::TagName, Char::LowercaseDigit, 1..usize::MAX, true) {
+        match self.read(Token::TagName, Char::LowercaseOrDigit, 1..usize::MAX, true) {
             Ok(read) => {
                 if read > 0 {
                     self.expected_next = vec![Token::TagName];
@@ -274,7 +278,7 @@ impl<'a> Tokenizer<'a> {
         }
         match self.read(
             Token::PropertyName,
-            Char::LowercaseDigit,
+            Char::LowercaseOrDigit,
             1..usize::MAX,
             true,
         ) {
@@ -296,7 +300,7 @@ impl<'a> Tokenizer<'a> {
             // Property value is expected when operator was used
             return Err(TokenizingResult::Expected(
                 Token::PropertyValue,
-                Char::LowercaseDigit,
+                Char::AnyNonSeparator,
                 self.tokens.len(),
             ));
         }
@@ -351,7 +355,7 @@ impl<'a> Tokenizer<'a> {
         // Normal property value, read as is
         match self.read(
             Token::PropertyValue,
-            Char::LowercaseDigitColon,
+            Char::AnyNonSeparator,
             1..usize::MAX,
             true,
         ) {
@@ -458,9 +462,9 @@ mod tests {
             ),
             (
                 " ",
-                vec![s],
+                vec![],
                 vec![Token::Date],
-                Some(TokenizingError::Expected(Token::Date, Char::Digit, 1)),
+                Some(TokenizingError::Expected(Token::Date, Char::Digit, 0)),
             ),
             (
                 "202",
@@ -523,12 +527,12 @@ mod tests {
                 vec![Token::Date],
                 Some(TokenizingError::Expected(Token::Date, Char::Digit, 20)),
             ),
-            // (
-            //     " 2022-01-02 23:11 - 2", // TODO Date formats should be strict with no spaces allowed
-            //     vec![s],
-            //     vec![Token::Date],
-            //     Some(TokenizingError::Expected(Token::Date, Char::Digit, 0)),
-            // ),
+            (
+                " 2022", // Dates are strict and no extra spaces are allowed
+                vec![],
+                vec![Token::Date],
+                Some(TokenizingError::Expected(Token::Date, Char::Digit, 0)),
+            ),
         ];
         for (input, tokens, next, error) in cases {
             let got = Tokenizer::new(input, true);
@@ -617,7 +621,7 @@ mod tests {
                 vec![Token::PropertyValue],
                 Some(TokenizingError::Expected(
                     Token::PropertyValue,
-                    Char::LowercaseDigit,
+                    Char::AnyNonSeparator,
                     27,
                 )),
             ),
@@ -691,18 +695,24 @@ mod tests {
                 vec![Token::Comment],
                 None,
             ),
+            (
+                "aa. bb pp=🧠. Ccc",
+                vec![tn, tn, ts, s, tn, tn, s, pn, pn, po, pv, ts, s, c, c, c],
+                vec![Token::Comment],
+                None,
+            ),
         ];
         for (input, tokens, next, error) in cases {
             let input = format!("{datetime_prefix}{input}");
             let got = Tokenizer::new(&input, true);
-            assert_eq!(got.error, error, "wrong error, input {input}");
-            assert_eq!(got.expected_next, next, "wrong next, input {input}");
             let (date_tokens, tags_tokens) = got.tokens.split_at(datetime_tokens.len());
             assert_eq!(
                 date_tokens, datetime_tokens,
                 "wrong date tokens, input {input}"
             );
             assert_eq!(tags_tokens, tokens, "wrong tokens, input {input}");
+            assert_eq!(got.error, error, "wrong error, input {input}");
+            assert_eq!(got.expected_next, next, "wrong next, input {input}");
         }
     }
 }
