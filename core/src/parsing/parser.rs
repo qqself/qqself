@@ -335,6 +335,18 @@ mod tests {
                     )],
                 ),
             ),
+            (
+                // Property values as emoji
+                "2000-01-01 01:01 01:01 aa. bb pp=🧠. Ccc",
+                Entry::new(
+                    dr(1, 1),
+                    Some("Ccc".to_string()),
+                    vec![
+                        tag("aa", vec![]),
+                        tag("bb", vec![prop("pp", PropVal::String("🧠".to_string()))]),
+                    ],
+                ),
+            ),
         ];
         for (input, want) in cases {
             let mut parser = Parser::new(input);
