@@ -14,7 +14,7 @@ log = "0.4.17"
 qqself-core = { path = "../core", features = ["serde"] }
 serde = { version="1.0.144", features = ["derive"] }
 tempdir = "0.3.7"
-tokio = { version = "1.20.1", features = ["rt", "macros", "time"] }
+tokio = { version = "1.24.2", features = ["rt", "macros", "time"] }
 thiserror = "1.0.35"
 # storage-dynamodb
 aws-config = { version = "0.51.0", optional = true }
