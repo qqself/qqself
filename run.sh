@@ -22,8 +22,8 @@ usage() {
 
 # Unpack vendored dependencies or install things that we didn't vendor yet
 deps() {
-  (cd client-web && yarn install --offline) 
-  # TODO Vendor wasm-pack
+  cargo fetch
+  (cd client-web && yarn install) 
   curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 }
 
