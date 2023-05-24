@@ -5,7 +5,8 @@
     "watch": "rsw watch",
     "build": "wasm-pack build core --out-dir pkg --target web --release && tsc --noEmit && vite build",
     "test": "wasm-pack build core --out-dir pkg --target nodejs --release && jest",
-    "format": "prettier --write 'src/**/*.ts'"
+    "format": "prettier --write 'src/**/*.ts'",
+    "format:check": "prettier --check 'src/**/*.ts'"
   },
   "dependencies": {
     "lit": "^2.4.0"

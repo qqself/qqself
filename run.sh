@@ -30,7 +30,7 @@ deps() {
 # Builds everything
 build() {
   log "Building all Rust projects"
-  cargo build --release --all-features --frozen
+  cargo build --release --all-features
   log "Building client-web - core"
   (cd client-web && yarn build)
 }
@@ -38,7 +38,7 @@ build() {
 # Run all the tests
 test() {
   log "Testing all Rust projects"
-  cargo test --release --frozen
+  cargo test --release
 
   log "Testing WebAssembly"
   (cd core && wasm-pack test --release --node --features wasm)
@@ -52,7 +52,7 @@ lint() {
   log "Linting all the Rust projects"
   cargo clippy --release --all-targets --all-features -- -D warnings
   log "Linting all TypeScript projects"
-  (cd client-web && $(npm bin)/prettier --check "src/**/*.ts")
+  (cd client-web && yarn format:check)
 }
 
 # Build a new Docker container and push to the registry
