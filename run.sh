@@ -22,15 +22,15 @@ usage() {
 
 # Unpack vendored dependencies or install things that we didn't vendor yet
 deps() {
-  (cd client-web && yarn install --offline) 
-  # TODO Vendor wasm-pack
+  cargo fetch
+  (cd client-web && yarn install) 
   curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 }
 
 # Builds everything
 build() {
   log "Building all Rust projects"
-  cargo build --release --all-features --frozen
+  cargo build --release --all-features
   log "Building client-web - core"
   (cd client-web && yarn build)
 }
@@ -38,7 +38,7 @@ build() {
 # Run all the tests
 test() {
   log "Testing all Rust projects"
-  cargo test --release --frozen
+  cargo test --release
 
   log "Testing WebAssembly"
   (cd core && wasm-pack test --release --node --features wasm)
@@ -52,7 +52,7 @@ lint() {
   log "Linting all the Rust projects"
   cargo clippy --release --all-targets --all-features -- -D warnings
   log "Linting all TypeScript projects"
-  (cd client-web && $(npm bin)/prettier --check "src/**/*.ts")
+  (cd client-web && yarn format:check)
 }
 
 # Build a new Docker container and push to the registry

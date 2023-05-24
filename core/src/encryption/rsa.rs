@@ -1,7 +1,7 @@
 use aes_gcm::aead::OsRng;
 use rsa::{
     pkcs8::{DecodePrivateKey, DecodePublicKey, EncodePrivateKey, EncodePublicKey, LineEnding},
-    PaddingScheme, RsaPrivateKey, RsaPublicKey,
+    RsaPrivateKey, RsaPublicKey, Pkcs1v15Encrypt, Pkcs1v15Sign,
 };
 
 use crate::binary_text::BinaryToText;
@@ -39,7 +39,7 @@ impl Rsa {
         let private_key = private_key.decoded()?;
         let private_key = RsaPrivateKey::from_pkcs8_pem(&private_key).ok()?;
         private_key
-            .decrypt(PaddingScheme::PKCS1v15Encrypt, payload)
+            .decrypt(Pkcs1v15Encrypt, payload)
             .ok()
     }
 
@@ -49,10 +49,10 @@ impl Rsa {
         }
         let public_key = public_key.decoded()?;
         let public_key = RsaPublicKey::from_public_key_pem(&public_key).ok()?;
-        rsa::PublicKey::encrypt(
+        rsa::RsaPublicKey::encrypt(
             &public_key,
             &mut OsRng,
-            PaddingScheme::PKCS1v15Encrypt,
+            Pkcs1v15Encrypt,
             payload,
         )
         .ok()
@@ -63,7 +63,7 @@ impl Rsa {
         let private_key = RsaPrivateKey::from_pkcs8_pem(&private_key).ok()?;
         let signature = private_key
             .sign(
-                PaddingScheme::PKCS1v15Sign { hash: None },
+                Pkcs1v15Sign::new_unprefixed(),
                 &digest.as_bytes(),
             )
             .ok()?;
@@ -82,9 +82,9 @@ impl Rsa {
     ) -> Option<()> {
         let public_key = public_key.decoded()?;
         let public_key = RsaPublicKey::from_public_key_pem(&public_key).ok()?;
-        rsa::PublicKey::verify(
+        rsa::RsaPublicKey::verify(
             &public_key,
-            PaddingScheme::PKCS1v15Sign { hash: None },
+            Pkcs1v15Sign::new_unprefixed(),
             &expected_hash.as_bytes(),
             signature,
         )
