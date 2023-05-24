@@ -1,132 +1,17 @@
 //! ASN.1 `INTEGER` support.
 
-pub(super) mod bigint;
-mod int;
-mod uint;
+pub(super) mod int;
+pub(super) mod uint;
 
-use crate::{
-    asn1::Any, ByteSlice, DecodeValue, Decoder, EncodeValue, Encoder, Error, FixedTag, Length,
-    Result, Tag, ValueOrd,
-};
 use core::{cmp::Ordering, mem};
 
-macro_rules! impl_int_encoding {
-    ($($int:ty => $uint:ty),+) => {
-        $(
-            impl<'a> DecodeValue<'a> for $int {
-                fn decode_value(decoder: &mut Decoder<'a>, length: Length) -> Result<Self> {
-                    let bytes = ByteSlice::decode_value(decoder, length)?.as_bytes();
+use crate::{EncodeValue, Result, SliceWriter};
 
-                    let result = if is_highest_bit_set(bytes) {
-                        <$uint>::from_be_bytes(int::decode_to_array(bytes)?) as $int
-                    } else {
-                        Self::from_be_bytes(uint::decode_to_array(bytes)?)
-                    };
-
-                    // Ensure we compute the same encoded length as the original any value
-                    if length != result.value_len()? {
-                        return Err(Self::TAG.non_canonical_error());
-                    }
-
-                    Ok(result)
-                }
-            }
-
-            impl EncodeValue for $int {
-                fn value_len(&self) -> Result<Length> {
-                    if *self < 0 {
-                        int::encoded_len(&(*self as $uint).to_be_bytes())
-                    } else {
-                        uint::encoded_len(&self.to_be_bytes())
-                    }
-                }
-
-                fn encode_value(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-                    if *self < 0 {
-                        int::encode_bytes(encoder, &(*self as $uint).to_be_bytes())
-                    } else {
-                        uint::encode_bytes(encoder, &self.to_be_bytes())
-                    }
-                }
-            }
-
-            impl FixedTag for $int {
-                const TAG: Tag = Tag::Integer;
-            }
-
-            impl ValueOrd for $int {
-                fn value_cmp(&self, other: &Self) -> Result<Ordering> {
-                    value_cmp(*self, *other)
-                }
-            }
-
-            impl TryFrom<Any<'_>> for $int {
-                type Error = Error;
-
-                fn try_from(any: Any<'_>) -> Result<Self> {
-                    any.decode_into()
-                }
-            }
-        )+
-    };
-}
-
-macro_rules! impl_uint_encoding {
-    ($($uint:ty),+) => {
-        $(
-            impl<'a> DecodeValue<'a> for $uint {
-                fn decode_value(decoder: &mut Decoder<'a>, length: Length) -> Result<Self> {
-                    let bytes = ByteSlice::decode_value(decoder, length)?.as_bytes();
-                    let result = Self::from_be_bytes(uint::decode_to_array(bytes)?);
-
-                    // Ensure we compute the same encoded length as the original any value
-                    if length != result.value_len()? {
-                        return Err(Self::TAG.non_canonical_error());
-                    }
-
-                    Ok(result)
-                }
-            }
-
-            impl EncodeValue for $uint {
-                fn value_len(&self) -> Result<Length> {
-                    uint::encoded_len(&self.to_be_bytes())
-                }
-
-                fn encode_value(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-                    uint::encode_bytes(encoder, &self.to_be_bytes())
-                }
-            }
-
-            impl FixedTag for $uint {
-                const TAG: Tag = Tag::Integer;
-            }
-
-            impl ValueOrd for $uint {
-                fn value_cmp(&self, other: &Self) -> Result<Ordering> {
-                    value_cmp(*self, *other)
-                }
-            }
-
-            impl TryFrom<Any<'_>> for $uint {
-                type Error = Error;
-
-                fn try_from(any: Any<'_>) -> Result<Self> {
-                    any.decode_into()
-                }
-            }
-        )+
-    };
-}
-
-impl_int_encoding!(i8 => u8, i16 => u16, i32 => u32, i64 => u64, i128 => u128);
-impl_uint_encoding!(u8, u16, u32, u64, u128);
-
-/// Is the highest bit of the first byte in the slice 1? (if present)
+/// Is the highest bit of the first byte in the slice set to `1`? (if present)
 #[inline]
 fn is_highest_bit_set(bytes: &[u8]) -> bool {
     bytes
-        .get(0)
+        .first()
         .map(|byte| byte & 0b10000000 != 0)
         .unwrap_or(false)
 }
@@ -140,11 +25,11 @@ where
     debug_assert!(mem::size_of::<T>() <= MAX_INT_SIZE);
 
     let mut buf1 = [0u8; MAX_INT_SIZE];
-    let mut encoder1 = Encoder::new(&mut buf1);
+    let mut encoder1 = SliceWriter::new(&mut buf1);
     a.encode_value(&mut encoder1)?;
 
     let mut buf2 = [0u8; MAX_INT_SIZE];
-    let mut encoder2 = Encoder::new(&mut buf2);
+    let mut encoder2 = SliceWriter::new(&mut buf2);
     b.encode_value(&mut encoder2)?;
 
     Ok(encoder1.finish()?.cmp(encoder2.finish()?))
@@ -152,7 +37,7 @@ where
 
 #[cfg(test)]
 pub(crate) mod tests {
-    use crate::{Decodable, Encodable};
+    use crate::{Decode, Encode};
 
     // Vectors from Section 5.7 of:
     // https://luca.ntop.org/Teaching/Appunti/asn1.html

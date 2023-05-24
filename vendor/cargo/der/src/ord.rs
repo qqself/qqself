@@ -1,7 +1,7 @@
 //! Ordering trait.
 
 use crate::{EncodeValue, Result, Tagged};
-use core::cmp::Ordering;
+use core::{cmp::Ordering, marker::PhantomData};
 
 /// DER ordering trait.
 ///
@@ -49,5 +49,37 @@ where
 {
     fn value_cmp(&self, other: &Self) -> Result<Ordering> {
         Ok(self.cmp(other))
+    }
+}
+
+/// Compare the order of two iterators using [`DerCmp`] on the values.
+pub(crate) fn iter_cmp<'a, I, T: 'a>(a: I, b: I) -> Result<Ordering>
+where
+    I: Iterator<Item = &'a T> + ExactSizeIterator,
+    T: DerOrd,
+{
+    let length_ord = a.len().cmp(&b.len());
+
+    for (value1, value2) in a.zip(b) {
+        match value1.der_cmp(value2)? {
+            Ordering::Equal => (),
+            other => return Ok(other),
+        }
+    }
+
+    Ok(length_ord)
+}
+
+/// Provide a no-op implementation for PhantomData
+impl<T> ValueOrd for PhantomData<T> {
+    fn value_cmp(&self, _other: &Self) -> Result<Ordering> {
+        Ok(Ordering::Equal)
+    }
+}
+
+/// Provide a no-op implementation for PhantomData
+impl<T> DerOrd for PhantomData<T> {
+    fn der_cmp(&self, _other: &Self) -> Result<Ordering> {
+        Ok(Ordering::Equal)
     }
 }

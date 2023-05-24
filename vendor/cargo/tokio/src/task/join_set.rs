@@ -120,6 +120,10 @@ impl<T: 'static> JoinSet<T> {
     /// Spawn the provided task on the `JoinSet`, returning an [`AbortHandle`]
     /// that can be used to remotely cancel the task.
     ///
+    /// The provided future will start running in the background immediately
+    /// when this method is called, even if you don't await anything on this
+    /// `JoinSet`.
+    ///
     /// # Panics
     ///
     /// This method panics if called outside of a Tokio runtime.
@@ -139,6 +143,10 @@ impl<T: 'static> JoinSet<T> {
     /// `JoinSet` returning an [`AbortHandle`] that can be used to remotely
     /// cancel the task.
     ///
+    /// The provided future will start running in the background immediately
+    /// when this method is called, even if you don't await anything on this
+    /// `JoinSet`.
+    ///
     /// [`AbortHandle`]: crate::task::AbortHandle
     #[track_caller]
     pub fn spawn_on<F>(&mut self, task: F, handle: &Handle) -> AbortHandle
@@ -153,6 +161,10 @@ impl<T: 'static> JoinSet<T> {
     /// Spawn the provided task on the current [`LocalSet`] and store it in this
     /// `JoinSet`, returning an [`AbortHandle`] that can be used to remotely
     /// cancel the task.
+    ///
+    /// The provided future will start running in the background immediately
+    /// when this method is called, even if you don't await anything on this
+    /// `JoinSet`.
     ///
     /// # Panics
     ///
@@ -173,8 +185,13 @@ impl<T: 'static> JoinSet<T> {
     /// this `JoinSet`, returning an [`AbortHandle`] that can be used to
     /// remotely cancel the task.
     ///
+    /// Unlike the [`spawn_local`] method, this method may be used to spawn local
+    /// tasks on a `LocalSet` that is _not_ currently running. The provided
+    /// future will start running whenever the `LocalSet` is next started.
+    ///
     /// [`LocalSet`]: crate::task::LocalSet
     /// [`AbortHandle`]: crate::task::AbortHandle
+    /// [`spawn_local`]: Self::spawn_local
     #[track_caller]
     pub fn spawn_local_on<F>(&mut self, task: F, local_set: &LocalSet) -> AbortHandle
     where
@@ -182,6 +199,67 @@ impl<T: 'static> JoinSet<T> {
         F: 'static,
     {
         self.insert(local_set.spawn_local(task))
+    }
+
+    /// Spawn the blocking code on the blocking threadpool and store
+    /// it in this `JoinSet`, returning an [`AbortHandle`] that can be
+    /// used to remotely cancel the task.
+    ///
+    /// # Examples
+    ///
+    /// Spawn multiple blocking tasks and wait for them.
+    ///
+    /// ```
+    /// use tokio::task::JoinSet;
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let mut set = JoinSet::new();
+    ///
+    ///     for i in 0..10 {
+    ///         set.spawn_blocking(move || { i });
+    ///     }
+    ///
+    ///     let mut seen = [false; 10];
+    ///     while let Some(res) = set.join_next().await {
+    ///         let idx = res.unwrap();
+    ///         seen[idx] = true;
+    ///     }
+    ///
+    ///     for i in 0..10 {
+    ///         assert!(seen[i]);
+    ///     }
+    /// }
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// This method panics if called outside of a Tokio runtime.
+    ///
+    /// [`AbortHandle`]: crate::task::AbortHandle
+    #[track_caller]
+    pub fn spawn_blocking<F>(&mut self, f: F) -> AbortHandle
+    where
+        F: FnOnce() -> T,
+        F: Send + 'static,
+        T: Send,
+    {
+        self.insert(crate::runtime::spawn_blocking(f))
+    }
+
+    /// Spawn the blocking code on the blocking threadpool of the
+    /// provided runtime and store it in this `JoinSet`, returning an
+    /// [`AbortHandle`] that can be used to remotely cancel the task.
+    ///
+    /// [`AbortHandle`]: crate::task::AbortHandle
+    #[track_caller]
+    pub fn spawn_blocking_on<F>(&mut self, f: F, handle: &Handle) -> AbortHandle
+    where
+        F: FnOnce() -> T,
+        F: Send + 'static,
+        T: Send,
+    {
+        self.insert(handle.spawn_blocking(f))
     }
 
     fn insert(&mut self, jh: JoinHandle<T>) -> AbortHandle {

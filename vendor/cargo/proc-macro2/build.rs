@@ -43,14 +43,15 @@
 use std::env;
 use std::process::{self, Command};
 use std::str;
+use std::u32;
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
 
-    let version = match rustc_version() {
-        Some(version) => version,
-        None => return,
-    };
+    let version = rustc_version().unwrap_or(RustcVersion {
+        minor: u32::MAX,
+        nightly: false,
+    });
 
     if version.minor < 31 {
         eprintln!("Minimum supported rustc version is 1.31");
@@ -70,6 +71,10 @@ fn main() {
 
     if version.minor < 32 {
         println!("cargo:rustc-cfg=no_libprocmacro_unwind_safe");
+    }
+
+    if version.minor < 34 {
+        println!("cargo:rustc-cfg=no_try_from");
     }
 
     if version.minor < 39 {
@@ -98,6 +103,10 @@ fn main() {
 
     if version.minor < 57 {
         println!("cargo:rustc-cfg=no_is_available");
+    }
+
+    if version.minor < 66 {
+        println!("cargo:rustc-cfg=no_source_text");
     }
 
     let target = env::var("TARGET").unwrap();

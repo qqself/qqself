@@ -1,15 +1,18 @@
 //! ASN.1 `GeneralizedTime` support.
+#![cfg_attr(feature = "arbitrary", allow(clippy::integer_arithmetic))]
 
 use crate::{
-    asn1::Any,
     datetime::{self, DateTime},
-    ByteSlice, DecodeValue, Decoder, EncodeValue, Encoder, Error, FixedTag, Length, OrdIsValueOrd,
-    Result, Tag,
+    ord::OrdIsValueOrd,
+    DecodeValue, EncodeValue, ErrorKind, FixedTag, Header, Length, Reader, Result, Tag, Writer,
 };
 use core::time::Duration;
 
 #[cfg(feature = "std")]
-use std::time::SystemTime;
+use {
+    crate::{asn1::AnyRef, Error},
+    std::time::SystemTime,
+};
 
 #[cfg(feature = "time")]
 use time::PrimitiveDateTime;
@@ -25,15 +28,16 @@ use time::PrimitiveDateTime;
 /// > is zero.  GeneralizedTime values MUST NOT include fractional seconds.
 ///
 /// [1]: https://tools.ietf.org/html/rfc5280#section-4.1.2.5.2
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub struct GeneralizedTime(DateTime);
 
 impl GeneralizedTime {
     /// Length of an RFC 5280-flavored ASN.1 DER-encoded [`GeneralizedTime`].
-    pub const LENGTH: Length = Length::new(15);
+    const LENGTH: usize = 15;
 
     /// Create a [`GeneralizedTime`] from a [`DateTime`].
-    pub fn from_date_time(datetime: DateTime) -> Self {
+    pub const fn from_date_time(datetime: DateTime) -> Self {
         Self(datetime)
     }
 
@@ -57,7 +61,6 @@ impl GeneralizedTime {
 
     /// Instantiate from [`SystemTime`].
     #[cfg(feature = "std")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     pub fn from_system_time(time: SystemTime) -> Result<Self> {
         DateTime::try_from(time)
             .map(Into::into)
@@ -66,19 +69,31 @@ impl GeneralizedTime {
 
     /// Convert to [`SystemTime`].
     #[cfg(feature = "std")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     pub fn to_system_time(&self) -> SystemTime {
         self.0.to_system_time()
     }
 }
 
-impl DecodeValue<'_> for GeneralizedTime {
-    fn decode_value(decoder: &mut Decoder<'_>, length: Length) -> Result<Self> {
-        match *ByteSlice::decode_value(decoder, length)?.as_bytes() {
+impl_any_conversions!(GeneralizedTime);
+
+impl<'a> DecodeValue<'a> for GeneralizedTime {
+    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+        if Self::LENGTH != usize::try_from(header.length)? {
+            return Err(Self::TAG.value_error());
+        }
+
+        let mut bytes = [0u8; Self::LENGTH];
+        reader.read_into(&mut bytes)?;
+
+        match bytes {
             // RFC 5280 requires mandatory seconds and Z-normalized time zone
             [y1, y2, y3, y4, mon1, mon2, day1, day2, hour1, hour2, min1, min2, sec1, sec2, b'Z'] => {
-                let year = datetime::decode_decimal(Self::TAG, y1, y2)? as u16 * 100
-                    + datetime::decode_decimal(Self::TAG, y3, y4)? as u16;
+                let year = u16::from(datetime::decode_decimal(Self::TAG, y1, y2)?)
+                    .checked_mul(100)
+                    .and_then(|y| {
+                        y.checked_add(datetime::decode_decimal(Self::TAG, y3, y4).ok()?.into())
+                    })
+                    .ok_or(ErrorKind::DateTime)?;
                 let month = datetime::decode_decimal(Self::TAG, mon1, mon2)?;
                 let day = datetime::decode_decimal(Self::TAG, day1, day2)?;
                 let hour = datetime::decode_decimal(Self::TAG, hour1, hour2)?;
@@ -96,21 +111,21 @@ impl DecodeValue<'_> for GeneralizedTime {
 
 impl EncodeValue for GeneralizedTime {
     fn value_len(&self) -> Result<Length> {
-        Ok(Self::LENGTH)
+        Self::LENGTH.try_into()
     }
 
-    fn encode_value(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        let year_hi = (self.0.year() / 100) as u8;
-        let year_lo = (self.0.year() % 100) as u8;
+    fn encode_value(&self, writer: &mut impl Writer) -> Result<()> {
+        let year_hi = u8::try_from(self.0.year() / 100)?;
+        let year_lo = u8::try_from(self.0.year() % 100)?;
 
-        datetime::encode_decimal(encoder, Self::TAG, year_hi)?;
-        datetime::encode_decimal(encoder, Self::TAG, year_lo)?;
-        datetime::encode_decimal(encoder, Self::TAG, self.0.month())?;
-        datetime::encode_decimal(encoder, Self::TAG, self.0.day())?;
-        datetime::encode_decimal(encoder, Self::TAG, self.0.hour())?;
-        datetime::encode_decimal(encoder, Self::TAG, self.0.minutes())?;
-        datetime::encode_decimal(encoder, Self::TAG, self.0.seconds())?;
-        encoder.byte(b'Z')
+        datetime::encode_decimal(writer, Self::TAG, year_hi)?;
+        datetime::encode_decimal(writer, Self::TAG, year_lo)?;
+        datetime::encode_decimal(writer, Self::TAG, self.0.month())?;
+        datetime::encode_decimal(writer, Self::TAG, self.0.day())?;
+        datetime::encode_decimal(writer, Self::TAG, self.0.hour())?;
+        datetime::encode_decimal(writer, Self::TAG, self.0.minutes())?;
+        datetime::encode_decimal(writer, Self::TAG, self.0.seconds())?;
+        writer.write_byte(b'Z')
     }
 }
 
@@ -150,17 +165,9 @@ impl From<&DateTime> for GeneralizedTime {
     }
 }
 
-impl TryFrom<Any<'_>> for GeneralizedTime {
-    type Error = Error;
-
-    fn try_from(any: Any<'_>) -> Result<GeneralizedTime> {
-        any.decode_into()
-    }
-}
-
-impl DecodeValue<'_> for DateTime {
-    fn decode_value(decoder: &mut Decoder<'_>, length: Length) -> Result<Self> {
-        Ok(GeneralizedTime::decode_value(decoder, length)?.into())
+impl<'a> DecodeValue<'a> for DateTime {
+    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+        Ok(GeneralizedTime::decode_value(reader, header)?.into())
     }
 }
 
@@ -169,8 +176,8 @@ impl EncodeValue for DateTime {
         GeneralizedTime::from(self).value_len()
     }
 
-    fn encode_value(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        GeneralizedTime::from(self).encode_value(encoder)
+    fn encode_value(&self, writer: &mut impl Writer) -> Result<()> {
+        GeneralizedTime::from(self).encode_value(writer)
     }
 }
 
@@ -181,27 +188,24 @@ impl FixedTag for DateTime {
 impl OrdIsValueOrd for DateTime {}
 
 #[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-impl DecodeValue<'_> for SystemTime {
-    fn decode_value(decoder: &mut Decoder<'_>, length: Length) -> Result<Self> {
-        Ok(GeneralizedTime::decode_value(decoder, length)?.into())
+impl<'a> DecodeValue<'a> for SystemTime {
+    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+        Ok(GeneralizedTime::decode_value(reader, header)?.into())
     }
 }
 
 #[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl EncodeValue for SystemTime {
     fn value_len(&self) -> Result<Length> {
         GeneralizedTime::try_from(self)?.value_len()
     }
 
-    fn encode_value(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        GeneralizedTime::try_from(self)?.encode_value(encoder)
+    fn encode_value(&self, writer: &mut impl Writer) -> Result<()> {
+        GeneralizedTime::try_from(self)?.encode_value(writer)
     }
 }
 
 #[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl From<GeneralizedTime> for SystemTime {
     fn from(time: GeneralizedTime) -> SystemTime {
         time.to_system_time()
@@ -209,7 +213,6 @@ impl From<GeneralizedTime> for SystemTime {
 }
 
 #[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl From<&GeneralizedTime> for SystemTime {
     fn from(time: &GeneralizedTime) -> SystemTime {
         time.to_system_time()
@@ -217,7 +220,6 @@ impl From<&GeneralizedTime> for SystemTime {
 }
 
 #[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl TryFrom<SystemTime> for GeneralizedTime {
     type Error = Error;
 
@@ -227,7 +229,6 @@ impl TryFrom<SystemTime> for GeneralizedTime {
 }
 
 #[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl TryFrom<&SystemTime> for GeneralizedTime {
     type Error = Error;
 
@@ -237,57 +238,49 @@ impl TryFrom<&SystemTime> for GeneralizedTime {
 }
 
 #[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-impl<'a> TryFrom<Any<'a>> for SystemTime {
+impl<'a> TryFrom<AnyRef<'a>> for SystemTime {
     type Error = Error;
 
-    fn try_from(any: Any<'a>) -> Result<SystemTime> {
+    fn try_from(any: AnyRef<'a>) -> Result<SystemTime> {
         GeneralizedTime::try_from(any).map(|s| s.to_system_time())
     }
 }
 
 #[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl FixedTag for SystemTime {
     const TAG: Tag = Tag::GeneralizedTime;
 }
 
 #[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl OrdIsValueOrd for SystemTime {}
 
 #[cfg(feature = "time")]
-#[cfg_attr(docsrs, doc(cfg(feature = "time")))]
-impl DecodeValue<'_> for PrimitiveDateTime {
-    fn decode_value(decoder: &mut Decoder<'_>, length: Length) -> Result<Self> {
-        GeneralizedTime::decode_value(decoder, length)?.try_into()
+impl<'a> DecodeValue<'a> for PrimitiveDateTime {
+    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+        GeneralizedTime::decode_value(reader, header)?.try_into()
     }
 }
 
 #[cfg(feature = "time")]
-#[cfg_attr(docsrs, doc(cfg(feature = "time")))]
 impl EncodeValue for PrimitiveDateTime {
     fn value_len(&self) -> Result<Length> {
         GeneralizedTime::try_from(self)?.value_len()
     }
 
-    fn encode_value(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        GeneralizedTime::try_from(self)?.encode_value(encoder)
+    fn encode_value(&self, writer: &mut impl Writer) -> Result<()> {
+        GeneralizedTime::try_from(self)?.encode_value(writer)
     }
 }
 
 #[cfg(feature = "time")]
-#[cfg_attr(docsrs, doc(cfg(feature = "time")))]
 impl FixedTag for PrimitiveDateTime {
     const TAG: Tag = Tag::GeneralizedTime;
 }
 
 #[cfg(feature = "time")]
-#[cfg_attr(docsrs, doc(cfg(feature = "time")))]
 impl OrdIsValueOrd for PrimitiveDateTime {}
 
 #[cfg(feature = "time")]
-#[cfg_attr(docsrs, doc(cfg(feature = "time")))]
 impl TryFrom<PrimitiveDateTime> for GeneralizedTime {
     type Error = Error;
 
@@ -297,7 +290,6 @@ impl TryFrom<PrimitiveDateTime> for GeneralizedTime {
 }
 
 #[cfg(feature = "time")]
-#[cfg_attr(docsrs, doc(cfg(feature = "time")))]
 impl TryFrom<&PrimitiveDateTime> for GeneralizedTime {
     type Error = Error;
 
@@ -307,7 +299,6 @@ impl TryFrom<&PrimitiveDateTime> for GeneralizedTime {
 }
 
 #[cfg(feature = "time")]
-#[cfg_attr(docsrs, doc(cfg(feature = "time")))]
 impl TryFrom<GeneralizedTime> for PrimitiveDateTime {
     type Error = Error;
 
@@ -319,7 +310,7 @@ impl TryFrom<GeneralizedTime> for PrimitiveDateTime {
 #[cfg(test)]
 mod tests {
     use super::GeneralizedTime;
-    use crate::{Decodable, Encodable, Encoder};
+    use crate::{Decode, Encode, SliceWriter};
     use hex_literal::hex;
 
     #[test]
@@ -329,7 +320,7 @@ mod tests {
         assert_eq!(utc_time.to_unix_duration().as_secs(), 673573540);
 
         let mut buf = [0u8; 128];
-        let mut encoder = Encoder::new(&mut buf);
+        let mut encoder = SliceWriter::new(&mut buf);
         utc_time.encode(&mut encoder).unwrap();
         assert_eq!(example_bytes, encoder.finish().unwrap());
     }

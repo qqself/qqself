@@ -3,6 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#![allow(clippy::derive_partial_eq_without_eq)]
+#![warn(
+    // missing_docs,
+    rustdoc::missing_crate_level_docs,
+    unreachable_pub,
+    rust_2018_idioms
+)]
+
 //! Abstractions for the Smithy AWS Query protocol
 
 use aws_smithy_types::date_time::{DateTimeFormatError, Format};
@@ -25,7 +33,7 @@ impl<'a> QueryWriter<'a> {
         QueryWriter { output }
     }
 
-    pub fn prefix(&mut self, prefix: &'a str) -> QueryValueWriter {
+    pub fn prefix(&mut self, prefix: &'a str) -> QueryValueWriter<'_> {
         QueryValueWriter::new(self.output, Cow::Borrowed(prefix))
     }
 
@@ -34,6 +42,7 @@ impl<'a> QueryWriter<'a> {
     }
 }
 
+#[must_use]
 pub struct QueryMapWriter<'a> {
     output: &'a mut String,
     prefix: Cow<'a, str>,
@@ -61,7 +70,7 @@ impl<'a> QueryMapWriter<'a> {
         }
     }
 
-    pub fn entry(&mut self, key: &str) -> QueryValueWriter {
+    pub fn entry(&mut self, key: &str) -> QueryValueWriter<'_> {
         let entry = if self.flatten { "" } else { ".entry" };
         write!(
             &mut self.output,
@@ -89,6 +98,7 @@ impl<'a> QueryMapWriter<'a> {
     }
 }
 
+#[must_use]
 pub struct QueryListWriter<'a> {
     output: &'a mut String,
     prefix: Cow<'a, str>,
@@ -113,7 +123,7 @@ impl<'a> QueryListWriter<'a> {
         }
     }
 
-    pub fn entry(&mut self) -> QueryValueWriter {
+    pub fn entry(&mut self) -> QueryValueWriter<'_> {
         let value_name = if self.flatten {
             format!("{}.{}", self.prefix, self.next_index)
         } else if self.member_override.is_some() {
@@ -132,10 +142,15 @@ impl<'a> QueryListWriter<'a> {
     }
 
     pub fn finish(self) {
-        // Calling this drops self
+        // https://github.com/awslabs/smithy/commit/715b1d94ab14764ad43496b016b0c2e85bcf1d1f
+        // If the list was empty, just serialize the parameter name
+        if self.next_index == 1 {
+            QueryValueWriter::new(self.output, self.prefix).write_param_name();
+        }
     }
 }
 
+#[must_use]
 pub struct QueryValueWriter<'a> {
     output: &'a mut String,
     prefix: Cow<'a, str>,
@@ -147,7 +162,7 @@ impl<'a> QueryValueWriter<'a> {
     }
 
     /// Starts a new prefix.
-    pub fn prefix(&mut self, prefix: &'a str) -> QueryValueWriter {
+    pub fn prefix(&mut self, prefix: &'a str) -> QueryValueWriter<'_> {
         QueryValueWriter::new(
             self.output,
             Cow::Owned(format!("{}.{}", self.prefix, prefix)),
@@ -227,6 +242,15 @@ mod tests {
         let writer = QueryWriter::new(&mut out, "SomeAction", "1.0");
         writer.finish();
         assert_eq!("Action=SomeAction&Version=1.0", out);
+    }
+
+    #[test]
+    fn query_list_writer_empty_list() {
+        let mut out = String::new();
+        let mut writer = QueryWriter::new(&mut out, "SomeAction", "1.0");
+        writer.prefix("myList").start_list(false, None).finish();
+        writer.finish();
+        assert_eq!("Action=SomeAction&Version=1.0&myList=", out);
     }
 
     #[test]

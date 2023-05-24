@@ -53,13 +53,14 @@ pub enum Sign {
     Plus,
 }
 
-#[cfg(feature = "zeroize")]
-impl Zeroize for Sign {
-    fn zeroize(&mut self) {
-        // TODO: Figure out how to better clear the sign.
-        *self = Sign::NoSign;
+impl Default for Sign {
+    fn default() -> Sign {
+        Sign::NoSign
     }
 }
+
+#[cfg(feature = "zeroize")]
+impl zeroize::DefaultIsZeroes for Sign {}
 
 impl Neg for Sign {
     type Output = Sign;
@@ -3307,6 +3308,24 @@ impl<'a, 'b> ExtendedGcd<&'b BigUint> for &'a BigInt {
             true,
         );
         (a, b.unwrap(), c.unwrap())
+    }
+}
+
+// arbitrary support
+#[cfg(feature = "fuzz")]
+impl arbitrary::Arbitrary<'_> for BigInt {
+    fn arbitrary(src: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
+        let sign = if bool::arbitrary(src)? {
+            Sign::Plus
+        } else {
+            Sign::Minus
+        };
+        let data = BigUint::arbitrary(src)?;
+        Ok(Self::from_biguint(sign, data))
+    }
+
+    fn size_hint(depth: usize) -> (usize, Option<usize>) {
+        arbitrary::size_hint::and(BigUint::size_hint(depth), bool::size_hint(depth))
     }
 }
 

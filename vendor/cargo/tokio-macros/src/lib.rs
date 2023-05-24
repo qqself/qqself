@@ -39,6 +39,13 @@ use proc_macro::TokenStream;
 /// function is called often, it is preferable to create the runtime using the
 /// runtime builder so the runtime can be reused across calls.
 ///
+/// # Non-worker async function
+///
+/// Note that the async function marked with this macro does not run as a
+/// worker. The expectation is that other tasks are spawned by the function here.
+/// Awaiting on other futures from the function provided here will not
+/// perform as fast as those spawned as workers.
+///
 /// # Multi-threaded runtime
 ///
 /// To use the multi-threaded runtime, the macro can be configured using
@@ -197,7 +204,7 @@ use proc_macro::TokenStream;
 #[proc_macro_attribute]
 #[cfg(not(test))] // Work around for rust-lang/rust#62127
 pub fn main(args: TokenStream, item: TokenStream) -> TokenStream {
-    entry::main(args, item, true)
+    entry::main(args.into(), item.into(), true).into()
 }
 
 /// Marks async function to be executed by selected runtime. This macro helps set up a `Runtime`
@@ -262,14 +269,23 @@ pub fn main(args: TokenStream, item: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 #[cfg(not(test))] // Work around for rust-lang/rust#62127
 pub fn main_rt(args: TokenStream, item: TokenStream) -> TokenStream {
-    entry::main(args, item, false)
+    entry::main(args.into(), item.into(), false).into()
 }
 
-/// Marks async function to be executed by runtime, suitable to test environment
+/// Marks async function to be executed by runtime, suitable to test environment.
+/// This macro helps set up a `Runtime` without requiring the user to use
+/// [Runtime](../tokio/runtime/struct.Runtime.html) or
+/// [Builder](../tokio/runtime/struct.Builder.html) directly.
 ///
-/// ## Usage
+/// Note: This macro is designed to be simplistic and targets applications that
+/// do not require a complex setup. If the provided functionality is not
+/// sufficient, you may be interested in using
+/// [Builder](../tokio/runtime/struct.Builder.html), which provides a more
+/// powerful interface.
 ///
-/// ### Multi-thread runtime
+/// # Multi-threaded runtime
+///
+/// To use the multi-threaded runtime, the macro can be configured using
 ///
 /// ```no_run
 /// #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
@@ -278,14 +294,96 @@ pub fn main_rt(args: TokenStream, item: TokenStream) -> TokenStream {
 /// }
 /// ```
 ///
-/// ### Using default
+/// The `worker_threads` option configures the number of worker threads, and
+/// defaults to the number of cpus on the system.
 ///
-/// The default test runtime is single-threaded.
+/// Note: The multi-threaded runtime requires the `rt-multi-thread` feature
+/// flag.
+///
+/// # Current thread runtime
+///
+/// The default test runtime is single-threaded. Each test gets a
+/// separate current-thread runtime.
 ///
 /// ```no_run
 /// #[tokio::test]
 /// async fn my_test() {
 ///     assert!(true);
+/// }
+/// ```
+///
+/// ## Usage
+///
+/// ### Using the multi-thread runtime
+///
+/// ```no_run
+/// #[tokio::test(flavor = "multi_thread")]
+/// async fn my_test() {
+///     assert!(true);
+/// }
+/// ```
+///
+/// Equivalent code not using `#[tokio::test]`
+///
+/// ```no_run
+/// #[test]
+/// fn my_test() {
+///     tokio::runtime::Builder::new_multi_thread()
+///         .enable_all()
+///         .build()
+///         .unwrap()
+///         .block_on(async {
+///             assert!(true);
+///         })
+/// }
+/// ```
+///
+/// ### Using current thread runtime
+///
+/// ```no_run
+/// #[tokio::test]
+/// async fn my_test() {
+///     assert!(true);
+/// }
+/// ```
+///
+/// Equivalent code not using `#[tokio::test]`
+///
+/// ```no_run
+/// #[test]
+/// fn my_test() {
+///     tokio::runtime::Builder::new_current_thread()
+///         .enable_all()
+///         .build()
+///         .unwrap()
+///         .block_on(async {
+///             assert!(true);
+///         })
+/// }
+/// ```
+///
+/// ### Set number of worker threads
+///
+/// ```no_run
+/// #[tokio::test(flavor ="multi_thread", worker_threads = 2)]
+/// async fn my_test() {
+///     assert!(true);
+/// }
+/// ```
+///
+/// Equivalent code not using `#[tokio::test]`
+///
+/// ```no_run
+/// #[test]
+/// fn my_test() {
+///     tokio::runtime::Builder::new_multi_thread()
+///         .worker_threads(2)
+///         .enable_all()
+///         .build()
+///         .unwrap()
+///         .block_on(async {
+///             assert!(true);
+///         })
 /// }
 /// ```
 ///
@@ -295,6 +393,22 @@ pub fn main_rt(args: TokenStream, item: TokenStream) -> TokenStream {
 /// #[tokio::test(start_paused = true)]
 /// async fn my_test() {
 ///     assert!(true);
+/// }
+/// ```
+///
+/// Equivalent code not using `#[tokio::test]`
+///
+/// ```no_run
+/// #[test]
+/// fn my_test() {
+///     tokio::runtime::Builder::new_current_thread()
+///         .enable_all()
+///         .start_paused(true)
+///         .build()
+///         .unwrap()
+///         .block_on(async {
+///             assert!(true);
+///         })
 /// }
 /// ```
 ///
@@ -312,7 +426,7 @@ pub fn main_rt(args: TokenStream, item: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro_attribute]
 pub fn test(args: TokenStream, item: TokenStream) -> TokenStream {
-    entry::test(args, item, true)
+    entry::test(args.into(), item.into(), true).into()
 }
 
 /// Marks async function to be executed by runtime, suitable to test environment
@@ -327,7 +441,7 @@ pub fn test(args: TokenStream, item: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro_attribute]
 pub fn test_rt(args: TokenStream, item: TokenStream) -> TokenStream {
-    entry::test(args, item, false)
+    entry::test(args.into(), item.into(), false).into()
 }
 
 /// Always fails with the error message below.

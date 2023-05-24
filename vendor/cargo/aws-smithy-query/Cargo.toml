@@ -12,7 +12,7 @@
 [package]
 edition = "2021"
 name = "aws-smithy-query"
-version = "0.51.0"
+version = "0.55.3"
 authors = [
     "AWS Rust SDK Team <aws-sdk-rust@amazon.com>",
     "John DiSanti <jdisanti@amazon.com>",
@@ -21,7 +21,6 @@ description = "AWSQuery and EC2Query Smithy protocol logic for smithy-rs."
 readme = "README.md"
 license = "Apache-2.0"
 repository = "https://github.com/awslabs/smithy-rs"
-resolver = "2"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -32,7 +31,7 @@ rustdoc-args = [
 ]
 
 [dependencies.aws-smithy-types]
-version = "0.51.0"
+version = "0.55.3"
 
 [dependencies.urlencoding]
 version = "2.1"

@@ -1,4 +1,5 @@
 #![cfg(feature = "rustls")]
+#![allow(clippy::uninlined_format_args)]
 
 extern crate tls_rustls as rustls;
 
@@ -41,7 +42,7 @@ where
         let body = stream.as_mut();
 
         match ready!(body.poll_next(cx)) {
-            Some(Ok(bytes)) => buf.extend_from_slice(&*bytes),
+            Some(Ok(bytes)) => buf.extend_from_slice(&bytes),
             None => return Poll::Ready(Ok(())),
             Some(Err(err)) => return Poll::Ready(Err(err)),
         }

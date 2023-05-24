@@ -12,7 +12,7 @@
 [package]
 edition = "2021"
 name = "aws-sig-auth"
-version = "0.51.0"
+version = "0.55.2"
 authors = [
     "AWS Rust SDK Team <aws-sdk-rust@amazon.com>",
     "Russell Cohen <rcoh@amazon.com>",
@@ -21,6 +21,7 @@ description = "SigV4 signing middleware for the AWS SDK."
 readme = "README.md"
 license = "Apache-2.0"
 repository = "https://github.com/awslabs/smithy-rs"
+resolver = "1"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -30,18 +31,21 @@ rustdoc-args = [
     "docsrs",
 ]
 
+[dependencies.aws-credential-types]
+version = "0.55.2"
+
 [dependencies.aws-sigv4]
-version = "0.51.0"
+version = "0.55.2"
 
 [dependencies.aws-smithy-eventstream]
-version = "0.51.0"
+version = "0.55.2"
 optional = true
 
 [dependencies.aws-smithy-http]
-version = "0.51.0"
+version = "0.55.2"
 
 [dependencies.aws-types]
-version = "0.51.0"
+version = "0.55.2"
 
 [dependencies.http]
 version = "0.2.2"
@@ -49,8 +53,15 @@ version = "0.2.2"
 [dependencies.tracing]
 version = "0.1"
 
+[dev-dependencies.aws-credential-types]
+version = "0.55.2"
+features = ["test-util"]
+
 [dev-dependencies.aws-endpoint]
-version = "0.51.0"
+version = "0.55.2"
+
+[dev-dependencies.aws-smithy-types]
+version = "0.55.2"
 
 [dev-dependencies.tracing-test]
 version = "0.2.1"

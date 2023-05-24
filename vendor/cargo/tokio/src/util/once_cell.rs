@@ -1,4 +1,4 @@
-#![cfg_attr(loom, allow(dead_code))]
+#![allow(dead_code)]
 use std::cell::UnsafeCell;
 use std::mem::MaybeUninit;
 use std::sync::Once;
@@ -19,13 +19,13 @@ impl<T> OnceCell<T> {
         }
     }
 
-    /// Get the value inside this cell, intiailizing it using the provided
+    /// Get the value inside this cell, initializing it using the provided
     /// function if necessary.
     ///
     /// If the `init` closure panics, then the `OnceCell` is poisoned and all
     /// future calls to `get` will panic.
     #[inline]
-    pub(crate) fn get(&self, init: fn() -> T) -> &T {
+    pub(crate) fn get(&self, init: impl FnOnce() -> T) -> &T {
         if !self.once.is_completed() {
             self.do_init(init);
         }
@@ -41,7 +41,7 @@ impl<T> OnceCell<T> {
     }
 
     #[cold]
-    fn do_init(&self, init: fn() -> T) {
+    fn do_init(&self, init: impl FnOnce() -> T) {
         let value_ptr = self.value.get() as *mut T;
 
         self.once.call_once(|| {

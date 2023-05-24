@@ -12,7 +12,7 @@
 [package]
 edition = "2021"
 name = "aws-smithy-client"
-version = "0.51.0"
+version = "0.55.3"
 authors = [
     "AWS Rust SDK Team <aws-sdk-rust@amazon.com>",
     "Russell Cohen <rcoh@amazon.com>",
@@ -21,7 +21,6 @@ description = "Client for smithy-rs."
 readme = "README.md"
 license = "Apache-2.0"
 repository = "https://github.com/awslabs/smithy-rs"
-resolver = "2"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -39,20 +38,20 @@ required-features = [
 ]
 
 [dependencies.aws-smithy-async]
-version = "0.51.0"
+version = "0.55.3"
 
 [dependencies.aws-smithy-http]
-version = "0.51.0"
+version = "0.55.3"
 
 [dependencies.aws-smithy-http-tower]
-version = "0.51.0"
+version = "0.55.3"
 
 [dependencies.aws-smithy-protocol-test]
-version = "0.51.0"
+version = "0.55.3"
 optional = true
 
 [dependencies.aws-smithy-types]
-version = "0.51.0"
+version = "0.55.3"
 
 [dependencies.bytes]
 version = "1"
@@ -67,11 +66,12 @@ version = "0.2.3"
 version = "0.4.4"
 
 [dependencies.hyper]
-version = "0.14.12"
+version = "0.14.25"
 features = [
     "client",
     "http2",
     "http1",
+    "tcp",
 ]
 optional = true
 
@@ -94,13 +94,21 @@ optional = true
 [dependencies.pin-project-lite]
 version = "0.2.7"
 
+[dependencies.rustls]
+version = "0.20"
+optional = true
+
 [dependencies.serde]
 version = "1"
 features = ["derive"]
 optional = true
 
+[dependencies.serde_json]
+version = "1"
+optional = true
+
 [dependencies.tokio]
-version = "1.8.4"
+version = "1.13.1"
 
 [dependencies.tower]
 version = "0.4.6"
@@ -113,12 +121,8 @@ features = [
 version = "0.1"
 
 [dev-dependencies.aws-smithy-async]
-version = "0.51.0"
+version = "0.55.3"
 features = ["rt-tokio"]
-
-[dev-dependencies.hyper-rustls]
-version = "0.23.0"
-features = ["webpki-roots"]
 
 [dev-dependencies.serde]
 version = "1"
@@ -128,7 +132,7 @@ features = ["derive"]
 version = "1"
 
 [dev-dependencies.tokio]
-version = "1.8.4"
+version = "1.23.1"
 features = [
     "full",
     "test-util",
@@ -137,22 +141,39 @@ features = [
 [dev-dependencies.tower-test]
 version = "0.4.0"
 
+[dev-dependencies.tracing-subscriber]
+version = "0.3.16"
+
+[dev-dependencies.tracing-test]
+version = "0.2.4"
+
 [features]
-client-hyper = ["hyper"]
+client-hyper = ["dep:hyper"]
+hyper-webpki-doctest-only = [
+    "dep:hyper-rustls",
+    "hyper-rustls?/webpki-roots",
+]
 native-tls = [
+    "dep:hyper-tls",
     "client-hyper",
-    "hyper-tls",
     "rt-tokio",
 ]
 rt-tokio = ["aws-smithy-async/rt-tokio"]
 rustls = [
+    "dep:hyper-rustls",
+    "dep:lazy_static",
+    "dep:rustls",
     "client-hyper",
-    "hyper-rustls",
     "rt-tokio",
-    "lazy_static",
 ]
 test-util = [
-    "aws-smithy-protocol-test",
-    "serde/derive",
+    "dep:aws-smithy-protocol-test",
+    "dep:hyper",
+    "hyper?/server",
+    "hyper?/h2",
+    "dep:serde",
+    "dep:serde_json",
+    "serde?/derive",
     "rustls",
+    "tokio/full",
 ]

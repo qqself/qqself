@@ -44,12 +44,13 @@ macro_rules! externs {
     )
 }
 
-/// A module which is typically glob imported from:
+/// A module which is typically glob imported.
 ///
 /// ```
 /// use wasm_bindgen::prelude::*;
 /// ```
 pub mod prelude {
+    pub use crate::JsCast;
     pub use crate::JsValue;
     pub use crate::UnwrapThrowExt;
     #[doc(hidden)]
@@ -62,6 +63,8 @@ pub mod prelude {
 
     pub use crate::JsError;
 }
+
+pub use wasm_bindgen_macro::link_to;
 
 pub mod convert;
 pub mod describe;
@@ -91,7 +94,7 @@ pub struct JsValue {
     _marker: marker::PhantomData<*mut u8>, // not at all threadsafe
 }
 
-const JSIDX_OFFSET: u32 = 32; // keep in sync with js/mod.rs
+const JSIDX_OFFSET: u32 = 128; // keep in sync with js/mod.rs
 const JSIDX_UNDEFINED: u32 = JSIDX_OFFSET + 0;
 const JSIDX_NULL: u32 = JSIDX_OFFSET + 1;
 const JSIDX_TRUE: u32 = JSIDX_OFFSET + 2;
@@ -100,31 +103,19 @@ const JSIDX_RESERVED: u32 = JSIDX_OFFSET + 4;
 
 impl JsValue {
     /// The `null` JS value constant.
-    pub const NULL: JsValue = JsValue {
-        idx: JSIDX_NULL,
-        _marker: marker::PhantomData,
-    };
+    pub const NULL: JsValue = JsValue::_new(JSIDX_NULL);
 
     /// The `undefined` JS value constant.
-    pub const UNDEFINED: JsValue = JsValue {
-        idx: JSIDX_UNDEFINED,
-        _marker: marker::PhantomData,
-    };
+    pub const UNDEFINED: JsValue = JsValue::_new(JSIDX_UNDEFINED);
 
     /// The `true` JS value constant.
-    pub const TRUE: JsValue = JsValue {
-        idx: JSIDX_TRUE,
-        _marker: marker::PhantomData,
-    };
+    pub const TRUE: JsValue = JsValue::_new(JSIDX_TRUE);
 
     /// The `false` JS value constant.
-    pub const FALSE: JsValue = JsValue {
-        idx: JSIDX_FALSE,
-        _marker: marker::PhantomData,
-    };
+    pub const FALSE: JsValue = JsValue::_new(JSIDX_FALSE);
 
     #[inline]
-    fn _new(idx: u32) -> JsValue {
+    const fn _new(idx: u32) -> JsValue {
         JsValue {
             idx,
             _marker: marker::PhantomData,
@@ -163,7 +154,7 @@ impl JsValue {
     /// This function creates a JS object representing a boolean (a heap
     /// allocated boolean) and returns a handle to the JS version of it.
     #[inline]
-    pub fn from_bool(b: bool) -> JsValue {
+    pub const fn from_bool(b: bool) -> JsValue {
         if b {
             JsValue::TRUE
         } else {
@@ -173,13 +164,13 @@ impl JsValue {
 
     /// Creates a new JS value representing `undefined`.
     #[inline]
-    pub fn undefined() -> JsValue {
+    pub const fn undefined() -> JsValue {
         JsValue::UNDEFINED
     }
 
     /// Creates a new JS value representing `null`.
     #[inline]
-    pub fn null() -> JsValue {
+    pub const fn null() -> JsValue {
         JsValue::NULL
     }
 
@@ -346,6 +337,12 @@ impl JsValue {
     #[inline]
     pub fn is_object(&self) -> bool {
         unsafe { __wbindgen_is_object(self.idx) == 1 }
+    }
+
+    /// Tests whether this JS value is an instance of Array.
+    #[inline]
+    pub fn is_array(&self) -> bool {
+        unsafe { __wbindgen_is_array(self.idx) == 1 }
     }
 
     /// Tests whether the type of this JS value is `function`.
@@ -779,6 +776,20 @@ impl<'a> From<&'a str> for JsValue {
     }
 }
 
+impl<T> From<*mut T> for JsValue {
+    #[inline]
+    fn from(s: *mut T) -> JsValue {
+        JsValue::from(s as usize)
+    }
+}
+
+impl<T> From<*const T> for JsValue {
+    #[inline]
+    fn from(s: *const T) -> JsValue {
+        JsValue::from(s as usize)
+    }
+}
+
 if_std! {
     impl<'a> From<&'a String> for JsValue {
         #[inline]
@@ -1003,6 +1014,7 @@ externs! {
         fn __wbindgen_is_undefined(idx: u32) -> u32;
         fn __wbindgen_is_symbol(idx: u32) -> u32;
         fn __wbindgen_is_object(idx: u32) -> u32;
+        fn __wbindgen_is_array(idx: u32) -> u32;
         fn __wbindgen_is_function(idx: u32) -> u32;
         fn __wbindgen_is_string(idx: u32) -> u32;
         fn __wbindgen_is_bigint(idx: u32) -> u32;
@@ -1054,8 +1066,11 @@ externs! {
         fn __wbindgen_jsval_eq(a: u32, b: u32) -> u32;
         fn __wbindgen_jsval_loose_eq(a: u32, b: u32) -> u32;
 
+        fn __wbindgen_copy_to_typed_array(ptr: *const u8, len: usize, idx: u32) -> ();
+
         fn __wbindgen_not(idx: u32) -> u32;
 
+        fn __wbindgen_exports() -> u32;
         fn __wbindgen_memory() -> u32;
         fn __wbindgen_module() -> u32;
         fn __wbindgen_function_table() -> u32;
@@ -1282,17 +1297,31 @@ pub fn anyref_heap_live_count() -> u32 {
 pub trait UnwrapThrowExt<T>: Sized {
     /// Unwrap this `Option` or `Result`, but instead of panicking on failure,
     /// throw an exception to JavaScript.
+    #[cfg_attr(debug_assertions, track_caller)]
     fn unwrap_throw(self) -> T {
-        self.expect_throw("`unwrap_throw` failed")
+        if cfg!(all(debug_assertions, feature = "std")) {
+            let loc = core::panic::Location::caller();
+            let msg = std::format!(
+                "`unwrap_throw` failed ({}:{}:{})",
+                loc.file(),
+                loc.line(),
+                loc.column()
+            );
+            self.expect_throw(&msg)
+        } else {
+            self.expect_throw("`unwrap_throw` failed")
+        }
     }
 
     /// Unwrap this container's `T` value, or throw an error to JS with the
     /// given message if the `T` value is unavailable (e.g. an `Option<T>` is
     /// `None`).
+    #[cfg_attr(debug_assertions, track_caller)]
     fn expect_throw(self, message: &str) -> T;
 }
 
 impl<T> UnwrapThrowExt<T> for Option<T> {
+    #[cfg_attr(debug_assertions, track_caller)]
     fn expect_throw(self, message: &str) -> T {
         if cfg!(all(target_arch = "wasm32", not(target_os = "emscripten"))) {
             match self {
@@ -1309,6 +1338,7 @@ impl<T, E> UnwrapThrowExt<T> for Result<T, E>
 where
     E: core::fmt::Debug,
 {
+    #[cfg_attr(debug_assertions, track_caller)]
     fn expect_throw(self, message: &str) -> T {
         if cfg!(all(target_arch = "wasm32", not(target_os = "emscripten"))) {
             match self {
@@ -1332,6 +1362,11 @@ pub fn module() -> JsValue {
     unsafe { JsValue::_new(__wbindgen_module()) }
 }
 
+/// Returns a handle to this wasm instance's `WebAssembly.Instance.prototype.exports`
+pub fn exports() -> JsValue {
+    unsafe { JsValue::_new(__wbindgen_exports()) }
+}
+
 /// Returns a handle to this wasm instance's `WebAssembly.Memory`
 pub fn memory() -> JsValue {
     unsafe { JsValue::_new(__wbindgen_memory()) }
@@ -1346,7 +1381,9 @@ pub fn function_table() -> JsValue {
 #[doc(hidden)]
 pub mod __rt {
     use crate::JsValue;
+    use core::borrow::{Borrow, BorrowMut};
     use core::cell::{Cell, UnsafeCell};
+    use core::convert::Infallible;
     use core::ops::{Deref, DerefMut};
 
     pub extern crate core;
@@ -1465,6 +1502,13 @@ pub mod __rt {
         }
     }
 
+    impl<'b, T: ?Sized> Borrow<T> for Ref<'b, T> {
+        #[inline]
+        fn borrow(&self) -> &T {
+            self.value
+        }
+    }
+
     impl<'b, T: ?Sized> Drop for Ref<'b, T> {
         fn drop(&mut self) {
             self.borrow.set(self.borrow.get() - 1);
@@ -1488,6 +1532,20 @@ pub mod __rt {
     impl<'b, T: ?Sized> DerefMut for RefMut<'b, T> {
         #[inline]
         fn deref_mut(&mut self) -> &mut T {
+            self.value
+        }
+    }
+
+    impl<'b, T: ?Sized> Borrow<T> for RefMut<'b, T> {
+        #[inline]
+        fn borrow(&self) -> &T {
+            self.value
+        }
+    }
+
+    impl<'b, T: ?Sized> BorrowMut<T> for RefMut<'b, T> {
+        #[inline]
+        fn borrow_mut(&mut self) -> &mut T {
             self.value
         }
     }
@@ -1677,6 +1735,42 @@ pub mod __rt {
         fn start(self) {
             if let Err(e) = self {
                 crate::throw_val(e.into());
+            }
+        }
+    }
+
+    /// An internal helper struct for usage in `#[wasm_bindgen(main)]`
+    /// functions to throw the error (if it is `Err`).
+    pub struct MainWrapper<T>(pub Option<T>);
+
+    pub trait Main {
+        fn __wasm_bindgen_main(&mut self);
+    }
+
+    impl Main for &mut &mut MainWrapper<()> {
+        #[inline]
+        fn __wasm_bindgen_main(&mut self) {}
+    }
+
+    impl Main for &mut &mut MainWrapper<Infallible> {
+        #[inline]
+        fn __wasm_bindgen_main(&mut self) {}
+    }
+
+    impl<E: Into<JsValue>> Main for &mut &mut MainWrapper<Result<(), E>> {
+        #[inline]
+        fn __wasm_bindgen_main(&mut self) {
+            if let Err(e) = self.0.take().unwrap() {
+                crate::throw_val(e.into());
+            }
+        }
+    }
+
+    impl<E: std::fmt::Debug> Main for &mut MainWrapper<Result<(), E>> {
+        #[inline]
+        fn __wasm_bindgen_main(&mut self) {
+            if let Err(e) = self.0.take().unwrap() {
+                crate::throw_str(&std::format!("{:?}", e));
             }
         }
     }

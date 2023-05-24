@@ -13,7 +13,7 @@
 edition = "2021"
 rust-version = "1.56"
 name = "aes-gcm"
-version = "0.10.1"
+version = "0.10.2"
 authors = ["RustCrypto Developers"]
 description = """
 Pure Rust implementation of the AES-GCM (Galois/Counter Mode)
@@ -35,6 +35,7 @@ categories = [
 ]
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/RustCrypto/AEADs"
+resolver = "1"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -80,13 +81,18 @@ version = "0.3"
 
 [features]
 alloc = ["aead/alloc"]
+arrayvec = ["aead/arrayvec"]
 default = [
     "aes",
     "alloc",
     "getrandom",
 ]
-getrandom = ["aead/getrandom"]
+getrandom = [
+    "aead/getrandom",
+    "rand_core",
+]
 heapless = ["aead/heapless"]
+rand_core = ["aead/rand_core"]
 std = [
     "aead/std",
     "alloc",

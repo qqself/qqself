@@ -3382,3 +3382,16 @@ fn test_set_digit() {
     assert_eq!(a.data.len(), 1);
     assert_eq!(a.data[0], 4);
 }
+
+// arbitrary support
+#[cfg(feature = "fuzz")]
+impl arbitrary::Arbitrary<'_> for BigUint {
+    fn arbitrary(src: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
+        let data = SmallVec::arbitrary(src)?;
+        Ok(Self { data })
+    }
+
+    fn size_hint(depth: usize) -> (usize, Option<usize>) {
+        SmallVec::<[BigDigit; VEC_SIZE]>::size_hint(depth)
+    }
+}

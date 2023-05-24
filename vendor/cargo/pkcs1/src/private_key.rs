@@ -1,23 +1,20 @@
 //! PKCS#1 RSA Private Keys.
 
 #[cfg(feature = "alloc")]
-pub(crate) mod document;
-#[cfg(feature = "alloc")]
 pub(crate) mod other_prime_info;
 
 use crate::{Error, Result, RsaPublicKey, Version};
 use core::fmt;
-use der::{asn1::UIntBytes, Decodable, Decoder, Encodable, Sequence, Tag};
+use der::{
+    asn1::UintRef, Decode, DecodeValue, Encode, EncodeValue, Header, Length, Reader, Sequence, Tag,
+    Writer,
+};
 
 #[cfg(feature = "alloc")]
-use {self::other_prime_info::OtherPrimeInfo, crate::RsaPrivateKeyDocument, alloc::vec::Vec};
+use {self::other_prime_info::OtherPrimeInfo, alloc::vec::Vec, der::SecretDocument};
 
 #[cfg(feature = "pem")]
-use {
-    crate::{EncodeRsaPrivateKey, LineEnding},
-    alloc::string::String,
-    zeroize::Zeroizing,
-};
+use der::pem::PemLabel;
 
 /// PKCS#1 RSA Private Keys as defined in [RFC 8017 Appendix 1.2].
 ///
@@ -45,28 +42,28 @@ use {
 #[derive(Clone)]
 pub struct RsaPrivateKey<'a> {
     /// `n`: RSA modulus.
-    pub modulus: UIntBytes<'a>,
+    pub modulus: UintRef<'a>,
 
     /// `e`: RSA public exponent.
-    pub public_exponent: UIntBytes<'a>,
+    pub public_exponent: UintRef<'a>,
 
     /// `d`: RSA private exponent.
-    pub private_exponent: UIntBytes<'a>,
+    pub private_exponent: UintRef<'a>,
 
     /// `p`: first prime factor of `n`.
-    pub prime1: UIntBytes<'a>,
+    pub prime1: UintRef<'a>,
 
     /// `q`: Second prime factor of `n`.
-    pub prime2: UIntBytes<'a>,
+    pub prime2: UintRef<'a>,
 
     /// First exponent: `d mod (p-1)`.
-    pub exponent1: UIntBytes<'a>,
+    pub exponent1: UintRef<'a>,
 
     /// Second exponent: `d mod (q-1)`.
-    pub exponent2: UIntBytes<'a>,
+    pub exponent2: UintRef<'a>,
 
     /// CRT coefficient: `(inverse of q) mod p`.
-    pub coefficient: UIntBytes<'a>,
+    pub coefficient: UintRef<'a>,
 
     /// Additional primes `r_3`, ..., `r_u`, in order, if this is a multi-prime
     /// RSA key (i.e. `version` is `multi`).
@@ -93,43 +90,28 @@ impl<'a> RsaPrivateKey<'a> {
             Version::TwoPrime
         }
     }
-
-    /// Encode this [`RsaPrivateKey`] as ASN.1 DER.
-    #[cfg(feature = "alloc")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-    pub fn to_der(&self) -> Result<RsaPrivateKeyDocument> {
-        self.try_into()
-    }
-
-    /// Encode this [`RsaPrivateKey`] as PEM-encoded ASN.1 DER using the given
-    /// [`LineEnding`].
-    #[cfg(feature = "pem")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
-    pub fn to_pem(&self, line_ending: LineEnding) -> Result<Zeroizing<String>> {
-        self.to_der()?.to_pkcs1_pem(line_ending)
-    }
 }
 
-impl<'a> Decodable<'a> for RsaPrivateKey<'a> {
-    fn decode(decoder: &mut Decoder<'a>) -> der::Result<Self> {
-        decoder.sequence(|decoder| {
-            let version = Version::decode(decoder)?;
+impl<'a> DecodeValue<'a> for RsaPrivateKey<'a> {
+    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> der::Result<Self> {
+        reader.read_nested(header.length, |reader| {
+            let version = Version::decode(reader)?;
 
             let result = Self {
-                modulus: decoder.decode()?,
-                public_exponent: decoder.decode()?,
-                private_exponent: decoder.decode()?,
-                prime1: decoder.decode()?,
-                prime2: decoder.decode()?,
-                exponent1: decoder.decode()?,
-                exponent2: decoder.decode()?,
-                coefficient: decoder.decode()?,
-                other_prime_infos: decoder.decode()?,
+                modulus: reader.decode()?,
+                public_exponent: reader.decode()?,
+                private_exponent: reader.decode()?,
+                prime1: reader.decode()?,
+                prime2: reader.decode()?,
+                exponent1: reader.decode()?,
+                exponent2: reader.decode()?,
+                coefficient: reader.decode()?,
+                other_prime_infos: reader.decode()?,
             };
 
             // Ensure version is set correctly for two-prime vs multi-prime key.
             if version.is_multi() != result.other_prime_infos.is_some() {
-                return Err(decoder.error(der::ErrorKind::Value { tag: Tag::Integer }));
+                return Err(reader.error(der::ErrorKind::Value { tag: Tag::Integer }));
             }
 
             Ok(result)
@@ -137,26 +119,36 @@ impl<'a> Decodable<'a> for RsaPrivateKey<'a> {
     }
 }
 
-impl<'a> Sequence<'a> for RsaPrivateKey<'a> {
-    fn fields<F, T>(&self, f: F) -> der::Result<T>
-    where
-        F: FnOnce(&[&dyn Encodable]) -> der::Result<T>,
-    {
-        f(&[
-            &self.version(),
-            &self.modulus,
-            &self.public_exponent,
-            &self.private_exponent,
-            &self.prime1,
-            &self.prime2,
-            &self.exponent1,
-            &self.exponent2,
-            &self.coefficient,
-            #[cfg(feature = "alloc")]
-            &self.other_prime_infos,
-        ])
+impl EncodeValue for RsaPrivateKey<'_> {
+    fn value_len(&self) -> der::Result<Length> {
+        self.version().encoded_len()?
+            + self.modulus.encoded_len()?
+            + self.public_exponent.encoded_len()?
+            + self.private_exponent.encoded_len()?
+            + self.prime1.encoded_len()?
+            + self.prime2.encoded_len()?
+            + self.exponent1.encoded_len()?
+            + self.exponent2.encoded_len()?
+            + self.coefficient.encoded_len()?
+            + self.other_prime_infos.encoded_len()?
+    }
+
+    fn encode_value(&self, writer: &mut impl Writer) -> der::Result<()> {
+        self.version().encode(writer)?;
+        self.modulus.encode(writer)?;
+        self.public_exponent.encode(writer)?;
+        self.private_exponent.encode(writer)?;
+        self.prime1.encode(writer)?;
+        self.prime2.encode(writer)?;
+        self.exponent1.encode(writer)?;
+        self.exponent2.encode(writer)?;
+        self.coefficient.encode(writer)?;
+        self.other_prime_infos.encode(writer)?;
+        Ok(())
     }
 }
+
+impl<'a> Sequence<'a> for RsaPrivateKey<'a> {}
 
 impl<'a> From<RsaPrivateKey<'a>> for RsaPublicKey<'a> {
     fn from(private_key: RsaPrivateKey<'a>) -> RsaPublicKey<'a> {
@@ -178,7 +170,7 @@ impl<'a> TryFrom<&'a [u8]> for RsaPrivateKey<'a> {
     }
 }
 
-impl<'a> fmt::Debug for RsaPrivateKey<'a> {
+impl fmt::Debug for RsaPrivateKey<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("RsaPrivateKey")
             .field("version", &self.version())
@@ -188,7 +180,32 @@ impl<'a> fmt::Debug for RsaPrivateKey<'a> {
     }
 }
 
+#[cfg(feature = "alloc")]
+impl TryFrom<RsaPrivateKey<'_>> for SecretDocument {
+    type Error = Error;
+
+    fn try_from(private_key: RsaPrivateKey<'_>) -> Result<SecretDocument> {
+        SecretDocument::try_from(&private_key)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl TryFrom<&RsaPrivateKey<'_>> for SecretDocument {
+    type Error = Error;
+
+    fn try_from(private_key: &RsaPrivateKey<'_>) -> Result<SecretDocument> {
+        Ok(Self::encode_msg(private_key)?)
+    }
+}
+
+#[cfg(feature = "pem")]
+impl PemLabel for RsaPrivateKey<'_> {
+    const PEM_LABEL: &'static str = "RSA PRIVATE KEY";
+}
+
 /// Placeholder struct for `OtherPrimeInfos` in the no-`alloc` case.
+///
+/// This type is unconstructable by design, but supports the same traits.
 #[cfg(not(feature = "alloc"))]
 #[derive(Clone)]
 #[non_exhaustive]
@@ -197,11 +214,26 @@ pub struct OtherPrimeInfos<'a> {
 }
 
 #[cfg(not(feature = "alloc"))]
-impl<'a> Decodable<'a> for OtherPrimeInfos<'a> {
-    fn decode(decoder: &mut Decoder<'a>) -> der::Result<Self> {
+impl<'a> DecodeValue<'a> for OtherPrimeInfos<'a> {
+    fn decode_value<R: Reader<'a>>(reader: &mut R, _header: Header) -> der::Result<Self> {
         // Placeholder decoder that always returns an error.
-        // Use `Tag::Integer` to signal an unsupported version.
-        Err(decoder.error(der::ErrorKind::Value { tag: Tag::Integer }))
+        // Uses `Tag::Integer` to signal an unsupported version.
+        Err(reader.error(der::ErrorKind::Value { tag: Tag::Integer }))
+    }
+}
+
+#[cfg(not(feature = "alloc"))]
+impl EncodeValue for OtherPrimeInfos<'_> {
+    fn value_len(&self) -> der::Result<Length> {
+        // Placeholder decoder that always returns an error.
+        // Uses `Tag::Integer` to signal an unsupported version.
+        Err(der::ErrorKind::Value { tag: Tag::Integer }.into())
+    }
+
+    fn encode_value(&self, _writer: &mut impl Writer) -> der::Result<()> {
+        // Placeholder decoder that always returns an error.
+        // Uses `Tag::Integer` to signal an unsupported version.
+        Err(der::ErrorKind::Value { tag: Tag::Integer }.into())
     }
 }
 

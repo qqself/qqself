@@ -5,17 +5,20 @@
 
 //! Type-erased variants of [`Client`] and friends.
 
+use std::fmt;
+
+use tower::{Layer, Service, ServiceExt};
+
+use aws_smithy_http::body::SdkBody;
+use aws_smithy_http::result::ConnectorError;
+use boxclone::*;
+
+use crate::{bounds, retry, Client};
+
 // These types are technically public in that they're reachable from the public trait impls on
 // DynMiddleware, but no-one should ever look at them or use them.
 #[doc(hidden)]
 pub mod boxclone;
-use boxclone::*;
-
-use crate::{bounds, http_connector::HttpConnector, retry, Client};
-use aws_smithy_http::body::SdkBody;
-use aws_smithy_http::result::ConnectorError;
-use std::fmt;
-use tower::{Layer, Service, ServiceExt};
 
 /// A [`Client`] whose connector and middleware types have been erased.
 ///
@@ -58,6 +61,7 @@ where
             retry_policy: self.retry_policy,
             operation_timeout_config: self.operation_timeout_config,
             sleep_impl: self.sleep_impl,
+            reconnect_mode: self.reconnect_mode,
         }
     }
 }
@@ -98,6 +102,7 @@ where
             retry_policy: self.retry_policy,
             operation_timeout_config: self.operation_timeout_config,
             sleep_impl: self.sleep_impl,
+            reconnect_mode: self.reconnect_mode,
         }
     }
 
@@ -159,6 +164,16 @@ impl DynConnector {
     {
         Self(BoxCloneService::new(connector.map_err(|e| e.into())))
     }
+
+    #[doc(hidden)]
+    pub fn call_lite(
+        &mut self,
+        req: http::Request<SdkBody>,
+    ) -> BoxFuture<http::Response<SdkBody>, Box<dyn std::error::Error + Send + Sync + 'static>>
+    {
+        let future = Service::call(self, req);
+        Box::pin(async move { future.await.map_err(|err| Box::new(err) as _) })
+    }
 }
 
 impl Service<http::Request<SdkBody>> for DynConnector {
@@ -175,12 +190,6 @@ impl Service<http::Request<SdkBody>> for DynConnector {
 
     fn call(&mut self, req: http::Request<SdkBody>) -> Self::Future {
         self.0.call(req)
-    }
-}
-
-impl From<DynConnector> for HttpConnector {
-    fn from(connector: DynConnector) -> Self {
-        HttpConnector::Prebuilt(Some(connector))
     }
 }
 

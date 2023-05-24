@@ -1,37 +1,36 @@
 //! PKCS#8 `PrivateKeyInfo`.
 
-use crate::{AlgorithmIdentifier, Error, Result, Version};
+use crate::{AlgorithmIdentifierRef, Error, Result, Version};
 use core::fmt;
 use der::{
-    asn1::{Any, BitString, ContextSpecific, OctetString},
-    Decodable, Decoder, Encodable, Sequence, TagMode, TagNumber,
+    asn1::{AnyRef, BitStringRef, ContextSpecific, OctetStringRef},
+    Decode, DecodeValue, Encode, EncodeValue, Header, Length, Reader, Sequence, TagMode, TagNumber,
+    Writer,
 };
 
 #[cfg(feature = "alloc")]
-use crate::PrivateKeyDocument;
+use der::SecretDocument;
 
 #[cfg(feature = "encryption")]
 use {
-    crate::EncryptedPrivateKeyDocument,
+    crate::EncryptedPrivateKeyInfo,
+    der::zeroize::Zeroizing,
+    pkcs5::pbes2,
     rand_core::{CryptoRng, RngCore},
 };
 
 #[cfg(feature = "pem")]
-use {
-    crate::{EncodePrivateKey, LineEnding},
-    alloc::string::String,
-    zeroize::Zeroizing,
-};
+use der::pem::PemLabel;
 
 #[cfg(feature = "subtle")]
 use subtle::{Choice, ConstantTimeEq};
 
 /// Context-specific tag number for the public key.
-const PUBLIC_KEY_TAG: TagNumber = TagNumber::new(1);
+const PUBLIC_KEY_TAG: TagNumber = TagNumber::N1;
 
 /// PKCS#8 `PrivateKeyInfo`.
 ///
-/// ASN.1 structure containing an [`AlgorithmIdentifier`], private key
+/// ASN.1 structure containing an `AlgorithmIdentifier`, private key
 /// data in an algorithm specific format, and optional attributes
 /// (ignored by this implementation).
 ///
@@ -92,8 +91,8 @@ const PUBLIC_KEY_TAG: TagNumber = TagNumber::new(1);
 /// [RFC 5958 Section 2]: https://datatracker.ietf.org/doc/html/rfc5958#section-2
 #[derive(Clone)]
 pub struct PrivateKeyInfo<'a> {
-    /// X.509 [`AlgorithmIdentifier`] for the private key type.
-    pub algorithm: AlgorithmIdentifier<'a>,
+    /// X.509 `AlgorithmIdentifier` for the private key type.
+    pub algorithm: AlgorithmIdentifierRef<'a>,
 
     /// Private key data.
     pub private_key: &'a [u8],
@@ -107,7 +106,7 @@ impl<'a> PrivateKeyInfo<'a> {
     ///
     /// This is a helper method which initializes `attributes` and `public_key`
     /// to `None`, helpful if you aren't using those.
-    pub fn new(algorithm: AlgorithmIdentifier<'a>, private_key: &'a [u8]) -> Self {
+    pub fn new(algorithm: AlgorithmIdentifierRef<'a>, private_key: &'a [u8]) -> Self {
         Self {
             algorithm,
             private_key,
@@ -129,42 +128,60 @@ impl<'a> PrivateKeyInfo<'a> {
     /// Encrypt this private key using a symmetric encryption key derived
     /// from the provided password.
     ///
-    /// See [`PrivateKeyDocument::encrypt`] for more information.
+    /// Uses the following algorithms for encryption:
+    /// - PBKDF: scrypt with default parameters:
+    ///   - log₂(N): 15
+    ///   - r: 8
+    ///   - p: 1
+    /// - Cipher: AES-256-CBC (best available option for PKCS#5 encryption)
     #[cfg(feature = "encryption")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "encryption")))]
     pub fn encrypt(
         &self,
         rng: impl CryptoRng + RngCore,
         password: impl AsRef<[u8]>,
-    ) -> Result<EncryptedPrivateKeyDocument> {
-        self.to_der()?.encrypt(rng, password)
+    ) -> Result<SecretDocument> {
+        let der = Zeroizing::new(self.to_der()?);
+        EncryptedPrivateKeyInfo::encrypt(rng, password, der.as_ref())
     }
 
-    /// Encode this [`PrivateKeyInfo`] as ASN.1 DER.
-    #[cfg(feature = "alloc")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-    pub fn to_der(&self) -> Result<PrivateKeyDocument> {
-        self.try_into()
+    /// Encrypt this private key using a symmetric encryption key derived
+    /// from the provided password and [`pbes2::Parameters`].
+    #[cfg(feature = "encryption")]
+    pub fn encrypt_with_params(
+        &self,
+        pbes2_params: pbes2::Parameters<'_>,
+        password: impl AsRef<[u8]>,
+    ) -> Result<SecretDocument> {
+        let der = Zeroizing::new(self.to_der()?);
+        EncryptedPrivateKeyInfo::encrypt_with(pbes2_params, password, der.as_ref())
     }
 
-    /// Encode this [`PrivateKeyInfo`] as PEM-encoded ASN.1 DER with the given
-    /// [`LineEnding`].
-    #[cfg(feature = "pem")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
-    pub fn to_pem(&self, line_ending: LineEnding) -> Result<Zeroizing<String>> {
-        self.to_der()?.to_pkcs8_pem(line_ending)
+    /// Get a `BIT STRING` representation of the public key, if present.
+    fn public_key_bit_string(&self) -> der::Result<Option<ContextSpecific<BitStringRef<'a>>>> {
+        self.public_key
+            .map(|pk| {
+                BitStringRef::from_bytes(pk).map(|value| ContextSpecific {
+                    tag_number: PUBLIC_KEY_TAG,
+                    tag_mode: TagMode::Implicit,
+                    value,
+                })
+            })
+            .transpose()
     }
 }
 
-impl<'a> Decodable<'a> for PrivateKeyInfo<'a> {
-    fn decode(decoder: &mut Decoder<'a>) -> der::Result<PrivateKeyInfo<'a>> {
-        decoder.sequence(|decoder| {
+impl<'a> DecodeValue<'a> for PrivateKeyInfo<'a> {
+    fn decode_value<R: Reader<'a>>(
+        reader: &mut R,
+        header: Header,
+    ) -> der::Result<PrivateKeyInfo<'a>> {
+        reader.read_nested(header.length, |reader| {
             // Parse and validate `version` INTEGER.
-            let version = Version::decode(decoder)?;
-            let algorithm = decoder.decode()?;
-            let private_key = decoder.octet_string()?.into();
-            let public_key = decoder
-                .context_specific::<BitString<'_>>(PUBLIC_KEY_TAG, TagMode::Implicit)?
+            let version = Version::decode(reader)?;
+            let algorithm = reader.decode()?;
+            let private_key = OctetStringRef::decode(reader)?.into();
+            let public_key = reader
+                .context_specific::<BitStringRef<'_>>(PUBLIC_KEY_TAG, TagMode::Implicit)?
                 .map(|bs| {
                     bs.as_bytes()
                         .ok_or_else(|| der::Tag::BitString.value_error())
@@ -172,15 +189,19 @@ impl<'a> Decodable<'a> for PrivateKeyInfo<'a> {
                 .transpose()?;
 
             if version.has_public_key() != public_key.is_some() {
-                return Err(decoder.value_error(der::Tag::ContextSpecific {
-                    constructed: true,
-                    number: PUBLIC_KEY_TAG,
-                }));
+                return Err(reader.error(
+                    der::Tag::ContextSpecific {
+                        constructed: true,
+                        number: PUBLIC_KEY_TAG,
+                    }
+                    .value_error()
+                    .kind(),
+                ));
             }
 
             // Ignore any remaining extension fields
-            while !decoder.is_finished() {
-                decoder.decode::<ContextSpecific<Any<'_>>>()?;
+            while !reader.is_finished() {
+                reader.decode::<ContextSpecific<AnyRef<'_>>>()?;
             }
 
             Ok(Self {
@@ -192,28 +213,24 @@ impl<'a> Decodable<'a> for PrivateKeyInfo<'a> {
     }
 }
 
-impl<'a> Sequence<'a> for PrivateKeyInfo<'a> {
-    fn fields<F, T>(&self, f: F) -> der::Result<T>
-    where
-        F: FnOnce(&[&dyn Encodable]) -> der::Result<T>,
-    {
-        f(&[
-            &u8::from(self.version()),
-            &self.algorithm,
-            &OctetString::new(self.private_key)?,
-            &self
-                .public_key
-                .map(|pk| {
-                    BitString::from_bytes(pk).map(|value| ContextSpecific {
-                        tag_number: PUBLIC_KEY_TAG,
-                        tag_mode: TagMode::Implicit,
-                        value,
-                    })
-                })
-                .transpose()?,
-        ])
+impl EncodeValue for PrivateKeyInfo<'_> {
+    fn value_len(&self) -> der::Result<Length> {
+        self.version().encoded_len()?
+            + self.algorithm.encoded_len()?
+            + OctetStringRef::new(self.private_key)?.encoded_len()?
+            + self.public_key_bit_string()?.encoded_len()?
+    }
+
+    fn encode_value(&self, writer: &mut impl Writer) -> der::Result<()> {
+        self.version().encode(writer)?;
+        self.algorithm.encode(writer)?;
+        OctetStringRef::new(self.private_key)?.encode(writer)?;
+        self.public_key_bit_string()?.encode(writer)?;
+        Ok(())
     }
 }
+
+impl<'a> Sequence<'a> for PrivateKeyInfo<'a> {}
 
 impl<'a> TryFrom<&'a [u8]> for PrivateKeyInfo<'a> {
     type Error = Error;
@@ -229,12 +246,34 @@ impl<'a> fmt::Debug for PrivateKeyInfo<'a> {
             .field("version", &self.version())
             .field("algorithm", &self.algorithm)
             .field("public_key", &self.public_key)
-            .finish() // TODO: use `finish_non_exhaustive` when stable
+            .finish_non_exhaustive()
     }
 }
 
+#[cfg(feature = "alloc")]
+impl TryFrom<PrivateKeyInfo<'_>> for SecretDocument {
+    type Error = Error;
+
+    fn try_from(private_key: PrivateKeyInfo<'_>) -> Result<SecretDocument> {
+        SecretDocument::try_from(&private_key)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl TryFrom<&PrivateKeyInfo<'_>> for SecretDocument {
+    type Error = Error;
+
+    fn try_from(private_key: &PrivateKeyInfo<'_>) -> Result<SecretDocument> {
+        Ok(Self::encode_msg(private_key)?)
+    }
+}
+
+#[cfg(feature = "pem")]
+impl PemLabel for PrivateKeyInfo<'_> {
+    const PEM_LABEL: &'static str = "PRIVATE KEY";
+}
+
 #[cfg(feature = "subtle")]
-#[cfg_attr(docsrs, doc(cfg(feature = "subtle")))]
 impl<'a> ConstantTimeEq for PrivateKeyInfo<'a> {
     fn ct_eq(&self, other: &Self) -> Choice {
         // NOTE: public fields are not compared in constant time
@@ -246,13 +285,11 @@ impl<'a> ConstantTimeEq for PrivateKeyInfo<'a> {
 }
 
 #[cfg(feature = "subtle")]
-#[cfg_attr(docsrs, doc(cfg(feature = "subtle")))]
+impl<'a> Eq for PrivateKeyInfo<'a> {}
+
+#[cfg(feature = "subtle")]
 impl<'a> PartialEq for PrivateKeyInfo<'a> {
     fn eq(&self, other: &Self) -> bool {
         self.ct_eq(other).into()
     }
 }
-
-#[cfg(feature = "subtle")]
-#[cfg_attr(docsrs, doc(cfg(feature = "subtle")))]
-impl<'a> Eq for PrivateKeyInfo<'a> {}

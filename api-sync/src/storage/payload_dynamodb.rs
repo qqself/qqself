@@ -2,10 +2,10 @@ use std::collections::HashMap;
 use std::pin::Pin;
 
 use async_trait::async_trait;
-use aws_sdk_dynamodb::error::QueryError;
-use aws_sdk_dynamodb::model::{AttributeValue, DeleteRequest, Select, WriteRequest};
-use aws_sdk_dynamodb::types::SdkError;
 use aws_sdk_dynamodb::Client;
+use aws_sdk_dynamodb::error::SdkError;
+use aws_sdk_dynamodb::operation::query::QueryError;
+use aws_sdk_dynamodb::types::{AttributeValue, WriteRequest, DeleteRequest, Select};
 use futures::{Stream, StreamExt, TryStreamExt};
 use log::warn;
 use qqself_core::binary_text::BinaryToText;

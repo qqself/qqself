@@ -16,38 +16,11 @@ use qqself_core::{
         tokens::{DeleteToken, SearchToken},
     },
 };
-use serde::{Deserialize, Serialize};
 
 const MAX_PAYLOAD_AGE: Duration = Duration::new(1, 0);
 
 async fn health() -> impl Responder {
     "OK"
-}
-
-#[derive(Serialize, Deserialize)]
-struct InfoResp {
-    pub timestamp: Timestamp,
-    pub build: String,
-    pub commit: String,
-    pub hash: String,
-    pub host: String,
-    pub profile: String,
-    pub rust: String,
-    pub target: String,
-    pub version: String,
-}
-async fn info() -> impl Responder {
-    web::Json(InfoResp {
-        timestamp: Timestamp::now(),
-        build: env!("VERGEN_BUILD_TIMESTAMP").to_string(),
-        commit: env!("VERGEN_GIT_COMMIT_MESSAGE").to_string(),
-        hash: env!("VERGEN_GIT_SHA").to_string(),
-        host: env!("VERGEN_RUSTC_HOST_TRIPLE").to_string(),
-        profile: env!("VERGEN_CARGO_PROFILE").to_string(),
-        rust: env!("VERGEN_RUSTC_SEMVER").to_string(),
-        target: env!("VERGEN_CARGO_TARGET_TRIPLE").to_string(),
-        version: env!("VERGEN_BUILD_SEMVER").to_string(),
-    })
 }
 
 async fn set(
@@ -158,7 +131,6 @@ pub fn http_config(
         .app_data(payload_storage)
         .app_data(account_storage)
         .route("/health", web::get().to(health))
-        .route("/info", web::get().to(info))
         .route("/set", web::post().to(set))
         .route("/find", web::post().to(find))
         .route("/delete", web::post().to(delete))
@@ -261,16 +233,6 @@ mod tests {
         let req = test::TestRequest::get().uri("/health").to_request();
         let resp = test::call_and_read_body(&app, req).await;
         assert_eq!(resp, Bytes::from_static(b"OK"))
-    }
-
-    #[actix_web::test]
-    async fn test_info() {
-        let (_, _, configure) = test_app();
-        let app = test::init_service(App::new().configure(configure)).await;
-        let req = test::TestRequest::get().uri("/info").to_request();
-        let resp: InfoResp = test::call_and_read_body_json(&app, req).await;
-        let max_diff_sec = 5;
-        assert!(resp.timestamp.elapsed() < max_diff_sec);
     }
 
     #[actix_web::test]

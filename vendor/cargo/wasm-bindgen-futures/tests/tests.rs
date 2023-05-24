@@ -5,7 +5,7 @@ wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
 use futures_channel::oneshot;
 use js_sys::Promise;
 use std::ops::FnMut;
-use wasm_bindgen::{prelude::*, JsValue};
+use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::{future_to_promise, spawn_local, JsFuture};
 use wasm_bindgen_test::*;
 
@@ -138,7 +138,6 @@ async fn can_create_multiple_futures_from_same_promise() {
 #[wasm_bindgen_test]
 async fn can_use_an_async_iterable_as_stream() {
     use futures_lite::stream::StreamExt;
-    use wasm_bindgen::JsCast;
     use wasm_bindgen_futures::stream::JsStream;
 
     let async_iter = js_sys::Function::new_no_args(
@@ -155,4 +154,22 @@ async fn can_use_an_async_iterable_as_stream() {
     assert_eq!(stream.next().await, Some(Ok(JsValue::from(42))));
     assert_eq!(stream.next().await, Some(Ok(JsValue::from(24))));
     assert_eq!(stream.next().await, None);
+}
+
+#[wasm_bindgen_test]
+#[should_panic]
+async fn should_panic() {
+    panic!()
+}
+
+#[wasm_bindgen_test]
+#[should_panic = "error message"]
+async fn should_panic_string() {
+    panic!("error message")
+}
+
+#[wasm_bindgen_test]
+#[should_panic(expected = "error message")]
+async fn should_panic_expected() {
+    panic!("error message")
 }

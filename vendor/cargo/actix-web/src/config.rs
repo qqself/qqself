@@ -141,7 +141,7 @@ impl AppConfig {
         self.secure
     }
 
-    /// Returns the socket address of the local half of this TCP connection
+    /// Returns the socket address of the local half of this TCP connection.
     pub fn local_addr(&self) -> SocketAddr {
         self.addr
     }
@@ -344,7 +344,7 @@ mod tests {
                     "/test",
                     web::get().to(|req: HttpRequest| {
                         HttpResponse::Ok()
-                            .body(req.url_for("youtube", &["12345"]).unwrap().to_string())
+                            .body(req.url_for("youtube", ["12345"]).unwrap().to_string())
                     }),
                 ),
         )

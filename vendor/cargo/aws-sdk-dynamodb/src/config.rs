@@ -18,14 +18,21 @@
 ///
 pub struct Config {
     pub(crate) make_token: crate::idempotency_token::IdempotencyTokenProvider,
+    pub(crate) endpoint_resolver:
+        std::sync::Arc<dyn aws_smithy_http::endpoint::ResolveEndpoint<crate::endpoint::Params>>,
     retry_config: Option<aws_smithy_types::retry::RetryConfig>,
     sleep_impl: Option<std::sync::Arc<dyn aws_smithy_async::rt::sleep::AsyncSleep>>,
     timeout_config: Option<aws_smithy_types::timeout::TimeoutConfig>,
     app_name: Option<aws_types::app_name::AppName>,
-    pub(crate) endpoint_resolver:
-        std::sync::Arc<dyn aws_smithy_http::endpoint::ResolveEndpoint<aws_endpoint::Params>>,
+    #[allow(missing_docs)] // documentation missing in model
+    pub(crate) endpoint_url: std::option::Option<std::string::String>,
+    #[allow(missing_docs)] // documentation missing in model
+    pub(crate) use_dual_stack: std::option::Option<std::primitive::bool>,
+    #[allow(missing_docs)] // documentation missing in model
+    pub(crate) use_fips: std::option::Option<std::primitive::bool>,
+    http_connector: Option<aws_smithy_client::http_connector::HttpConnector>,
     pub(crate) region: Option<aws_types::region::Region>,
-    pub(crate) credentials_provider: aws_types::credentials::SharedCredentialsProvider,
+    pub(crate) credentials_cache: aws_credential_types::cache::SharedCredentialsCache,
 }
 impl std::fmt::Debug for Config {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -43,6 +50,13 @@ impl Config {
     /// a newly-randomized token provider will be returned.
     pub fn make_token(&self) -> crate::idempotency_token::IdempotencyTokenProvider {
         self.make_token.clone()
+    }
+    /// Returns the endpoint resolver.
+    pub fn endpoint_resolver(
+        &self,
+    ) -> std::sync::Arc<dyn aws_smithy_http::endpoint::ResolveEndpoint<crate::endpoint::Params>>
+    {
+        self.endpoint_resolver.clone()
     }
     /// Return a reference to the retry configuration contained in this config, if any.
     pub fn retry_config(&self) -> Option<&aws_smithy_types::retry::RetryConfig> {
@@ -67,6 +81,10 @@ impl Config {
     pub fn app_name(&self) -> Option<&aws_types::app_name::AppName> {
         self.app_name.as_ref()
     }
+    /// Return an [`HttpConnector`](aws_smithy_client::http_connector::HttpConnector) to use when making requests, if any.
+    pub fn http_connector(&self) -> Option<&aws_smithy_client::http_connector::HttpConnector> {
+        self.http_connector.as_ref()
+    }
     /// Creates a new [service config](crate::Config) from a [shared `config`](aws_types::sdk_config::SdkConfig).
     pub fn new(config: &aws_types::sdk_config::SdkConfig) -> Self {
         Builder::from(config).build()
@@ -82,24 +100,35 @@ impl Config {
     pub fn region(&self) -> Option<&aws_types::region::Region> {
         self.region.as_ref()
     }
-    /// Returns the credentials provider.
-    pub fn credentials_provider(&self) -> aws_types::credentials::SharedCredentialsProvider {
-        self.credentials_provider.clone()
+    /// Returns the credentials cache.
+    pub fn credentials_cache(&self) -> aws_credential_types::cache::SharedCredentialsCache {
+        self.credentials_cache.clone()
     }
 }
 /// Builder for creating a `Config`.
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Builder {
     make_token: Option<crate::idempotency_token::IdempotencyTokenProvider>,
+    endpoint_resolver: Option<
+        std::sync::Arc<dyn aws_smithy_http::endpoint::ResolveEndpoint<crate::endpoint::Params>>,
+    >,
     retry_config: Option<aws_smithy_types::retry::RetryConfig>,
     sleep_impl: Option<std::sync::Arc<dyn aws_smithy_async::rt::sleep::AsyncSleep>>,
     timeout_config: Option<aws_smithy_types::timeout::TimeoutConfig>,
     app_name: Option<aws_types::app_name::AppName>,
-    endpoint_resolver: Option<
-        std::sync::Arc<dyn aws_smithy_http::endpoint::ResolveEndpoint<aws_endpoint::Params>>,
-    >,
+    endpoint_url: std::option::Option<std::string::String>,
+    use_dual_stack: std::option::Option<std::primitive::bool>,
+    use_fips: std::option::Option<std::primitive::bool>,
+    http_connector: Option<aws_smithy_client::http_connector::HttpConnector>,
     region: Option<aws_types::region::Region>,
-    credentials_provider: Option<aws_types::credentials::SharedCredentialsProvider>,
+    credentials_provider: Option<aws_credential_types::provider::SharedCredentialsProvider>,
+    credentials_cache: Option<aws_credential_types::cache::CredentialsCache>,
+}
+impl std::fmt::Debug for Builder {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut config = f.debug_struct("Builder");
+        config.finish()
+    }
 }
 impl Builder {
     /// Constructs a config builder.
@@ -111,7 +140,71 @@ impl Builder {
         mut self,
         make_token: impl Into<crate::idempotency_token::IdempotencyTokenProvider>,
     ) -> Self {
-        self.make_token = Some(make_token.into());
+        self.set_make_token(Some(make_token.into()));
+        self
+    }
+
+    /// Sets the idempotency token provider to use for service calls that require tokens.
+    pub fn set_make_token(
+        &mut self,
+        make_token: Option<crate::idempotency_token::IdempotencyTokenProvider>,
+    ) -> &mut Self {
+        self.make_token = make_token;
+        self
+    }
+    /// Sets the endpoint resolver to use when making requests.
+
+    ///
+    /// When unset, the client will used a generated endpoint resolver based on the endpoint resolution
+    /// rules for `aws_sdk_dynamodb`.
+    ///
+    /// # Examples
+    /// ```no_run
+    /// use aws_smithy_http::endpoint;
+    /// use aws_sdk_dynamodb::endpoint::{Params as EndpointParams, DefaultResolver};
+    /// /// Endpoint resolver which adds a prefix to the generated endpoint
+    /// #[derive(Debug)]
+    /// struct PrefixResolver {
+    ///     base_resolver: DefaultResolver,
+    ///     prefix: String
+    /// }
+    /// impl endpoint::ResolveEndpoint<EndpointParams> for PrefixResolver {
+    ///   fn resolve_endpoint(&self, params: &EndpointParams) -> endpoint::Result {
+    ///        self.base_resolver
+    ///              .resolve_endpoint(params)
+    ///              .map(|ep|{
+    ///                   let url = ep.url().to_string();
+    ///                   ep.into_builder().url(format!("{}.{}", &self.prefix, url)).build()
+    ///               })
+    ///   }
+    /// }
+    /// let prefix_resolver = PrefixResolver {
+    ///     base_resolver: DefaultResolver::new(),
+    ///     prefix: "subdomain".to_string()
+    /// };
+    /// let config = aws_sdk_dynamodb::Config::builder().endpoint_resolver(prefix_resolver);
+    /// ```
+
+    pub fn endpoint_resolver(
+        mut self,
+        endpoint_resolver: impl aws_smithy_http::endpoint::ResolveEndpoint<crate::endpoint::Params>
+            + 'static,
+    ) -> Self {
+        self.endpoint_resolver = Some(std::sync::Arc::new(endpoint_resolver) as _);
+        self
+    }
+
+    /// Sets the endpoint resolver to use when making requests.
+    ///
+    /// When unset, the client will used a generated endpoint resolver based on the endpoint resolution
+    /// rules for `aws_sdk_dynamodb`.
+    pub fn set_endpoint_resolver(
+        &mut self,
+        endpoint_resolver: Option<
+            std::sync::Arc<dyn aws_smithy_http::endpoint::ResolveEndpoint<crate::endpoint::Params>>,
+        >,
+    ) -> &mut Self {
+        self.endpoint_resolver = endpoint_resolver;
         self
     }
     /// Set the retry_config for the builder
@@ -279,39 +372,129 @@ impl Builder {
         self.app_name = app_name;
         self
     }
-    /// Overrides the endpoint resolver to use when making requests.
-    ///
-    /// When unset, the client will used a generated endpoint resolver based on the endpoint metadata
-    /// for `aws_sdk_dynamodb`.
+    /// Sets the endpoint url used to communicate with this service
+
+    /// Note: this is used in combination with other endpoint rules, e.g. an API that applies a host-label prefix
+    /// will be prefixed onto this URL. To fully override the endpoint resolver, use
+    /// [`Builder::endpoint_resolver`].
+    pub fn endpoint_url(mut self, endpoint_url: impl Into<std::string::String>) -> Self {
+        self.endpoint_url = Some(endpoint_url.into());
+        self
+    }
+    /// Sets the endpoint url used to communicate with this service
+
+    /// Note: this is used in combination with other endpoint rules, e.g. an API that applies a host-label prefix
+    /// will be prefixed onto this URL. To fully override the endpoint resolver, use
+    /// [`Builder::endpoint_resolver`].
+    pub fn set_endpoint_url(&mut self, endpoint_url: Option<std::string::String>) -> &mut Self {
+        self.endpoint_url = endpoint_url;
+        self
+    }
+    /// When true, use the dual-stack endpoint. If the configured endpoint does not support dual-stack, dispatching the request MAY return an error.
+    pub fn use_dual_stack(mut self, use_dual_stack: impl Into<std::primitive::bool>) -> Self {
+        self.use_dual_stack = Some(use_dual_stack.into());
+        self
+    }
+    /// When true, use the dual-stack endpoint. If the configured endpoint does not support dual-stack, dispatching the request MAY return an error.
+    pub fn set_use_dual_stack(
+        &mut self,
+        use_dual_stack: Option<std::primitive::bool>,
+    ) -> &mut Self {
+        self.use_dual_stack = use_dual_stack;
+        self
+    }
+    /// When true, send this request to the FIPS-compliant regional endpoint. If the configured endpoint does not have a FIPS compliant endpoint, dispatching the request will return an error.
+    pub fn use_fips(mut self, use_fips: impl Into<std::primitive::bool>) -> Self {
+        self.use_fips = Some(use_fips.into());
+        self
+    }
+    /// When true, send this request to the FIPS-compliant regional endpoint. If the configured endpoint does not have a FIPS compliant endpoint, dispatching the request will return an error.
+    pub fn set_use_fips(&mut self, use_fips: Option<std::primitive::bool>) -> &mut Self {
+        self.use_fips = use_fips;
+        self
+    }
+    /// Sets the HTTP connector to use when making requests.
     ///
     /// # Examples
     /// ```no_run
-    /// use aws_types::region::Region;
-    /// use aws_sdk_dynamodb::config::{Builder, Config};
-    /// use aws_sdk_dynamodb::Endpoint;
+    /// # #[cfg(test)]
+    /// # mod tests {
+    /// # #[test]
+    /// # fn example() {
+    /// use std::time::Duration;
+    /// use aws_smithy_client::{Client, hyper_ext};
+    /// use aws_smithy_client::erase::DynConnector;
+    /// use aws_smithy_client::http_connector::ConnectorSettings;
+    /// use aws_sdk_dynamodb::config::Config;
     ///
-    /// let config = aws_sdk_dynamodb::Config::builder()
-    ///     .endpoint_resolver(
-    ///         Endpoint::immutable("http://localhost:8080".parse().expect("valid URI"))
-    ///     ).build();
+    /// let https_connector = hyper_rustls::HttpsConnectorBuilder::new()
+    ///     .with_webpki_roots()
+    ///     .https_only()
+    ///     .enable_http1()
+    ///     .enable_http2()
+    ///     .build();
+    /// let smithy_connector = hyper_ext::Adapter::builder()
+    ///     // Optionally set things like timeouts as well
+    ///     .connector_settings(
+    ///         ConnectorSettings::builder()
+    ///             .connect_timeout(Duration::from_secs(5))
+    ///             .build()
+    ///     )
+    ///     .build(https_connector);
+    /// # }
+    /// # }
     /// ```
-    pub fn endpoint_resolver(
+    pub fn http_connector(
         mut self,
-        endpoint_resolver: impl aws_endpoint::ResolveAwsEndpoint + 'static,
+        http_connector: impl Into<aws_smithy_client::http_connector::HttpConnector>,
     ) -> Self {
-        self.endpoint_resolver = Some(std::sync::Arc::new(
-            aws_endpoint::EndpointShim::from_resolver(endpoint_resolver),
-        ) as _);
+        self.http_connector = Some(http_connector.into());
         self
     }
 
-    /// Sets the endpoint resolver to use when making requests.
-    pub fn set_endpoint_resolver(
+    /// Sets the HTTP connector to use when making requests.
+    ///
+    /// # Examples
+    /// ```no_run
+    /// # #[cfg(test)]
+    /// # mod tests {
+    /// # #[test]
+    /// # fn example() {
+    /// use std::time::Duration;
+    /// use aws_smithy_client::hyper_ext;
+    /// use aws_smithy_client::http_connector::ConnectorSettings;
+    /// use crate::sdk_config::{SdkConfig, Builder};
+    /// use aws_sdk_dynamodb::config::{Builder, Config};
+    ///
+    /// fn override_http_connector(builder: &mut Builder) {
+    ///     let https_connector = hyper_rustls::HttpsConnectorBuilder::new()
+    ///         .with_webpki_roots()
+    ///         .https_only()
+    ///         .enable_http1()
+    ///         .enable_http2()
+    ///         .build();
+    ///     let smithy_connector = hyper_ext::Adapter::builder()
+    ///         // Optionally set things like timeouts as well
+    ///         .connector_settings(
+    ///             ConnectorSettings::builder()
+    ///                 .connect_timeout(Duration::from_secs(5))
+    ///                 .build()
+    ///         )
+    ///         .build(https_connector);
+    ///     builder.set_http_connector(Some(smithy_connector));
+    /// }
+    ///
+    /// let mut builder = aws_sdk_dynamodb::Config::builder();
+    /// override_http_connector(&mut builder);
+    /// let config = builder.build();
+    /// # }
+    /// # }
+    /// ```
+    pub fn set_http_connector(
         &mut self,
-        endpoint_resolver: Option<std::sync::Arc<dyn aws_endpoint::ResolveAwsEndpoint>>,
+        http_connector: Option<impl Into<aws_smithy_client::http_connector::HttpConnector>>,
     ) -> &mut Self {
-        self.endpoint_resolver = endpoint_resolver
-            .map(|res| std::sync::Arc::new(aws_endpoint::EndpointShim::from_arc(res)) as _);
+        self.http_connector = http_connector.map(|inner| inner.into());
         self
     }
     /// Sets the AWS region to use when making requests.
@@ -332,10 +515,10 @@ impl Builder {
     /// Sets the credentials provider for this service
     pub fn credentials_provider(
         mut self,
-        credentials_provider: impl aws_types::credentials::ProvideCredentials + 'static,
+        credentials_provider: impl aws_credential_types::provider::ProvideCredentials + 'static,
     ) -> Self {
-        self.credentials_provider = Some(aws_types::credentials::SharedCredentialsProvider::new(
-            credentials_provider,
+        self.set_credentials_provider(Some(
+            aws_credential_types::provider::SharedCredentialsProvider::new(credentials_provider),
         ));
         self
     }
@@ -343,9 +526,45 @@ impl Builder {
     /// Sets the credentials provider for this service
     pub fn set_credentials_provider(
         &mut self,
-        credentials_provider: Option<aws_types::credentials::SharedCredentialsProvider>,
+        credentials_provider: Option<aws_credential_types::provider::SharedCredentialsProvider>,
     ) -> &mut Self {
         self.credentials_provider = credentials_provider;
+        self
+    }
+    /// Sets the credentials cache for this service
+    pub fn credentials_cache(
+        mut self,
+        credentials_cache: aws_credential_types::cache::CredentialsCache,
+    ) -> Self {
+        self.set_credentials_cache(Some(credentials_cache));
+        self
+    }
+
+    /// Sets the credentials cache for this service
+    pub fn set_credentials_cache(
+        &mut self,
+        credentials_cache: Option<aws_credential_types::cache::CredentialsCache>,
+    ) -> &mut Self {
+        self.credentials_cache = credentials_cache;
+        self
+    }
+    #[cfg(any(feature = "test-util", test))]
+    #[allow(unused_mut)]
+    /// Apply test defaults to the builder
+    pub fn set_test_defaults(&mut self) -> &mut Self {
+        self.set_make_token(Some("00000000-0000-4000-8000-000000000000".into()));
+        self.set_credentials_provider(Some(
+            aws_credential_types::provider::SharedCredentialsProvider::new(
+                aws_credential_types::Credentials::for_tests(),
+            ),
+        ));
+        self
+    }
+    #[cfg(any(feature = "test-util", test))]
+    #[allow(unused_mut)]
+    /// Apply test defaults to the builder
+    pub fn with_test_defaults(mut self) -> Self {
+        self.set_test_defaults();
         self
     }
     /// Builds a [`Config`].
@@ -354,35 +573,61 @@ impl Builder {
             make_token: self
                 .make_token
                 .unwrap_or_else(crate::idempotency_token::default_provider),
+            endpoint_resolver: self
+                .endpoint_resolver
+                .unwrap_or_else(|| std::sync::Arc::new(crate::endpoint::DefaultResolver::new())),
             retry_config: self.retry_config,
-            sleep_impl: self.sleep_impl,
+            sleep_impl: self.sleep_impl.clone(),
             timeout_config: self.timeout_config,
             app_name: self.app_name,
-            endpoint_resolver: self.endpoint_resolver.unwrap_or_else(|| {
-                std::sync::Arc::new(aws_endpoint::EndpointShim::from_resolver(
-                    crate::aws_endpoint::endpoint_resolver(),
-                ))
-            }),
+            endpoint_url: self.endpoint_url,
+            use_dual_stack: self.use_dual_stack,
+            use_fips: self.use_fips,
+            http_connector: self.http_connector,
             region: self.region,
-            credentials_provider: self.credentials_provider.unwrap_or_else(|| {
-                aws_types::credentials::SharedCredentialsProvider::new(
-                    crate::no_credentials::NoCredentials,
-                )
-            }),
+            credentials_cache: self
+                .credentials_cache
+                .unwrap_or_else({
+                    let sleep = self.sleep_impl.clone();
+                    || match sleep {
+                        Some(sleep) => {
+                            aws_credential_types::cache::CredentialsCache::lazy_builder()
+                                .sleep(sleep)
+                                .into_credentials_cache()
+                        }
+                        None => aws_credential_types::cache::CredentialsCache::lazy(),
+                    }
+                })
+                .create_cache(self.credentials_provider.unwrap_or_else(|| {
+                    aws_credential_types::provider::SharedCredentialsProvider::new(
+                        crate::no_credentials::NoCredentials,
+                    )
+                })),
         }
     }
 }
 
+pub use aws_credential_types::Credentials;
+
+pub use aws_types::region::Region;
+
 impl From<&aws_types::sdk_config::SdkConfig> for Builder {
     fn from(input: &aws_types::sdk_config::SdkConfig) -> Self {
         let mut builder = Builder::default();
+        builder.set_credentials_cache(input.credentials_cache().cloned());
+        builder.set_credentials_provider(input.credentials_provider().cloned());
         builder = builder.region(input.region().cloned());
-        builder.set_endpoint_resolver(input.endpoint_resolver().clone());
+        builder.set_use_fips(input.use_fips());
+        builder.set_use_dual_stack(input.use_dual_stack());
+        builder.set_endpoint_url(input.endpoint_url().map(|s| s.to_string()));
+        // resiliency
         builder.set_retry_config(input.retry_config().cloned());
         builder.set_timeout_config(input.timeout_config().cloned());
         builder.set_sleep_impl(input.sleep_impl());
-        builder.set_credentials_provider(input.credentials_provider().cloned());
+
+        builder.set_http_connector(input.http_connector().cloned());
         builder.set_app_name(input.app_name().cloned());
+
         builder
     }
 }
@@ -392,6 +637,8 @@ impl From<&aws_types::sdk_config::SdkConfig> for Config {
         Builder::from(sdk_config).build()
     }
 }
+
+pub use aws_types::app_name::AppName;
 
 pub use aws_smithy_async::rt::sleep::{AsyncSleep, Sleep};
 

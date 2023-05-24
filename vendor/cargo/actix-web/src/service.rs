@@ -238,11 +238,7 @@ impl ServiceRequest {
         self.req.connection_info()
     }
 
-    /// Returns reference to the Path parameters.
-    ///
-    /// Params is a container for URL parameters. A variable segment is specified in the form
-    /// `{identifier}`, where the identifier can be used later in a request handler to access the
-    /// matched value for that segment.
+    /// Counterpart to [`HttpRequest::match_info`].
     #[inline]
     pub fn match_info(&self) -> &Path<Url> {
         self.req.match_info()
@@ -267,12 +263,13 @@ impl ServiceRequest {
     }
 
     /// Returns a reference to the application's resource map.
+    /// Counterpart to [`HttpRequest::resource_map`].
     #[inline]
     pub fn resource_map(&self) -> &ResourceMap {
         self.req.resource_map()
     }
 
-    /// Returns a reference to the application's configuration.
+    /// Counterpart to [`HttpRequest::app_config`].
     #[inline]
     pub fn app_config(&self) -> &AppConfig {
         self.req.app_config()
@@ -327,9 +324,7 @@ impl ServiceRequest {
             .push(extensions);
     }
 
-    /// Creates a context object for use with a [guard](crate::guard).
-    ///
-    /// Useful if you are implementing
+    /// Creates a context object for use with a routing [guard](crate::guard).
     #[inline]
     pub fn guard_ctx(&self) -> GuardContext<'_> {
         GuardContext { req: self }

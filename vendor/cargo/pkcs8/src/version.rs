@@ -1,12 +1,12 @@
 //! PKCS#8 version identifier.
 
 use crate::Error;
-use der::{Decodable, Decoder, Encodable, Encoder, FixedTag, Tag};
+use der::{Decode, Encode, FixedTag, Reader, Tag, Writer};
 
 /// Version identifier for PKCS#8 documents.
 ///
 /// (RFC 5958 designates `0` and `1` as the only valid versions for PKCS#8 documents)
-#[derive(Clone, Debug, Copy, PartialEq)]
+#[derive(Clone, Debug, Copy, PartialEq, Eq)]
 pub enum Version {
     /// Denotes PKCS#8 v1: no public key field.
     V1 = 0,
@@ -25,19 +25,19 @@ impl Version {
     }
 }
 
-impl Decodable<'_> for Version {
-    fn decode(decoder: &mut Decoder<'_>) -> der::Result<Self> {
+impl<'a> Decode<'a> for Version {
+    fn decode<R: Reader<'a>>(decoder: &mut R) -> der::Result<Self> {
         Version::try_from(u8::decode(decoder)?).map_err(|_| Self::TAG.value_error())
     }
 }
 
-impl Encodable for Version {
+impl Encode for Version {
     fn encoded_len(&self) -> der::Result<der::Length> {
         der::Length::from(1u8).for_tlv()
     }
 
-    fn encode(&self, encoder: &mut Encoder<'_>) -> der::Result<()> {
-        u8::from(*self).encode(encoder)
+    fn encode(&self, writer: &mut impl Writer) -> der::Result<()> {
+        u8::from(*self).encode(writer)
     }
 }
 

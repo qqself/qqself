@@ -1,8 +1,8 @@
 //! ASN.1 `SEQUENCE OF` support.
 
 use crate::{
-    arrayvec, ArrayVec, Decodable, DecodeValue, Decoder, DerOrd, Encodable, EncodeValue, Encoder,
-    ErrorKind, FixedTag, Length, Result, Tag, ValueOrd,
+    arrayvec, ord::iter_cmp, ArrayVec, Decode, DecodeValue, DerOrd, Encode, EncodeValue, FixedTag,
+    Header, Length, Reader, Result, Tag, ValueOrd, Writer,
 };
 use core::cmp::Ordering;
 
@@ -30,7 +30,7 @@ impl<T, const N: usize> SequenceOf<T, N> {
 
     /// Add an element to this [`SequenceOf`].
     pub fn add(&mut self, element: T) -> Result<()> {
-        self.inner.add(element)
+        self.inner.push(element)
     }
 
     /// Get an element of this [`SequenceOf`].
@@ -64,36 +64,33 @@ impl<T, const N: usize> Default for SequenceOf<T, N> {
 
 impl<'a, T, const N: usize> DecodeValue<'a> for SequenceOf<T, N>
 where
-    T: Decodable<'a>,
+    T: Decode<'a>,
 {
-    fn decode_value(decoder: &mut Decoder<'a>, length: Length) -> Result<Self> {
-        let end_pos = (decoder.position() + length)?;
-        let mut sequence_of = Self::new();
+    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+        reader.read_nested(header.length, |reader| {
+            let mut sequence_of = Self::new();
 
-        while decoder.position() < end_pos {
-            sequence_of.add(decoder.decode()?)?;
-        }
+            while !reader.is_finished() {
+                sequence_of.add(T::decode(reader)?)?;
+            }
 
-        if decoder.position() != end_pos {
-            decoder.error(ErrorKind::Length { tag: Self::TAG });
-        }
-
-        Ok(sequence_of)
+            Ok(sequence_of)
+        })
     }
 }
 
 impl<T, const N: usize> EncodeValue for SequenceOf<T, N>
 where
-    T: Encodable,
+    T: Encode,
 {
     fn value_len(&self) -> Result<Length> {
         self.iter()
             .fold(Ok(Length::ZERO), |len, elem| len + elem.encoded_len()?)
     }
 
-    fn encode_value(&self, encoder: &mut Encoder<'_>) -> Result<()> {
+    fn encode_value(&self, writer: &mut impl Writer) -> Result<()> {
         for elem in self.iter() {
-            elem.encode(encoder)?;
+            elem.encode(writer)?;
         }
 
         Ok(())
@@ -109,7 +106,7 @@ where
     T: DerOrd,
 {
     fn value_cmp(&self, other: &Self) -> Result<Ordering> {
-        value_cmp(self.iter(), other.iter())
+        iter_cmp(self.iter(), other.iter())
     }
 }
 
@@ -128,29 +125,39 @@ impl<'a, T> Iterator for SequenceOfIter<'a, T> {
     }
 }
 
+impl<'a, T> ExactSizeIterator for SequenceOfIter<'a, T> {}
+
 impl<'a, T, const N: usize> DecodeValue<'a> for [T; N]
 where
-    T: Decodable<'a>,
+    T: Decode<'a>,
 {
-    fn decode_value(decoder: &mut Decoder<'a>, length: Length) -> Result<Self> {
-        SequenceOf::decode_value(decoder, length)?
-            .inner
-            .try_into_array()
+    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+        let sequence_of = SequenceOf::<T, N>::decode_value(reader, header)?;
+
+        // TODO(tarcieri): use `[T; N]::try_map` instead of `expect` when stable
+        if sequence_of.inner.len() == N {
+            Ok(sequence_of
+                .inner
+                .into_array()
+                .map(|elem| elem.expect("arrayvec length mismatch")))
+        } else {
+            Err(Self::TAG.length_error())
+        }
     }
 }
 
 impl<T, const N: usize> EncodeValue for [T; N]
 where
-    T: Encodable,
+    T: Encode,
 {
     fn value_len(&self) -> Result<Length> {
         self.iter()
             .fold(Ok(Length::ZERO), |len, elem| len + elem.encoded_len()?)
     }
 
-    fn encode_value(&self, encoder: &mut Encoder<'_>) -> Result<()> {
+    fn encode_value(&self, writer: &mut impl Writer) -> Result<()> {
         for elem in self {
-            elem.encode(encoder)?;
+            elem.encode(writer)?;
         }
 
         Ok(())
@@ -166,46 +173,41 @@ where
     T: DerOrd,
 {
     fn value_cmp(&self, other: &Self) -> Result<Ordering> {
-        value_cmp(self.iter(), other.iter())
+        iter_cmp(self.iter(), other.iter())
     }
 }
 
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl<'a, T> DecodeValue<'a> for Vec<T>
 where
-    T: Decodable<'a>,
+    T: Decode<'a>,
 {
-    fn decode_value(decoder: &mut Decoder<'a>, length: Length) -> Result<Self> {
-        let end_pos = (decoder.position() + length)?;
-        let mut sequence_of = Self::new();
+    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+        reader.read_nested(header.length, |reader| {
+            let mut sequence_of = Self::new();
 
-        while decoder.position() < end_pos {
-            sequence_of.push(decoder.decode()?);
-        }
+            while !reader.is_finished() {
+                sequence_of.push(T::decode(reader)?);
+            }
 
-        if decoder.position() != end_pos {
-            decoder.error(ErrorKind::Length { tag: Self::TAG });
-        }
-
-        Ok(sequence_of)
+            Ok(sequence_of)
+        })
     }
 }
 
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl<T> EncodeValue for Vec<T>
 where
-    T: Encodable,
+    T: Encode,
 {
     fn value_len(&self) -> Result<Length> {
         self.iter()
             .fold(Ok(Length::ZERO), |len, elem| len + elem.encoded_len()?)
     }
 
-    fn encode_value(&self, encoder: &mut Encoder<'_>) -> Result<()> {
+    fn encode_value(&self, writer: &mut impl Writer) -> Result<()> {
         for elem in self {
-            elem.encode(encoder)?;
+            elem.encode(writer)?;
         }
 
         Ok(())
@@ -213,34 +215,16 @@ where
 }
 
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl<T> FixedTag for Vec<T> {
     const TAG: Tag = Tag::Sequence;
 }
 
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl<T> ValueOrd for Vec<T>
 where
     T: DerOrd,
 {
     fn value_cmp(&self, other: &Self) -> Result<Ordering> {
-        value_cmp(self.iter(), other.iter())
+        iter_cmp(self.iter(), other.iter())
     }
-}
-
-/// Compare two `SEQUENCE OF`s by value.
-fn value_cmp<'a, I, T: 'a>(a: I, b: I) -> Result<Ordering>
-where
-    I: Iterator<Item = &'a T>,
-    T: DerOrd,
-{
-    for (value1, value2) in a.zip(b) {
-        match value1.der_cmp(value2)? {
-            Ordering::Equal => (),
-            other => return Ok(other),
-        }
-    }
-
-    Ok(Ordering::Equal)
 }

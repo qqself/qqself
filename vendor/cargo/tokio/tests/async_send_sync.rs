@@ -136,6 +136,21 @@ macro_rules! cfg_not_wasi {
     }
 }
 
+// Manually re-implementation of `async_assert_fn` for `poll_fn`. The macro
+// doesn't work for this particular case because constructing the closure
+// is too complicated.
+const _: fn() = || {
+    let pinned = std::marker::PhantomPinned;
+    let f = tokio::macros::support::poll_fn(move |_| {
+        // Use `pinned` to take ownership of it.
+        let _ = &pinned;
+        std::task::Poll::Pending::<()>
+    });
+    require_send(&f);
+    require_sync(&f);
+    AmbiguousIfUnpin::some_item(&f);
+};
+
 cfg_not_wasi! {
     mod fs {
         use super::*;
@@ -248,6 +263,19 @@ mod unix_datagram {
     async_assert_fn!(UnixStream::writable(_): Send & Sync & !Unpin);
 }
 
+#[cfg(unix)]
+mod unix_pipe {
+    use super::*;
+    use tokio::net::unix::pipe::*;
+    assert_value!(OpenOptions: Send & Sync & Unpin);
+    assert_value!(Receiver: Send & Sync & Unpin);
+    assert_value!(Sender: Send & Sync & Unpin);
+    async_assert_fn!(Receiver::readable(_): Send & Sync & !Unpin);
+    async_assert_fn!(Receiver::ready(_, tokio::io::Interest): Send & Sync & !Unpin);
+    async_assert_fn!(Sender::ready(_, tokio::io::Interest): Send & Sync & !Unpin);
+    async_assert_fn!(Sender::writable(_): Send & Sync & !Unpin);
+}
+
 #[cfg(windows)]
 mod windows_named_pipe {
     use super::*;
@@ -319,6 +347,15 @@ assert_value!(tokio::sync::OnceCell<YY>: Send & Sync & Unpin);
 assert_value!(tokio::sync::OwnedMutexGuard<NN>: !Send & !Sync & Unpin);
 assert_value!(tokio::sync::OwnedMutexGuard<YN>: Send & !Sync & Unpin);
 assert_value!(tokio::sync::OwnedMutexGuard<YY>: Send & Sync & Unpin);
+assert_value!(tokio::sync::OwnedMappedMutexGuard<NN,NN>: !Send & !Sync & Unpin);
+assert_value!(tokio::sync::OwnedMappedMutexGuard<NN,YN>: !Send & !Sync & Unpin);
+assert_value!(tokio::sync::OwnedMappedMutexGuard<NN,YY>: !Send & !Sync & Unpin);
+assert_value!(tokio::sync::OwnedMappedMutexGuard<YN,NN>: !Send & !Sync & Unpin);
+assert_value!(tokio::sync::OwnedMappedMutexGuard<YN,YN>: Send & !Sync & Unpin);
+assert_value!(tokio::sync::OwnedMappedMutexGuard<YN,YY>: Send & !Sync & Unpin);
+assert_value!(tokio::sync::OwnedMappedMutexGuard<YY,NN>: !Send & !Sync & Unpin);
+assert_value!(tokio::sync::OwnedMappedMutexGuard<YY,YN>: Send & !Sync & Unpin);
+assert_value!(tokio::sync::OwnedMappedMutexGuard<YY,YY>: Send & Sync & Unpin);
 assert_value!(tokio::sync::OwnedRwLockMappedWriteGuard<NN>: !Send & !Sync & Unpin);
 assert_value!(tokio::sync::OwnedRwLockMappedWriteGuard<YN>: !Send & !Sync & Unpin);
 assert_value!(tokio::sync::OwnedRwLockMappedWriteGuard<YY>: Send & Sync & Unpin);

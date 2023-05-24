@@ -4,21 +4,21 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
-aes-gcm = "0.10.1"
-blake2 = "0.10.4"
-bs58 = "0.4.0"
-getrandom = { version = "0.2.7", features = ["js"] }
+aes-gcm = "0.10.2"
+blake2 = "0.10.6"
+bs58 = "0.5.0"
+getrandom = { version = "0.2.9", features = ["js"] }
 lazy_static = "1.4.0"
-regex = "1.6.0"
-rsa = "0.6.1"
-serde = { version = "1.0", optional = true, features = ["derive"] }
-thiserror = "1.0.35"
-time = { version = "0.3.17", features = ["wasm-bindgen", "local-offset"] }
-wasm-bindgen = { version = "0.2.83", optional = true }
-js-sys = {version = "0.3.60", optional = true }
+regex = "1.8.2"
+rsa = "0.9.2"
+serde = { version = "1.0.163", optional = true, features = ["derive"] }
+thiserror = "1.0.40"
+time = { version = "0.3.21", features = ["wasm-bindgen", "local-offset"] }
+wasm-bindgen = { version = "0.2.86", optional = true }
+js-sys = {version = "0.3.63", optional = true }
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3.33"
+wasm-bindgen-test = "0.3.36"
 
 [features]
 default = []

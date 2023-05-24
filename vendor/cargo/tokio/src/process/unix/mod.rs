@@ -21,8 +21,6 @@
 //! processes in general aren't scalable (e.g. millions) so it shouldn't be that
 //! bad in theory...
 
-pub(crate) mod driver;
-
 pub(crate) mod orphan;
 use orphan::{OrphanQueue, OrphanQueueImpl, Wait};
 
@@ -32,9 +30,8 @@ use reap::Reaper;
 use crate::io::{AsyncRead, AsyncWrite, PollEvented, ReadBuf};
 use crate::process::kill::Kill;
 use crate::process::SpawnedChild;
-use crate::signal::unix::driver::Handle as SignalHandle;
+use crate::runtime::signal::Handle as SignalHandle;
 use crate::signal::unix::{signal, Signal, SignalKind};
-use crate::util::once_cell::OnceCell;
 
 use mio::event::Source;
 use mio::unix::SourceFd;
@@ -42,6 +39,8 @@ use std::fmt;
 use std::fs::File;
 use std::future::Future;
 use std::io;
+#[cfg(not(tokio_no_as_fd))]
+use std::os::unix::io::{AsFd, BorrowedFd};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use std::pin::Pin;
 use std::process::{Child as StdChild, ExitStatus, Stdio};
@@ -64,10 +63,22 @@ impl Kill for StdChild {
     }
 }
 
-fn get_orphan_queue() -> &'static OrphanQueueImpl<StdChild> {
-    static ORPHAN_QUEUE: OnceCell<OrphanQueueImpl<StdChild>> = OnceCell::new();
+cfg_not_has_const_mutex_new! {
+    fn get_orphan_queue() -> &'static OrphanQueueImpl<StdChild> {
+        use crate::util::once_cell::OnceCell;
 
-    ORPHAN_QUEUE.get(OrphanQueueImpl::new)
+        static ORPHAN_QUEUE: OnceCell<OrphanQueueImpl<StdChild>> = OnceCell::new();
+
+        ORPHAN_QUEUE.get(OrphanQueueImpl::new)
+    }
+}
+
+cfg_has_const_mutex_new! {
+    fn get_orphan_queue() -> &'static OrphanQueueImpl<StdChild> {
+        static ORPHAN_QUEUE: OrphanQueueImpl<StdChild> = OrphanQueueImpl::new();
+
+        &ORPHAN_QUEUE
+    }
 }
 
 pub(crate) struct GlobalOrphanQueue;
@@ -79,7 +90,7 @@ impl fmt::Debug for GlobalOrphanQueue {
 }
 
 impl GlobalOrphanQueue {
-    fn reap_orphans(handle: &SignalHandle) {
+    pub(crate) fn reap_orphans(handle: &SignalHandle) {
         get_orphan_queue().reap_orphans(handle)
     }
 }
@@ -147,7 +158,7 @@ impl Future for Child {
 
 #[derive(Debug)]
 pub(crate) struct Pipe {
-    // Actually a pipe and not a File. However, we are reusing `File` to get
+    // Actually a pipe is not a File. However, we are reusing `File` to get
     // close on drop. This is a similar trick as `mio`.
     fd: File,
 }
@@ -173,11 +184,22 @@ impl<'a> io::Write for &'a Pipe {
     fn flush(&mut self) -> io::Result<()> {
         (&self.fd).flush()
     }
+
+    fn write_vectored(&mut self, bufs: &[io::IoSlice<'_>]) -> io::Result<usize> {
+        (&self.fd).write_vectored(bufs)
+    }
 }
 
 impl AsRawFd for Pipe {
     fn as_raw_fd(&self) -> RawFd {
         self.fd.as_raw_fd()
+    }
+}
+
+#[cfg(not(tokio_no_as_fd))]
+impl AsFd for Pipe {
+    fn as_fd(&self) -> BorrowedFd<'_> {
+        unsafe { BorrowedFd::borrow_raw(self.as_raw_fd()) }
     }
 }
 
@@ -233,6 +255,13 @@ impl AsRawFd for ChildStdio {
     }
 }
 
+#[cfg(not(tokio_no_as_fd))]
+impl AsFd for ChildStdio {
+    fn as_fd(&self) -> BorrowedFd<'_> {
+        unsafe { BorrowedFd::borrow_raw(self.as_raw_fd()) }
+    }
+}
+
 impl AsyncWrite for ChildStdio {
     fn poll_write(
         self: Pin<&mut Self>,
@@ -248,6 +277,18 @@ impl AsyncWrite for ChildStdio {
 
     fn poll_shutdown(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         Poll::Ready(Ok(()))
+    }
+
+    fn poll_write_vectored(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        bufs: &[io::IoSlice<'_>],
+    ) -> Poll<Result<usize, io::Error>> {
+        self.inner.poll_write_vectored(cx, bufs)
+    }
+
+    fn is_write_vectored(&self) -> bool {
+        true
     }
 }
 

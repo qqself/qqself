@@ -513,6 +513,8 @@ impl fmt::Display for ExecEnvMetadata {
     }
 }
 
+// TODO(enableNewSmithyRuntime): Delete the user agent Tower middleware and consider moving all the remaining code into aws-runtime
+
 /// User agent middleware
 #[non_exhaustive]
 #[derive(Default, Clone, Debug)]
@@ -525,52 +527,75 @@ impl UserAgentStage {
     }
 }
 
-/// Failures that can arise from the user agent middleware
 #[derive(Debug)]
-pub enum UserAgentStageError {
+enum UserAgentStageErrorKind {
     /// There was no [`AwsUserAgent`] in the property bag.
     UserAgentMissing,
     /// The formatted user agent string is not a valid HTTP header value. This indicates a bug.
     InvalidHeader(InvalidHeaderValue),
 }
 
-impl Error for UserAgentStageError {}
+/// Failures that can arise from the user agent middleware
+#[derive(Debug)]
+pub struct UserAgentStageError {
+    kind: UserAgentStageErrorKind,
+}
+
+impl Error for UserAgentStageError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        use UserAgentStageErrorKind::*;
+        match &self.kind {
+            InvalidHeader(source) => Some(source as _),
+            UserAgentMissing => None,
+        }
+    }
+}
 
 impl fmt::Display for UserAgentStageError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::UserAgentMissing => write!(f, "User agent missing from property bag"),
-            Self::InvalidHeader(_) => {
-                write!(f, "Provided user agent header was invalid. This is a bug.")
+        use UserAgentStageErrorKind::*;
+        match self.kind {
+            UserAgentMissing => write!(f, "user agent missing from property bag"),
+            InvalidHeader(_) => {
+                write!(f, "provided user agent header was invalid (this is a bug)")
             }
         }
     }
 }
 
-impl From<InvalidHeaderValue> for UserAgentStageError {
-    fn from(value: InvalidHeaderValue) -> Self {
-        UserAgentStageError::InvalidHeader(value)
+impl From<UserAgentStageErrorKind> for UserAgentStageError {
+    fn from(kind: UserAgentStageErrorKind) -> Self {
+        Self { kind }
     }
 }
 
-lazy_static::lazy_static! {
-    static ref X_AMZ_USER_AGENT: HeaderName = HeaderName::from_static("x-amz-user-agent");
+impl From<InvalidHeaderValue> for UserAgentStageError {
+    fn from(value: InvalidHeaderValue) -> Self {
+        Self {
+            kind: UserAgentStageErrorKind::InvalidHeader(value),
+        }
+    }
 }
+
+#[allow(clippy::declare_interior_mutable_const)] // we will never mutate this
+const X_AMZ_USER_AGENT: HeaderName = HeaderName::from_static("x-amz-user-agent");
 
 impl MapRequest for UserAgentStage {
     type Error = UserAgentStageError;
+
+    fn name(&self) -> &'static str {
+        "generate_user_agent"
+    }
 
     fn apply(&self, request: Request) -> Result<Request, Self::Error> {
         request.augment(|mut req, conf| {
             let ua = conf
                 .get::<AwsUserAgent>()
-                .ok_or(UserAgentStageError::UserAgentMissing)?;
+                .ok_or(UserAgentStageErrorKind::UserAgentMissing)?;
             req.headers_mut()
                 .append(USER_AGENT, HeaderValue::try_from(ua.ua_header())?);
-            req.headers_mut().append(
-                X_AMZ_USER_AGENT.clone(),
-                HeaderValue::try_from(ua.aws_ua_header())?,
-            );
+            req.headers_mut()
+                .append(X_AMZ_USER_AGENT, HeaderValue::try_from(ua.aws_ua_header())?);
 
             Ok(req)
         })
@@ -753,7 +778,7 @@ mod test {
             .get(USER_AGENT)
             .expect("UA header should be set");
         req.headers()
-            .get(&*X_AMZ_USER_AGENT)
+            .get(&X_AMZ_USER_AGENT)
             .expect("UA header should be set");
     }
 }

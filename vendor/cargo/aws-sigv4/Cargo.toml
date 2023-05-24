@@ -12,7 +12,7 @@
 [package]
 edition = "2021"
 name = "aws-sigv4"
-version = "0.51.0"
+version = "0.55.2"
 authors = [
     "AWS Rust SDK Team <aws-sdk-rust@amazon.com>",
     "David Barsky <me@davidbarsky.com>",
@@ -22,6 +22,7 @@ description = "SigV4 signer for HTTP requests and Event Stream messages."
 readme = "README.md"
 license = "Apache-2.0"
 repository = "https://github.com/awslabs/smithy-rs"
+resolver = "1"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -31,12 +32,16 @@ rustdoc-args = [
     "docsrs",
 ]
 
+[[bench]]
+name = "hmac"
+harness = false
+
 [dependencies.aws-smithy-eventstream]
-version = "0.51.0"
+version = "0.55.2"
 optional = true
 
 [dependencies.aws-smithy-http]
-version = "0.51.0"
+version = "0.55.2"
 
 [dependencies.bytes]
 version = "1"
@@ -48,6 +53,9 @@ optional = true
 
 [dependencies.hex]
 version = "0.4"
+
+[dependencies.hmac]
+version = "0.12"
 
 [dependencies.http]
 version = "0.2"
@@ -63,8 +71,8 @@ optional = true
 [dependencies.regex]
 version = "1.5"
 
-[dependencies.ring]
-version = "0.16"
+[dependencies.sha2]
+version = "0.10"
 
 [dependencies.time]
 version = "0.3.5"
@@ -75,11 +83,14 @@ version = "0.1"
 [dev-dependencies.bytes]
 version = "1"
 
+[dev-dependencies.criterion]
+version = "0.4"
+
 [dev-dependencies.httparse]
 version = "1.5"
 
 [dev-dependencies.pretty_assertions]
-version = "1.0"
+version = "1.3"
 
 [dev-dependencies.proptest]
 version = "1"
@@ -99,3 +110,6 @@ sign-http = [
     "percent-encoding",
     "form_urlencoded",
 ]
+
+[target."cfg(not(any(target_arch = \"powerpc\", target_arch = \"powerpc64\")))".dev-dependencies.ring]
+version = "0.16"

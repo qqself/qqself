@@ -1,17 +1,36 @@
 //! ASN.1 `PrintableString` support.
 
-use crate::{
-    asn1::Any, ByteSlice, DecodeValue, Decoder, EncodeValue, Encoder, Error, FixedTag, Length,
-    OrdIsValueOrd, Result, StrSlice, Tag,
-};
-use core::{fmt, str};
+use crate::{asn1::AnyRef, FixedTag, Result, StrRef, Tag};
+use core::{fmt, ops::Deref};
+
+macro_rules! impl_printable_string {
+    ($type: ty) => {
+        impl_printable_string!($type,);
+    };
+    ($type: ty, $($li: lifetime)?) => {
+        impl_string_type!($type, $($li),*);
+
+        impl<$($li),*> FixedTag for $type {
+            const TAG: Tag = Tag::PrintableString;
+        }
+
+        impl<$($li),*> fmt::Debug for $type {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                write!(f, "PrintableString({:?})", self.as_str())
+            }
+        }
+    };
+}
 
 /// ASN.1 `PrintableString` type.
 ///
-/// Supports a subset the ASCII character set (desribed below).
+/// Supports a subset the ASCII character set (described below).
 ///
-/// For UTF-8, use [`Utf8String`][`crate::asn1::Utf8String`] instead. For the
-/// full ASCII character set, use [`Ia5String`][`crate::asn1::Ia5String`].
+/// For UTF-8, use [`Utf8StringRef`][`crate::asn1::Utf8StringRef`] instead.
+/// For the full ASCII character set, use
+/// [`Ia5StringRef`][`crate::asn1::Ia5StringRef`].
+///
+/// This is a zero-copy reference type which borrows from the input data.
 ///
 /// # Supported characters
 ///
@@ -33,12 +52,12 @@ use core::{fmt, str};
 /// - `=`
 /// - `?`
 #[derive(Copy, Clone, Eq, PartialEq, PartialOrd, Ord)]
-pub struct PrintableString<'a> {
+pub struct PrintableStringRef<'a> {
     /// Inner value
-    inner: StrSlice<'a>,
+    inner: StrRef<'a>,
 }
 
-impl<'a> PrintableString<'a> {
+impl<'a> PrintableStringRef<'a> {
     /// Create a new ASN.1 `PrintableString`.
     pub fn new<T>(input: &'a T) -> Result<Self>
     where
@@ -46,7 +65,7 @@ impl<'a> PrintableString<'a> {
     {
         let input = input.as_ref();
 
-        // Validate all characters are within PrintedString's allowed set
+        // Validate all characters are within PrintableString's allowed set
         for &c in input.iter() {
             match c {
                 b'A'..=b'Z'
@@ -68,108 +87,145 @@ impl<'a> PrintableString<'a> {
             }
         }
 
-        StrSlice::from_bytes(input)
+        StrRef::from_bytes(input)
             .map(|inner| Self { inner })
             .map_err(|_| Self::TAG.value_error())
     }
-
-    /// Borrow the string as a `str`.
-    pub fn as_str(&self) -> &'a str {
-        self.inner.as_str()
-    }
-
-    /// Borrow the string as bytes.
-    pub fn as_bytes(&self) -> &'a [u8] {
-        self.inner.as_bytes()
-    }
-
-    /// Get the length of the inner byte slice.
-    pub fn len(&self) -> Length {
-        self.inner.len()
-    }
-
-    /// Is the inner string empty?
-    pub fn is_empty(&self) -> bool {
-        self.inner.is_empty()
-    }
 }
 
-impl AsRef<str> for PrintableString<'_> {
-    fn as_ref(&self) -> &str {
-        self.as_str()
+impl_printable_string!(PrintableStringRef<'a>, 'a);
+
+impl<'a> Deref for PrintableStringRef<'a> {
+    type Target = StrRef<'a>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
     }
 }
-
-impl AsRef<[u8]> for PrintableString<'_> {
-    fn as_ref(&self) -> &[u8] {
-        self.as_bytes()
-    }
-}
-
-impl<'a> DecodeValue<'a> for PrintableString<'a> {
-    fn decode_value(decoder: &mut Decoder<'a>, length: Length) -> Result<Self> {
-        Self::new(ByteSlice::decode_value(decoder, length)?.as_bytes())
-    }
-}
-
-impl<'a> EncodeValue for PrintableString<'a> {
-    fn value_len(&self) -> Result<Length> {
-        self.inner.value_len()
-    }
-
-    fn encode_value(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        self.inner.encode_value(encoder)
-    }
-}
-
-impl FixedTag for PrintableString<'_> {
-    const TAG: Tag = Tag::PrintableString;
-}
-
-impl OrdIsValueOrd for PrintableString<'_> {}
-
-impl<'a> From<&PrintableString<'a>> for PrintableString<'a> {
-    fn from(value: &PrintableString<'a>) -> PrintableString<'a> {
+impl<'a> From<&PrintableStringRef<'a>> for PrintableStringRef<'a> {
+    fn from(value: &PrintableStringRef<'a>) -> PrintableStringRef<'a> {
         *value
     }
 }
 
-impl<'a> TryFrom<Any<'a>> for PrintableString<'a> {
-    type Error = Error;
-
-    fn try_from(any: Any<'a>) -> Result<PrintableString<'a>> {
-        any.decode_into()
+impl<'a> From<PrintableStringRef<'a>> for AnyRef<'a> {
+    fn from(printable_string: PrintableStringRef<'a>) -> AnyRef<'a> {
+        AnyRef::from_tag_and_value(Tag::PrintableString, printable_string.inner.into())
     }
 }
 
-impl<'a> From<PrintableString<'a>> for Any<'a> {
-    fn from(printable_string: PrintableString<'a>) -> Any<'a> {
-        Any::from_tag_and_value(Tag::PrintableString, printable_string.inner.into())
-    }
-}
+#[cfg(feature = "alloc")]
+pub use self::allocation::PrintableString;
 
-impl<'a> From<PrintableString<'a>> for &'a [u8] {
-    fn from(printable_string: PrintableString<'a>) -> &'a [u8] {
-        printable_string.as_bytes()
-    }
-}
+#[cfg(feature = "alloc")]
+mod allocation {
+    use super::PrintableStringRef;
 
-impl<'a> fmt::Display for PrintableString<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
+    use crate::{
+        asn1::AnyRef,
+        referenced::{OwnedToRef, RefToOwned},
+        BytesRef, FixedTag, Result, StrOwned, Tag,
+    };
+    use core::{fmt, ops::Deref};
 
-impl<'a> fmt::Debug for PrintableString<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "PrintableString({:?})", self.as_str())
+    /// ASN.1 `PrintableString` type.
+    ///
+    /// Supports a subset the ASCII character set (described below).
+    ///
+    /// For UTF-8, use [`Utf8StringRef`][`crate::asn1::Utf8StringRef`] instead.
+    /// For the full ASCII character set, use
+    /// [`Ia5StringRef`][`crate::asn1::Ia5StringRef`].
+    ///
+    /// # Supported characters
+    ///
+    /// The following ASCII characters/ranges are supported:
+    ///
+    /// - `A..Z`
+    /// - `a..z`
+    /// - `0..9`
+    /// - "` `" (i.e. space)
+    /// - `\`
+    /// - `(`
+    /// - `)`
+    /// - `+`
+    /// - `,`
+    /// - `-`
+    /// - `.`
+    /// - `/`
+    /// - `:`
+    /// - `=`
+    /// - `?`
+    #[derive(Clone, Eq, PartialEq, PartialOrd, Ord)]
+    pub struct PrintableString {
+        /// Inner value
+        inner: StrOwned,
+    }
+
+    impl PrintableString {
+        /// Create a new ASN.1 `PrintableString`.
+        pub fn new<T>(input: &T) -> Result<Self>
+        where
+            T: AsRef<[u8]> + ?Sized,
+        {
+            let input = input.as_ref();
+            PrintableStringRef::new(input)?;
+
+            StrOwned::from_bytes(input)
+                .map(|inner| Self { inner })
+                .map_err(|_| Self::TAG.value_error())
+        }
+    }
+
+    impl_printable_string!(PrintableString);
+
+    impl Deref for PrintableString {
+        type Target = StrOwned;
+
+        fn deref(&self) -> &Self::Target {
+            &self.inner
+        }
+    }
+
+    impl<'a> From<PrintableStringRef<'a>> for PrintableString {
+        fn from(value: PrintableStringRef<'a>) -> PrintableString {
+            let inner =
+                StrOwned::from_bytes(value.inner.as_bytes()).expect("Invalid PrintableString");
+            Self { inner }
+        }
+    }
+
+    impl<'a> From<&'a PrintableString> for AnyRef<'a> {
+        fn from(printable_string: &'a PrintableString) -> AnyRef<'a> {
+            AnyRef::from_tag_and_value(
+                Tag::PrintableString,
+                BytesRef::new(printable_string.inner.as_bytes()).expect("Invalid PrintableString"),
+            )
+        }
+    }
+
+    impl<'a> RefToOwned<'a> for PrintableStringRef<'a> {
+        type Owned = PrintableString;
+        fn ref_to_owned(&self) -> Self::Owned {
+            PrintableString {
+                inner: self.inner.ref_to_owned(),
+            }
+        }
+    }
+
+    impl OwnedToRef for PrintableString {
+        type Borrowed<'a> = PrintableStringRef<'a>;
+        fn owned_to_ref(&self) -> Self::Borrowed<'_> {
+            PrintableStringRef {
+                inner: self.inner.owned_to_ref(),
+            }
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::PrintableString;
-    use crate::Decodable;
+    use super::PrintableStringRef;
+    use crate::Decode;
 
     #[test]
     fn parse_bytes() {
@@ -177,7 +233,7 @@ mod tests {
             0x13, 0x0b, 0x54, 0x65, 0x73, 0x74, 0x20, 0x55, 0x73, 0x65, 0x72, 0x20, 0x31,
         ];
 
-        let printable_string = PrintableString::from_der(example_bytes).unwrap();
+        let printable_string = PrintableStringRef::from_der(example_bytes).unwrap();
         assert_eq!(printable_string.as_str(), "Test User 1");
     }
 }

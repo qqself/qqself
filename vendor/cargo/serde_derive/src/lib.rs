@@ -13,7 +13,7 @@
 //!
 //! [https://serde.rs/derive.html]: https://serde.rs/derive.html
 
-#![doc(html_root_url = "https://docs.rs/serde_derive/1.0.145")]
+#![doc(html_root_url = "https://docs.rs/serde_derive/1.0.163")]
 #![allow(unknown_lints, bare_trait_objects)]
 // Ignored clippy lints
 #![allow(
@@ -43,7 +43,7 @@
     clippy::enum_glob_use,
     clippy::indexing_slicing,
     clippy::items_after_statements,
-    clippy::let_underscore_drop,
+    clippy::let_underscore_untyped,
     clippy::manual_assert,
     clippy::map_err_ignore,
     clippy::match_same_arms,
@@ -85,6 +85,7 @@ mod de;
 mod dummy;
 mod pretend;
 mod ser;
+mod this;
 mod try;
 
 #[proc_macro_derive(Serialize, attributes(serde))]

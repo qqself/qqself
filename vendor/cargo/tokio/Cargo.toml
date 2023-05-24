@@ -10,10 +10,10 @@
 # See Cargo.toml.orig for the original contents.
 
 [package]
-edition = "2018"
-rust-version = "1.49"
+edition = "2021"
+rust-version = "1.56"
 name = "tokio"
-version = "1.21.2"
+version = "1.28.1"
 authors = ["Tokio Contributors <team@tokio.rs>"]
 description = """
 An event-driven, non-blocking I/O platform for writing asynchronous I/O
@@ -33,16 +33,17 @@ categories = [
 ]
 license = "MIT"
 repository = "https://github.com/tokio-rs/tokio"
+resolver = "1"
 
 [package.metadata.docs.rs]
 all-features = true
-rustdoc-args = [
-    "--cfg",
-    "docsrs",
+rustc-args = [
     "--cfg",
     "tokio_unstable",
 ]
-rustc-args = [
+rustdoc-args = [
+    "--cfg",
+    "docsrs",
     "--cfg",
     "tokio_unstable",
 ]
@@ -55,10 +56,6 @@ features = [
 
 [dependencies.bytes]
 version = "1.0.0"
-optional = true
-
-[dependencies.memchr]
-version = "2.2"
 optional = true
 
 [dependencies.mio]
@@ -77,7 +74,7 @@ optional = true
 version = "0.2.0"
 
 [dependencies.tokio-macros]
-version = "1.7.0"
+version = "~2.1.0"
 optional = true
 
 [dev-dependencies.async-stream]
@@ -89,9 +86,6 @@ features = ["async-await"]
 
 [dev-dependencies.mockall]
 version = "0.11.1"
-
-[dev-dependencies.tempfile]
-version = "3.1.0"
 
 [dev-dependencies.tokio-stream]
 version = "0.1"
@@ -120,10 +114,7 @@ full = [
     "time",
 ]
 io-std = []
-io-util = [
-    "memchr",
-    "bytes",
-]
+io-util = ["bytes"]
 macros = ["tokio-macros"]
 net = [
     "libc",
@@ -131,14 +122,11 @@ net = [
     "mio/os-ext",
     "mio/net",
     "socket2",
-    "winapi/fileapi",
-    "winapi/handleapi",
-    "winapi/namedpipeapi",
-    "winapi/winbase",
-    "winapi/winnt",
-    "winapi/minwindef",
-    "winapi/accctrl",
-    "winapi/aclapi",
+    "windows-sys/Win32_Foundation",
+    "windows-sys/Win32_Security",
+    "windows-sys/Win32_Storage_FileSystem",
+    "windows-sys/Win32_System_Pipes",
+    "windows-sys/Win32_System_SystemServices",
 ]
 process = [
     "bytes",
@@ -147,12 +135,9 @@ process = [
     "mio/os-ext",
     "mio/net",
     "signal-hook-registry",
-    "winapi/handleapi",
-    "winapi/minwindef",
-    "winapi/processthreadsapi",
-    "winapi/threadpoollegacyapiset",
-    "winapi/winbase",
-    "winapi/winnt",
+    "windows-sys/Win32_Foundation",
+    "windows-sys/Win32_System_Threading",
+    "windows-sys/Win32_System_WindowsProgramming",
 ]
 rt = []
 rt-multi-thread = [
@@ -165,9 +150,8 @@ signal = [
     "mio/net",
     "mio/os-ext",
     "signal-hook-registry",
-    "winapi/consoleapi",
-    "winapi/wincon",
-    "winapi/minwindef",
+    "windows-sys/Win32_Foundation",
+    "windows-sys/Win32_System_Console",
 ]
 stats = []
 sync = []
@@ -181,6 +165,13 @@ time = []
 [target."cfg(all(any(target_arch = \"wasm32\", target_arch = \"wasm64\"), not(target_os = \"wasi\")))".dev-dependencies.wasm-bindgen-test]
 version = "0.3.0"
 
+[target."cfg(docsrs)".dependencies.windows-sys]
+version = "0.48"
+features = [
+    "Win32_Foundation",
+    "Win32_Security_Authorization",
+]
+
 [target."cfg(loom)".dev-dependencies.loom]
 version = "0.5.2"
 features = [
@@ -192,18 +183,18 @@ features = [
 version = "0.8.0"
 
 [target."cfg(not(any(target_arch = \"wasm32\", target_arch = \"wasm64\")))".dependencies.socket2]
-version = "0.4.4"
+version = "0.4.9"
 features = ["all"]
 optional = true
 
-[target."cfg(not(any(target_arch = \"wasm32\", target_arch = \"wasm64\")))".dev-dependencies.proptest]
-version = "1"
-
 [target."cfg(not(any(target_arch = \"wasm32\", target_arch = \"wasm64\")))".dev-dependencies.socket2]
-version = "0.4"
+version = "0.4.9"
+
+[target."cfg(not(any(target_arch = \"wasm32\", target_arch = \"wasm64\")))".dev-dependencies.tempfile]
+version = "3.1.0"
 
 [target."cfg(target_os = \"freebsd\")".dev-dependencies.mio-aio]
-version = "0.6.0"
+version = "0.7.0"
 features = ["tokio"]
 
 [target."cfg(tokio_unstable)".dependencies.tracing]
@@ -224,18 +215,13 @@ optional = true
 version = "0.2.42"
 
 [target."cfg(unix)".dev-dependencies.nix]
-version = "0.24"
+version = "0.26"
 features = [
     "fs",
     "socket",
 ]
 default-features = false
 
-[target."cfg(windows)".dependencies.winapi]
-version = "0.3.8"
-features = ["std"]
+[target."cfg(windows)".dependencies.windows-sys]
+version = "0.48"
 optional = true
-default-features = false
-
-[target."cfg(windows)".dev-dependencies.ntapi]
-version = "0.3.6"

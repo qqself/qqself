@@ -1,11 +1,25 @@
-//! RSA Implementation in pure Rust.
+#![cfg_attr(not(test), no_std)]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![doc = include_str!("../README.md")]
+#![doc(html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
+#![warn(missing_docs)]
+
+//! # Supported algorithms
 //!
+//! This crate supports several schemes described in [RFC8017]:
+//!
+//! - [OAEP encryption scheme](#oaep-encryption)
+//! - [PKCS#1 v1.5 encryption scheme](#pkcs1-v15-encryption)
+//! - [PKCS#1 v1.5 signature scheme](#pkcs1-v15-signatures)
+//! - [PSS signature scheme](#pss-signatures)
+//!
+//! These schemes are described below.
 //!
 //! # Usage
 //!
-//! Using PKCS1v15.
+//! ## OAEP encryption
 //! ```
-//! use rsa::{PublicKey, RsaPrivateKey, RsaPublicKey, PaddingScheme};
+//! use rsa::{RsaPrivateKey, RsaPublicKey, Oaep};
 //!
 //! let mut rng = rand::thread_rng();
 //!
@@ -15,19 +29,19 @@
 //!
 //! // Encrypt
 //! let data = b"hello world";
-//! let padding = PaddingScheme::new_pkcs1v15_encrypt();
+//! let padding = Oaep::new::<sha2::Sha256>();
 //! let enc_data = public_key.encrypt(&mut rng, padding, &data[..]).expect("failed to encrypt");
 //! assert_ne!(&data[..], &enc_data[..]);
 //!
 //! // Decrypt
-//! let padding = PaddingScheme::new_pkcs1v15_encrypt();
+//! let padding = Oaep::new::<sha2::Sha256>();
 //! let dec_data = private_key.decrypt(padding, &enc_data).expect("failed to decrypt");
 //! assert_eq!(&data[..], &dec_data[..]);
 //! ```
 //!
-//! Using OAEP.
+//! ## PKCS#1 v1.5 encryption
 //! ```
-//! use rsa::{PublicKey, RsaPrivateKey, RsaPublicKey, PaddingScheme};
+//! use rsa::{RsaPrivateKey, RsaPublicKey, Pkcs1v15Encrypt};
 //!
 //! let mut rng = rand::thread_rng();
 //!
@@ -37,20 +51,72 @@
 //!
 //! // Encrypt
 //! let data = b"hello world";
-//! let padding = PaddingScheme::new_oaep::<sha2::Sha256>();
-//! let enc_data = public_key.encrypt(&mut rng, padding, &data[..]).expect("failed to encrypt");
+//! let enc_data = public_key.encrypt(&mut rng, Pkcs1v15Encrypt, &data[..]).expect("failed to encrypt");
 //! assert_ne!(&data[..], &enc_data[..]);
 //!
 //! // Decrypt
-//! let padding = PaddingScheme::new_oaep::<sha2::Sha256>();
-//! let dec_data = private_key.decrypt(padding, &enc_data).expect("failed to decrypt");
+//! let dec_data = private_key.decrypt(Pkcs1v15Encrypt, &enc_data).expect("failed to decrypt");
 //! assert_eq!(&data[..], &dec_data[..]);
+//! ```
+//!
+//! ## PKCS#1 v1.5 signatures
+//!
+//! Note: requires `sha2` feature of `rsa` crate is enabled.
+//!
+#![cfg_attr(feature = "sha2", doc = "```")]
+#![cfg_attr(not(feature = "sha2"), doc = "```ignore")]
+//! use rsa::RsaPrivateKey;
+//! use rsa::pkcs1v15::{SigningKey, VerifyingKey};
+//! use rsa::signature::{Keypair, RandomizedSigner, SignatureEncoding, Verifier};
+//! use rsa::sha2::{Digest, Sha256};
+//!
+//! let mut rng = rand::thread_rng();
+//!
+//! let bits = 2048;
+//! let private_key = RsaPrivateKey::new(&mut rng, bits).expect("failed to generate a key");
+//! let signing_key = SigningKey::<Sha256>::new(private_key);
+//! let verifying_key = signing_key.verifying_key();
+//!
+//! // Sign
+//! let data = b"hello world";
+//! let signature = signing_key.sign_with_rng(&mut rng, data);
+//! assert_ne!(signature.to_bytes().as_ref(), data.as_slice());
+//!
+//! // Verify
+//! verifying_key.verify(data, &signature).expect("failed to verify");
+//! ```
+//!
+//! ## PSS signatures
+//!
+//! Note: requires `sha2` feature of `rsa` crate is enabled.
+//!
+#![cfg_attr(feature = "sha2", doc = "```")]
+#![cfg_attr(not(feature = "sha2"), doc = "```ignore")]
+//! use rsa::RsaPrivateKey;
+//! use rsa::pss::{BlindedSigningKey, VerifyingKey};
+//! use rsa::signature::{Keypair,RandomizedSigner, SignatureEncoding, Verifier};
+//! use rsa::sha2::{Digest, Sha256};
+//!
+//! let mut rng = rand::thread_rng();
+//!
+//! let bits = 2048;
+//! let private_key = RsaPrivateKey::new(&mut rng, bits).expect("failed to generate a key");
+//! let signing_key = BlindedSigningKey::<Sha256>::new(private_key);
+//! let verifying_key = signing_key.verifying_key();
+//!
+//! // Sign
+//! let data = b"hello world";
+//! let signature = signing_key.sign_with_rng(&mut rng, data);
+//! assert_ne!(signature.to_bytes().as_ref(), data);
+//!
+//! // Verify
+//! verifying_key.verify(data, &signature).expect("failed to verify");
 //! ```
 //!
 //! ## PKCS#1 RSA Key Encoding
 //!
-//! PKCS#1 is a legacy format for encoding RSA keys as binary (DER) or text
-//! (PEM) data.
+//! PKCS#1 supports a legacy format for encoding RSA keys as binary (DER) or
+//! text (PEM) data.
 //!
 //! You can recognize PEM encoded PKCS#1 keys because they have "RSA * KEY" in
 //! the type label, e.g.:
@@ -66,8 +132,8 @@
 //! toplevel of the `rsa` crate:
 //!
 //! - [`pkcs1::DecodeRsaPrivateKey`]: decode RSA private keys from PKCS#1
-//! - [`pkcs1::DecodeRsaPublicKey`]: decode RSA public keys from PKCS#1
 //! - [`pkcs1::EncodeRsaPrivateKey`]: encode RSA private keys to PKCS#1
+//! - [`pkcs1::DecodeRsaPublicKey`]: decode RSA public keys from PKCS#1
 //! - [`pkcs1::EncodeRsaPublicKey`]: encode RSA public keys to PKCS#1
 //!
 //! ### Example
@@ -110,8 +176,8 @@
 //! toplevel of the `rsa` crate:
 //!
 //! - [`pkcs8::DecodePrivateKey`]: decode private keys from PKCS#8
-//! - [`pkcs8::DecodePublicKey`]: decode public keys from PKCS#8
 //! - [`pkcs8::EncodePrivateKey`]: encode private keys to PKCS#8
+//! - [`pkcs8::DecodePublicKey`]: decode public keys from PKCS#8
 //! - [`pkcs8::EncodePublicKey`]: encode public keys to PKCS#8
 //!
 //! ### Example
@@ -137,10 +203,15 @@
 //! # Ok(())
 //! # }
 //! ```
+//!
+//! [RFC8017]: https://datatracker.ietf.org/doc/html/rfc8017#section-8.1
+//!
+// TODO(tarcieri): figure out why rustdoc isn't rendering these links correctly
+//! [`pkcs8::DecodePublicKey`]: https://docs.rs/pkcs8/latest/pkcs8/trait.DecodePublicKey.html
+//! [`pkcs8::EncodePublicKey`]: https://docs.rs/pkcs8/latest/pkcs8/trait.EncodePublicKey.html
 
-#![cfg_attr(not(test), no_std)]
-#![cfg_attr(docsrs, feature(doc_cfg))]
-#![doc(html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
+#[cfg(doctest)]
+pub struct ReadmeDoctests;
 
 #[macro_use]
 extern crate alloc;
@@ -149,35 +220,29 @@ extern crate std;
 
 pub use num_bigint::BigUint;
 pub use rand_core;
+pub use signature;
 
-/// Useful algorithms.
-pub mod algorithms;
-/// Error types.
+mod algorithms;
 pub mod errors;
-/// Supported hash functions.
-pub mod hash;
-/// Supported padding schemes.
-pub mod padding;
+pub mod oaep;
+pub mod pkcs1v15;
+pub mod pss;
+pub mod traits;
 
+mod dummy_rng;
 mod encoding;
 mod key;
-mod oaep;
-mod pkcs1v15;
-mod pss;
-mod raw;
 
 pub use pkcs1;
 pub use pkcs8;
+#[cfg(feature = "sha2")]
+pub use sha2;
 
-pub use self::hash::Hash;
-pub use self::key::{PublicKey, PublicKeyParts, RsaPrivateKey, RsaPublicKey};
-pub use self::padding::PaddingScheme;
-
-/// Internal raw RSA functions.
-#[cfg(not(feature = "expose-internals"))]
-mod internals;
-
-/// Internal raw RSA functions.
-#[cfg(feature = "expose-internals")]
-#[cfg_attr(docsrs, doc(cfg(feature = "expose-internals")))]
-pub mod internals;
+pub use crate::{
+    errors::{Error, Result},
+    key::{RsaPrivateKey, RsaPublicKey},
+    oaep::Oaep,
+    pkcs1v15::{Pkcs1v15Encrypt, Pkcs1v15Sign},
+    pss::Pss,
+    traits::keys::CrtValue,
+};

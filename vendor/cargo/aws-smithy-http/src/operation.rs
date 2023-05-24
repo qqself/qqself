@@ -3,16 +3,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+//! Types for representing the interaction between a service an a client, referred to as an "operation" in smithy.
+//! Clients "send" operations to services, which are composed of 1 or more HTTP requests.
+
 use crate::body::SdkBody;
 use crate::property_bag::{PropertyBag, SharedPropertyBag};
 use crate::retry::DefaultResponseRetryClassifier;
-use aws_smithy_types::date_time::DateTimeFormatError;
-use http::uri::InvalidUri;
 use std::borrow::Cow;
-use std::error::Error;
-use std::fmt::{Display, Formatter};
 use std::ops::{Deref, DerefMut};
 
+pub mod error;
+
+/// Metadata attached to an [`Operation`] that identifies the API being called.
 #[derive(Clone, Debug)]
 pub struct Metadata {
     operation: Cow<'static, str>,
@@ -20,14 +22,17 @@ pub struct Metadata {
 }
 
 impl Metadata {
+    /// Returns the operation name.
     pub fn name(&self) -> &str {
         &self.operation
     }
 
+    /// Returns the service name.
     pub fn service(&self) -> &str {
         &self.service
     }
 
+    /// Creates [`Metadata`].
     pub fn new(
         operation: impl Into<Cow<'static, str>>,
         service: impl Into<Cow<'static, str>>,
@@ -39,137 +44,28 @@ impl Metadata {
     }
 }
 
+/// Non-request parts of an [`Operation`].
+///
+/// Generics:
+/// - `H`: Response handler
+/// - `R`: Implementation of `ClassifyRetry`
 #[non_exhaustive]
 #[derive(Clone, Debug)]
 pub struct Parts<H, R> {
+    /// The response deserializer that will convert the connector's response into an `operation::Response`
     pub response_handler: H,
+    /// The classifier that will determine if an HTTP response indicates that a request failed for a retryable reason.
     pub retry_classifier: R,
+    /// Metadata describing this operation and the service it relates to.
     pub metadata: Option<Metadata>,
 }
 
-/// An error occurred attempting to build an `Operation` from an input
+/// An [`Operation`] is a request paired with a response handler, retry classifier,
+/// and metadata that identifies the API being called.
 ///
-/// These are almost always due to user error caused by limitations of specific fields due to
-/// protocol serialization (e.g. fields that can only be a subset ASCII because they are serialized
-/// as the name of an HTTP header)
-#[non_exhaustive]
-#[derive(Debug)]
-pub enum BuildError {
-    /// A field contained an invalid value
-    InvalidField {
-        field: &'static str,
-        details: String,
-    },
-    /// A field was missing
-    MissingField {
-        field: &'static str,
-        details: &'static str,
-    },
-    /// The serializer could not serialize the input
-    SerializationError(SerializationError),
-
-    /// The serializer did not produce a valid URI
-    ///
-    /// This typically indicates that a field contained invalid characters.
-    InvalidUri {
-        uri: String,
-        err: InvalidUri,
-        message: Cow<'static, str>,
-    },
-
-    /// An error occurred request construction
-    Other(Box<dyn Error + Send + Sync + 'static>),
-}
-
-impl From<SerializationError> for BuildError {
-    fn from(err: SerializationError) -> Self {
-        BuildError::SerializationError(err)
-    }
-}
-
-impl From<DateTimeFormatError> for BuildError {
-    fn from(err: DateTimeFormatError) -> Self {
-        BuildError::from(SerializationError::from(err))
-    }
-}
-
-impl Display for BuildError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            BuildError::InvalidField { field, details } => write!(
-                f,
-                "Invalid field in input: {} (Details: {})",
-                field, details
-            ),
-            BuildError::MissingField { field, details } => {
-                write!(f, "{} was missing. {}", field, details)
-            }
-            BuildError::SerializationError(inner) => {
-                write!(f, "failed to serialize input: {}", inner)
-            }
-            BuildError::Other(inner) => write!(f, "error during request construction: {}", inner),
-            BuildError::InvalidUri { uri, err, message } => {
-                write!(
-                    f,
-                    "generated URI `{}` was not a valid URI ({}): {}",
-                    uri, err, message
-                )
-            }
-        }
-    }
-}
-
-impl Error for BuildError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
-            BuildError::SerializationError(inner) => Some(inner as _),
-            BuildError::Other(inner) => Some(inner.as_ref()),
-            _ => None,
-        }
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug)]
-pub enum SerializationError {
-    #[non_exhaustive]
-    CannotSerializeUnknownVariant { union: &'static str },
-    #[non_exhaustive]
-    DateTimeFormatError { cause: DateTimeFormatError },
-}
-
-impl SerializationError {
-    pub fn unknown_variant(union: &'static str) -> Self {
-        Self::CannotSerializeUnknownVariant { union }
-    }
-}
-
-impl Display for SerializationError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::CannotSerializeUnknownVariant { union } => write!(
-                f,
-                "Cannot serialize `{}::Unknown`. Unknown union variants cannot be serialized. \
-                This can occur when round-tripping a response from the server that was not \
-                recognized by the SDK. Consider upgrading to the latest version of the SDK.",
-                union
-            ),
-            Self::DateTimeFormatError { cause } => write!(f, "{}", cause),
-        }
-    }
-}
-
-impl Error for SerializationError {}
-
-impl From<DateTimeFormatError> for SerializationError {
-    fn from(err: DateTimeFormatError) -> SerializationError {
-        SerializationError::DateTimeFormatError { cause: err }
-    }
-}
-
-// Generics:
-// - H: Response handler
-// - R: Implementation of `ClassifyRetry`
+/// Generics:
+/// - `H`: Response handler
+/// - `R`: Implementation of `ClassifyRetry`
 #[derive(Debug)]
 pub struct Operation<H, R> {
     request: Request,
@@ -177,17 +73,22 @@ pub struct Operation<H, R> {
 }
 
 impl<H, R> Operation<H, R> {
+    /// Converts this operation into its parts.
     pub fn into_request_response(self) -> (Request, Parts<H, R>) {
         (self.request, self.parts)
     }
+
+    /// Constructs an [`Operation`] from a request and [`Parts`]
     pub fn from_parts(request: Request, parts: Parts<H, R>) -> Self {
         Self { request, parts }
     }
 
+    /// Returns a mutable reference to the request's property bag.
     pub fn properties_mut(&mut self) -> impl DerefMut<Target = PropertyBag> + '_ {
         self.request.properties_mut()
     }
 
+    /// Returns an immutable reference to the request's property bag.
     pub fn properties(&self) -> impl Deref<Target = PropertyBag> + '_ {
         self.request.properties()
     }
@@ -202,11 +103,13 @@ impl<H, R> Operation<H, R> {
         self.request.http()
     }
 
+    /// Attaches metadata to the operation.
     pub fn with_metadata(mut self, metadata: Metadata) -> Self {
         self.parts.metadata = Some(metadata);
         self
     }
 
+    /// Replaces the retry classifier on the operation.
     pub fn with_retry_classifier<R2>(self, retry_classifier: R2) -> Operation<H, R2> {
         Operation {
             request: self.request,
@@ -218,10 +121,14 @@ impl<H, R> Operation<H, R> {
         }
     }
 
+    /// Returns the retry classifier for this operation.
     pub fn retry_classifier(&self) -> &R {
         &self.parts.retry_classifier
     }
 
+    /// Attempts to clone the operation.
+    ///
+    /// Will return `None` if the request body is already consumed and can't be replayed.
     pub fn try_clone(&self) -> Option<Self>
     where
         H: Clone,
@@ -236,6 +143,7 @@ impl<H, R> Operation<H, R> {
 }
 
 impl<H> Operation<H, ()> {
+    /// Creates a new [`Operation`].
     pub fn new(
         request: Request,
         response_handler: H,

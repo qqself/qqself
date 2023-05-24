@@ -125,10 +125,12 @@ impl TagNumber {
     ///
     /// Panics if the tag number is greater than `30`.
     /// For a fallible conversion, use [`TryFrom`] instead.
-    #[allow(clippy::no_effect)]
     pub const fn new(byte: u8) -> Self {
-        // TODO(tarcieri): hax! use const panic when available
-        ["tag number out of range"][(byte > Self::MAX) as usize];
+        #[allow(clippy::panic)]
+        if byte > Self::MAX {
+            panic!("tag number out of range");
+        }
+
         Self(byte)
     }
 
@@ -182,5 +184,18 @@ impl From<TagNumber> for u8 {
 impl fmt::Display for TagNumber {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+// Implement by hand because the derive would create invalid values.
+// Use the constructor to create a valid value.
+#[cfg(feature = "arbitrary")]
+impl<'a> arbitrary::Arbitrary<'a> for TagNumber {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(Self::new(u.int_in_range(0..=Self::MAX)?))
+    }
+
+    fn size_hint(depth: usize) -> (usize, Option<usize>) {
+        u8::size_hint(depth)
     }
 }

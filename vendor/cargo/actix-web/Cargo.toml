@@ -12,7 +12,7 @@
 [package]
 edition = "2018"
 name = "actix-web"
-version = "4.2.1"
+version = "4.3.1"
 authors = [
     "Nikolay Kim <fafhrd91@gmail.com>",
     "Rob Ede <robjtede@icloud.com>",
@@ -102,7 +102,7 @@ harness = false
 version = "0.5"
 
 [dependencies.actix-http]
-version = "3.2.2"
+version = "3.3"
 features = [
     "http2",
     "ws",
@@ -134,7 +134,7 @@ default-features = false
 version = "3"
 
 [dependencies.actix-web-codegen]
-version = "4.1"
+version = "4.2"
 optional = true
 
 [dependencies.ahash]
@@ -155,17 +155,17 @@ features = ["percent-encode"]
 optional = true
 
 [dependencies.derive_more]
-version = "0.99.5"
+version = "0.99.8"
 
 [dependencies.encoding_rs]
 version = "0.8"
 
 [dependencies.futures-core]
-version = "0.3.7"
+version = "0.3.17"
 default-features = false
 
 [dependencies.futures-util]
-version = "0.3.7"
+version = "0.3.17"
 default-features = false
 
 [dependencies.http]
