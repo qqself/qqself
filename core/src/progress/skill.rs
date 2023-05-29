@@ -73,6 +73,10 @@ impl Skill {
         &self.title
     }
 
+    pub fn kind(&self) -> &str {
+        &self.kind
+    }
+
     pub fn add_duration(&mut self, duration: Duration) {
         self.duration_minutes += duration.minutes();
     }

@@ -132,6 +132,11 @@ pub struct App {
     db: DB,
 }
 
+#[wasm_bindgen(getter_with_clone)]
+pub struct SkillsView {
+    pub skills: String,
+}
+
 #[wasm_bindgen]
 impl App {
     pub fn new(keys: &Keys) -> Self {
@@ -159,5 +164,15 @@ impl App {
             entries.push_str(&format!("{}\n", entry.to_string_short()));
         }
         AppJournalDay { day, entries }
+    }
+
+    pub fn view_skills(&self) -> SkillsView {
+        let skills = self
+            .db
+            .skills()
+            .iter()
+            .map(|v| format!("{} {} {}", v.kind(), v.title(), v.progress().level))
+            .fold(String::new(), |a, b| a + &b + "\n");
+        SkillsView { skills }
     }
 }

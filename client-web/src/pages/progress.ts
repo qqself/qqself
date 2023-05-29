@@ -5,6 +5,7 @@ import { find } from "../api"
 import "../components/logoBlock"
 import "../controls/button"
 import "../components/journal"
+import "../components/skills"
 import { EncryptionPool } from "../encryptionPool"
 import { log } from "../logger"
 
@@ -74,6 +75,7 @@ export class ProgressPage extends LitElement {
           @next=${() => this.switchDay(1)}
           @prev=${() => this.switchDay(-1)}
         ></q-journal>
+        <q-skills .data=${this.app?.view_skills().skills}></q-skills>
         ${this.error && html`<p>Error ${this.error}</p>`}
       </q-logo-block>
     `
