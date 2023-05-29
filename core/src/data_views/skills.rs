@@ -25,6 +25,7 @@ impl SkillsView {
                 Record::Value(RecordValue::Entry(entry)) => entry.entry(),
                 _ => continue, // We don't care about non entries
             };
+            // TODO Skill calculation works only if skill definition appears before it's entries
             match Skill::from_record(entry) {
                 Some(skill) => {
                     if let Some(existing) =

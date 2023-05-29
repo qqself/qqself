@@ -2,6 +2,8 @@ import { html, LitElement, TemplateResult } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
 import { App, DateDay, Keys } from "../../core/pkg"
 import { EncryptionPool } from "../encryptionPool"
+import "../components/skills"
+import "../controls/panel"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -52,7 +54,10 @@ export class DevcardsPage extends LitElement {
     // Test data
     const testKeys: Keys = Keys.createNewKeys()
     const testApp = App.new(testKeys)
-    const input = `2022-11-09 09:20 11:00 qqself. Query for DynamoDB storage, figured out we should always include items equal to after_timestamp
+    const input = `2022-07-15 00:00 00:02 qqself. skill kind=🧠. Entrepreneur 
+2022-07-15 00:00 00:03 read. skill kind=🧠. Reader
+2022-07-15 00:00 00:11 drums. skill kind=🫀. Drummer
+2022-11-09 09:20 11:00 qqself. Query for DynamoDB storage, figured out we should always include items equal to after_timestamp
 2022-11-09 11:05 11:25 drums
 2022-11-09 11:25 12:30 qqself. Completed DynamoDB storage, created a PR
 2022-11-09 13:40 15:20 qqself. AWS config changes for Dynamo, switch to Dynamo storage in code
@@ -72,12 +77,26 @@ export class DevcardsPage extends LitElement {
 
     // Render all the devcards. If page hash ends with `/devcards:[CARD_NAME]` then only the card with such name will be rendered
     this.cards = html`<div class="devcards">
+      <!-- Controls -->
+      <q-card name="Panel">
+        <q-panel title="Dev panel">
+          <div>Content #1</div>
+          <div>Content #2</div>
+        </q-pane>
+      </q-card>
+      
+      <!-- Components -->
       <q-card name="Journal">
         <q-journal
           .data=${testApp.journal_day(DateDay.fromDate(new Date(2022, 10, 10)))}
         ></q-journal>
       </q-card>
 
+      <q-card name="Skills">
+        <q-skills .data=${testApp.view_skills().skills}></q-skills>
+      </q-card>
+
+      <!-- Pages -->
       <q-card name="Progress page">
         <q-progress-page
           .keys="${testKeys}"
