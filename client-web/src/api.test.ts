@@ -1,9 +1,8 @@
+import { describe, test, expect } from "vitest"
 import { Keys } from "../core/pkg/qqself_client_web_core"
 import * as API from "./api"
 
 describe("API", () => {
-  jest.setTimeout(10 * 1000)
-
   test("Create new keys", async () => {
     const keys = Keys.createNewKeys()
     expect(keys).toBeTruthy()

@@ -8,9 +8,7 @@ type ApiError = {
 }
 
 const http = async (req: Request): Promise<Response> => {
-  const url = import.meta.env.DEV
-    ? req.url.replace("https://api.qqself.com", "http://localhost:8080")
-    : req.url
+  const url = req.url.replace("https://api.qqself.com", import.meta.env.VITE_API_HOST)
   const resp = await fetch(url, {
     method: "POST",
     body: req.payload,
