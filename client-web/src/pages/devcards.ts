@@ -3,6 +3,7 @@ import { customElement, property, state } from "lit/decorators.js"
 import { App, DateDay, Keys } from "../../bridge/pkg"
 import { EncryptionPool } from "../encryptionPool"
 import "../components/skills"
+import "../components/entryInput"
 import "../controls/panel"
 
 declare global {
@@ -17,7 +18,7 @@ class Card extends LitElement {
   name = ""
   render() {
     const filter = window.location.hash.slice(1).split(":")
-    if (filter.length == 2 && decodeURI(filter[1]) != this.name) {
+    if (filter.length == 2 && !this.name.includes(decodeURI(filter[1]))) {
       return // Card is filtered out
     }
     const renderTitle = filter.length != 2 // render title only when filter is not set and we are rendering many controls
@@ -89,11 +90,24 @@ export class DevcardsPage extends LitElement {
       <q-card name="Journal">
         <q-journal
           .data=${testApp.journal_day(DateDay.fromDate(new Date(2022, 10, 10)))}
+          .keys=${testKeys}
         ></q-journal>
       </q-card>
 
       <q-card name="Skills">
         <q-skills .data=${testApp.view_skills().skills}></q-skills>
+      </q-card>
+
+      <q-card name="AddEntry - Valid">
+        <q-entry-input entry="2022-11-09 11:25 12:30 qqself. Added entry input"></q-entry-input>
+      </q-card>
+
+      <q-card name="AddEntry - Invalid">
+        <q-entry-input entry="2022-11-09 11:25 12:30 foo. foo"></q-entry-input>
+      </q-card>
+
+      <q-card name="AddEntry - Empty">
+        <q-entry-input></q-entry-input>
       </q-card>
 
       <!-- Pages -->

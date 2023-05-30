@@ -176,3 +176,8 @@ impl App {
         SkillsView { skills }
     }
 }
+
+#[wasm_bindgen]
+pub fn validateEntry(input: String) -> Option<String> {
+    Entry::parse(&input).map_err(|e| e.to_string()).err()
+}

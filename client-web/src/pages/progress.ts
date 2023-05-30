@@ -72,6 +72,7 @@ export class ProgressPage extends LitElement {
         <h1>Progress</h1>
         <q-journal
           .data=${this.journalData}
+          .keys=${this.keys}
           @next=${() => this.switchDay(1)}
           @prev=${() => this.switchDay(-1)}
         ></q-journal>
