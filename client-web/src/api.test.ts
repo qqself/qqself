@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest"
-import { Keys } from "../core/pkg/qqself_client_web_core"
+import { Keys } from "../bridge/pkg/qqself_client_web_bridge"
 import * as API from "./api"
 
 describe("API", () => {

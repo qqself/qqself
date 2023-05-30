@@ -1,7 +1,7 @@
 cli="yarn"
 
 [[crates]]
-name = "core"
+name = "bridge"
 
 [crates.watch]
 # Encryption is CPU heavy. With dev profile it's very slow and unusable during development, switch to release

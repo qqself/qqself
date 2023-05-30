@@ -1,4 +1,4 @@
-import { API, Keys, Request } from "../core/pkg/qqself_client_web_core"
+import { API, Keys, Request } from "../bridge/pkg/qqself_client_web_bridge"
 import { EncryptionPool } from "./encryptionPool"
 
 type ApiError = {

@@ -1,7 +1,6 @@
 import { css, html, LitElement } from "lit"
 import { customElement, property } from "lit/decorators.js"
 import { classMap } from "lit/directives/class-map.js"
-import { ifDefined } from "lit/directives/if-defined"
 import { defaultFont } from "../constants"
 import "../controls/logo"
 

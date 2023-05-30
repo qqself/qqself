@@ -1,4 +1,4 @@
-import { Keys } from "../core/pkg/qqself_client_web_core"
+import { Keys } from "../bridge/pkg/qqself_client_web_bridge"
 import { InputType, OutputType } from "./encryptionPool.worker"
 import { log } from "./logger"
 

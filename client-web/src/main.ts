@@ -4,7 +4,7 @@ import "./pages/loading"
 import "./pages/register"
 import "./pages/login"
 import "./pages/progress"
-import { App, Keys } from "../core/pkg/qqself_client_web_core"
+import { App, Keys } from "../bridge/pkg/qqself_client_web_bridge"
 import { EncryptionPool } from "./encryptionPool"
 
 type Page = "login" | "register" | "progress" | "devcards"

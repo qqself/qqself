@@ -1,5 +1,5 @@
 [package]
-name = "qqself-client-web-core"
+name = "qqself-client-web-bridge"
 version = "0.1.0"
 edition = "2021"
 
