@@ -1,6 +1,6 @@
 import { html, LitElement } from "lit"
 import { customElement, state } from "lit/decorators.js"
-import init, { initialize } from "../../core/pkg"
+import init, { initialize } from "../../bridge/pkg"
 import { log } from "../logger"
 import "../components/logoBlock"
 import { EncryptionPool } from "../encryptionPool"

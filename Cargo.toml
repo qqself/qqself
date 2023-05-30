@@ -4,5 +4,5 @@ members = [
     "core",
     "api-sync",
     "client-cli",
-    "client-web/core"
+    "client-web/bridge"
 ]

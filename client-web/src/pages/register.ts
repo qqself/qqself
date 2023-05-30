@@ -1,6 +1,6 @@
 import { css, html, LitElement } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
-import { Keys } from "../../core/pkg/qqself_client_web_core"
+import { Keys } from "../../bridge/pkg/qqself_client_web_bridge"
 import { log } from "../logger"
 import "../components/logoBlock"
 import "../controls/button"

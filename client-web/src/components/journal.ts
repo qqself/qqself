@@ -1,6 +1,6 @@
 import { css, html, LitElement } from "lit"
 import { customElement, property } from "lit/decorators.js"
-import { AppJournalDay } from "../../core/pkg/qqself_client_web_core"
+import { AppJournalDay } from "../../bridge/pkg/qqself_client_web_bridge"
 import "../controls/logo"
 
 declare global {

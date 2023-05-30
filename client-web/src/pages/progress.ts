@@ -1,6 +1,6 @@
 import { css, html, LitElement } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
-import { API, App, AppJournalDay, DateDay, Keys } from "../../core/pkg/qqself_client_web_core"
+import { API, App, AppJournalDay, DateDay, Keys } from "../../bridge/pkg/qqself_client_web_bridge"
 import { find } from "../api"
 import "../components/logoBlock"
 import "../controls/button"

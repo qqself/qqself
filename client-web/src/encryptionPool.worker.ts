@@ -1,5 +1,5 @@
 // Worker for running encryption related login outside of the main thread to avoid blocking main event loop
-import init, { Keys } from "../core/pkg/qqself_client_web_core"
+import init, { Keys } from "../bridge/pkg/qqself_client_web_bridge"
 
 export type InputType =
   | { kind: "Init"; keys: string }

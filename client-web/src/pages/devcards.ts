@@ -1,6 +1,6 @@
 import { html, LitElement, TemplateResult } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
-import { App, DateDay, Keys } from "../../core/pkg"
+import { App, DateDay, Keys } from "../../bridge/pkg"
 import { EncryptionPool } from "../encryptionPool"
 import "../components/skills"
 import "../controls/panel"
