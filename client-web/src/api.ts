@@ -1,5 +1,4 @@
 import { API, Keys, Request } from "../bridge/pkg/qqself_client_web_bridge"
-import { EncryptionPool } from "./encryptionPool"
 
 type ApiError = {
   timestamp: number
@@ -44,4 +43,34 @@ export const find = async (keys: Keys): Promise<string[]> => {
 // Call Delete sync API endpoint
 export const deleteAccount = async (keys: Keys): Promise<void> => {
   await http(API.createApiDeleteRequest(keys))
+}
+
+if (import.meta.vitest) {
+  const { describe, test, expect } = import.meta.vitest
+
+  describe("API", () => {
+    test("Create new keys", async () => {
+      const keys = Keys.createNewKeys()
+      expect(keys).toBeTruthy()
+    })
+
+    test("API", async () => {
+      // First find call no data
+      const keys = Keys.createNewKeys()
+      const lines = await find(keys)
+      expect(lines).toEqual([])
+
+      // Add couple of messages
+      await set(keys, "msg1")
+      await set(keys, "msg2")
+
+      // Get those back
+      const got = await find(keys)
+      const plaintext = got.map((v) => keys.decrypt(v))
+      expect(plaintext.sort()).toEqual(["msg1", "msg2"]) // Sort order of items with the same timestamp is not defined
+
+      // Delete it all
+      await deleteAccount(keys)
+    })
+  })
 }

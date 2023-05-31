@@ -4,7 +4,11 @@ import ViteRsw from "vite-plugin-rsw"
 
 export default defineConfig({
   plugins: [ViteRsw()],
+  define: {
+    "import.meta.vitest": "undefined",
+  },
   test: {
     setupFiles: "vitest.setup.ts",
+    includeSource: ["src/**/*.ts"],
   },
 })
