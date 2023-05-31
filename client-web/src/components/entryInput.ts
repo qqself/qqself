@@ -56,7 +56,6 @@ export class EntryInput extends LitElement {
 
   validateEntry() {
     this.validationError = validateEntry(this.currentEntry)
-    console.log(`Entry: ${this.currentEntry} - ${this.validationError}`)
     this.isEntryValid = this.validationError == undefined
   }
 

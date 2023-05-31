@@ -5,6 +5,7 @@ import { EncryptionPool } from "../encryptionPool"
 import "../components/skills"
 import "../components/entryInput"
 import "../controls/panel"
+import { Cache } from "../cache"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -52,6 +53,8 @@ export class DevcardsPage extends LitElement {
   async connectedCallback() {
     super.connectedCallback()
 
+    const cache = await Cache.init("foo", true)
+
     // Test data
     const testKeys: Keys = Keys.createNewKeys()
     const testApp = App.new(testKeys)
@@ -74,6 +77,7 @@ export class DevcardsPage extends LitElement {
 2022-11-10 21:30 23:30 qqself. Fixed all the tests, migrated fully to new date and time structures, created a PR`
     for (const entry of input.split("\n")) {
       testApp.add_entry(entry)
+      await cache.setItem(entry, entry)
     }
 
     // Render all the devcards. If page hash ends with `/devcards:[CARD_NAME]` then only the card with such name will be rendered
