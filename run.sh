@@ -20,7 +20,7 @@ usage() {
   exit 1
 }
 
-# Unpack vendored dependencies or install things that we didn't vendor yet
+# Install dependencies and required tooling for the development
 deps() {
   cargo fetch
   (cd client-web && yarn install) 

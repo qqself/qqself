@@ -49,9 +49,9 @@ pub struct DeleteToken {
 }
 
 impl DeleteToken {
-    pub fn new_from_encoded(data: String) -> Result<Self, TokenErr> {
+    pub fn new_from_encoded(data: String, min_timestamp: Option<Timestamp>) -> Result<Self, TokenErr> {
         // TODO It's not exactly clean to use Token here as DeleteToken doesn't have any payload
-        let token = Token::new_from_encoded(data, None)?;
+        let token = Token::new_from_encoded(data, min_timestamp)?;
         Ok(Self {
             public_key: token.key,
         })

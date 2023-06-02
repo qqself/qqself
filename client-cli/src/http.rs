@@ -37,20 +37,15 @@ mod tests {
         // Set
         let msg = "2022-10-10 00:00 01:00 test app=client_cli source=test_set";
         let req = ApiRequest::new_set_request(&keys, msg.to_string()).unwrap();
-        let payload = req.payload.clone();
         let resp = http.send(req).await.unwrap();
         assert_eq!(resp.status(), 200);
-        let body = resp.text().await.unwrap();
-        assert_eq!(body, "");
 
         // Find what we've just added
         let req = ApiRequest::new_find_request(&keys, None).unwrap();
         let resp = http.send(req).await.unwrap();
         assert_eq!(resp.status(), 200);
         let body = resp.text().await.unwrap();
-        let lines: Vec<_> = body.lines().collect();
-        assert_eq!(lines.len(), 1);
-        assert_eq!(payload, lines[0]);
+        assert_eq!(body.lines().count(), 1);
 
         // Delete it all
         let req = ApiRequest::new_delete_request(&keys).unwrap();
