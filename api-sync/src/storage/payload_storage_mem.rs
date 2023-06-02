@@ -8,13 +8,13 @@ use qqself_core::date_time::timestamp::Timestamp;
 use qqself_core::encryption::keys::PublicKey;
 use qqself_core::encryption::payload::{Payload, PayloadBytes, PayloadId};
 
-use super::payload::{PayloadStorage, StorageErr};
+use super::payload_storage::{PayloadIdString, PayloadStorage, StorageErr};
 
-pub struct MemoryPayloadStorage {
+pub struct PayloadStorageMemory {
     data: Mutex<Vec<(PublicKey, PayloadId, Option<Payload>)>>,
 }
 
-impl MemoryPayloadStorage {
+impl PayloadStorageMemory {
     pub fn new() -> Self {
         Self {
             data: Mutex::from(Vec::new()),
@@ -22,15 +22,15 @@ impl MemoryPayloadStorage {
     }
 }
 
-impl Default for MemoryPayloadStorage {
+impl Default for PayloadStorageMemory {
     fn default() -> Self {
         Self::new()
     }
 }
 
 #[async_trait]
-impl PayloadStorage for MemoryPayloadStorage {
-    async fn set(&self, payload: Payload) -> Result<(), StorageErr> {
+impl PayloadStorage for PayloadStorageMemory {
+    async fn set(&self, payload: Payload, payload_id: PayloadId) -> Result<(), StorageErr> {
         let mut data = self.data.lock().unwrap();
         if let Some(prev) = payload.previous_version() {
             for v in data.iter_mut() {
@@ -39,11 +39,7 @@ impl PayloadStorage for MemoryPayloadStorage {
                 }
             }
         }
-        data.push((
-            payload.public_key().clone(),
-            payload.id().clone(),
-            Some(payload),
-        ));
+        data.push((payload.public_key().clone(), payload_id, Some(payload)));
         Ok(())
     }
 
@@ -51,7 +47,7 @@ impl PayloadStorage for MemoryPayloadStorage {
         &self,
         public_key: &PublicKey,
         after_timestamp: Option<Timestamp>,
-    ) -> Pin<Box<dyn Stream<Item = Result<PayloadBytes, StorageErr>>>> {
+    ) -> Pin<Box<dyn Stream<Item = Result<(PayloadIdString, PayloadBytes), StorageErr>>>> {
         let mut found = Vec::new();
         let data = self.data.lock().unwrap();
         let timestamp = after_timestamp.unwrap_or_default();
@@ -63,7 +59,7 @@ impl PayloadStorage for MemoryPayloadStorage {
                 continue;
             }
             if let Some(data) = &v.2 {
-                found.push(Ok(data.data()));
+                found.push(Ok((v.1.to_string(), data.data())));
             }
         }
         Box::pin(stream::iter(found))

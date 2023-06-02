@@ -26,6 +26,13 @@ impl StableHash {
         StableHash(buf)
     }
 
+    pub fn parse(s: &str) -> Option<Self> {
+        let decoded = BinaryToText::new_from_encoded(s.to_string())?.decoded()?;
+        Some(StableHash::new_from_bytes(
+            decoded.as_slice().try_into().ok()?,
+        ))
+    }
+
     pub fn new_from_bytes(data: [u8; StableHash::SIZE]) -> Self {
         Self(data)
     }
@@ -74,5 +81,14 @@ mod tests {
         data.push(20);
         let got = StableHash::hash_bytes(&data);
         assert_eq!(got.to_string(), "Nr2ASJ1iffPXuHonq1Hddk")
+    }
+
+    #[test]
+    #[wasm_bindgen_test]
+    fn to_from_string() {
+        let payload = "foo";
+        let hash1 = StableHash::hash_string(payload);
+        let hash2 = StableHash::parse(&hash1.to_string()).unwrap();
+        assert_eq!(hash1.to_string(), hash2.to_string())
     }
 }

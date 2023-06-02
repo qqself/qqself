@@ -47,7 +47,7 @@ impl Keys {
         let decrypted = payload
             .decrypt(&self.0.private_key)
             .map_err(|v| v.to_string())?;
-        Ok(decrypted.text().to_string())
+        Ok(decrypted)
     }
 }
 

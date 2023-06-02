@@ -36,6 +36,15 @@ impl PayloadId {
     pub fn new(timestamp: Timestamp, hash: StableHash) -> Self {
         Self { timestamp, hash }
     }
+    pub fn parse(s: &str) -> Option<Self> {
+        let timestamp = Timestamp::from_string(&s[..20])?;
+        // timestamp is 20 characters + separator, rest is a hash
+        if s.len() < 22 {
+            return None; // String
+        }
+        let hash = StableHash::parse(&s[21..])?;
+        Some(Self { timestamp, hash })
+    }
     pub fn timestamp(&self) -> &Timestamp {
         &self.timestamp
     }
@@ -52,24 +61,9 @@ impl fmt::Display for PayloadId {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct Plaintext {
-    id: PayloadId,
-    text: String,
-}
-
-impl Plaintext {
-    pub fn text(&self) -> &str {
-        &self.text
-    }
-    pub fn id(&self) -> &PayloadId {
-        &self.id
-    }
-}
-
 #[derive(Debug)]
 pub struct Payload {
-    id: PayloadId,
+    plaintext_hash: StableHash,
     data: PayloadBytes,
     public_key: PublicKey,
     previous_version: Option<PayloadId>,
@@ -77,7 +71,7 @@ pub struct Payload {
 
 impl Payload {
     // Decrypt the payload and get clear text payload
-    pub fn decrypt(&self, private_key: &PrivateKey) -> Result<Plaintext, PayloadError> {
+    pub fn decrypt(&self, private_key: &PrivateKey) -> Result<String, PayloadError> {
         let encoded = self
             .data
             .0
@@ -95,17 +89,11 @@ impl Payload {
         let text = String::from_utf8(data).map_err(|_| {
             PayloadError::DecryptionError("Decrypted payload is not valid UTF8 string")
         })?;
-        Ok(Plaintext {
-            text,
-            id: PayloadId {
-                timestamp: bytes.timestamp,
-                hash: bytes.hash,
-            },
-        })
+        Ok(text)
     }
 
-    pub fn id(&self) -> &PayloadId {
-        &self.id
+    pub fn plaintext_hash(&self) -> &StableHash {
+        &self.plaintext_hash
     }
 
     pub fn data(&self) -> PayloadBytes {
@@ -160,8 +148,8 @@ impl PayloadBytes {
         let bytes = PayloadBinary::to_bytes(
             private_key,
             public_key,
-            PayloadBytes::VERSION,
             timestamp.as_u64(),
+            &StableHash::hash_string(plaintext),
             &encrypted_aes_key,
             aes_payload.payload(),
             previous_version,
@@ -197,13 +185,13 @@ impl PayloadBytes {
         let public_key = PublicKey::new(public_key_data)
             .map_err(|_| PayloadError::ValidationError("Public key validation error"))?;
         // Hash and RSA verify
-        if Rsa::verify_signature(&public_key, bytes.signature, &bytes.hash).is_none() {
+        if Rsa::verify_signature(&public_key, bytes.signature, &bytes.payload_hash).is_none() {
             return Err(PayloadError::ValidationError(
                 "Payload signature validation failed",
             ));
         }
         Ok(Payload {
-            id: PayloadId::new(bytes.timestamp, bytes.hash),
+            plaintext_hash: bytes.plaintext_hash.clone(),
             data: self,
             public_key,
             previous_version: bytes.previous,
@@ -221,6 +209,7 @@ impl PayloadBytes {
   [PREVIOUS_TIMESTAMP]               8 bytes if [CONTAINS_PREVIOUS]
   [PREVIOUS_HASH]                   16 bytes if [CONTAINS_PREVIOUS]
 [TIMESTAMP]                       8 bytes
+[PLAINTEXT_HASH]                  16 bytes
 [PUBLIC_KEY_LENGTH]               8 bytes
 [ENCRYPTED_AES_KEY_LENGTH]        8 bytes
 [AES_ENCRYPTED_PAYLOAD_LENGTH]    8 bytes
@@ -232,7 +221,8 @@ struct PayloadBinary<'a> {
     version: u64,
     previous: Option<PayloadId>,
     timestamp: Timestamp,
-    hash: StableHash,
+    payload_hash: StableHash,
+    plaintext_hash: StableHash,
     public_key: &'a [u8],
     aes_key: &'a [u8],
     aes_payload: &'a [u8],
@@ -259,6 +249,8 @@ impl<'a> PayloadBinary<'a> {
         };
         let (timestamp, idx) = PayloadBinary::read_u64(data, idx)?;
         let timestamp = Timestamp::from_u64(timestamp);
+        let (plaintext_hash, idx) = PayloadBinary::read_bytes(data, idx, 16)?;
+        let plaintext_hash = StableHash::new_from_bytes(plaintext_hash.try_into().ok()?);
         let (public_key_len, idx) = PayloadBinary::read_u64(data, idx)?;
         let (aes_key_len, idx) = PayloadBinary::read_u64(data, idx)?;
         let (aes_payload_len, idx) = PayloadBinary::read_u64(data, idx)?;
@@ -267,7 +259,7 @@ impl<'a> PayloadBinary<'a> {
         let (aes_key, idx) = PayloadBinary::read_bytes(data, idx, aes_key_len)?;
         let (aes_payload, idx) = PayloadBinary::read_bytes(data, idx, aes_payload_len)?;
         let all_but_signature = &data[..idx];
-        let hash = StableHash::hash_bytes(all_but_signature);
+        let payload_hash = StableHash::hash_bytes(all_but_signature);
         let signature = &data[idx..];
         if signature.is_empty() {
             return None;
@@ -276,7 +268,8 @@ impl<'a> PayloadBinary<'a> {
             version,
             previous,
             timestamp,
-            hash,
+            payload_hash,
+            plaintext_hash,
             public_key,
             aes_key,
             aes_payload,
@@ -287,19 +280,24 @@ impl<'a> PayloadBinary<'a> {
     fn to_bytes(
         private_key: &PrivateKey,
         public_key: &PublicKey,
-        version: u64,
         timestamp: u64,
+        plaintext_hash: &StableHash,
         aes_key: &'a [u8],
         aes_payload: &'a [u8],
         previous: Option<PayloadId>,
     ) -> Option<Vec<u8>> {
         let public_key_s = public_key.to_string();
         let public_key = public_key_s.as_bytes();
-        let capacity =
-            16 + 8 * 5 + public_key.len() + aes_key.len() + aes_payload.len() + Rsa::SIGNATURE_SIZE;
+        let capacity = 16
+            + 16
+            + 8 * 5
+            + public_key.len()
+            + aes_key.len()
+            + aes_payload.len()
+            + Rsa::SIGNATURE_SIZE;
         let mut data = Vec::with_capacity(capacity);
         // Fixed sizes length
-        data.extend_from_slice(&version.to_le_bytes());
+        data.extend_from_slice(&PayloadBytes::VERSION.to_le_bytes());
         // If previous version is set
         match previous {
             Some(id) => {
@@ -310,6 +308,7 @@ impl<'a> PayloadBinary<'a> {
             None => data.push(0x00),
         }
         data.extend_from_slice(&timestamp.to_le_bytes());
+        data.extend_from_slice(&plaintext_hash.as_bytes());
         data.extend_from_slice(&usize_bytes(public_key.len()));
         data.extend_from_slice(&usize_bytes(aes_key.len()));
         data.extend_from_slice(&usize_bytes(aes_payload.len()));
@@ -381,6 +380,7 @@ mod tests {
     #[wasm_bindgen_test]
     fn binary_data() {
         // No previous
+        let plaintext_hash = StableHash::hash_string("entry");
         let (public_key, private_key) = keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
         let previous_id = PayloadId::new(
             Timestamp::from_u64(TIMESTAMP),
@@ -390,8 +390,8 @@ mod tests {
         let bytes = PayloadBinary::to_bytes(
             &private_key,
             &public_key,
-            PayloadBytes::VERSION,
             TIMESTAMP,
+            &plaintext_hash,
             &[3; 30],
             &[4; 40],
             Some(previous_id.clone()),
@@ -401,6 +401,7 @@ mod tests {
 
         assert_eq!(data.version, 1);
         assert_eq!(data.timestamp, Timestamp::from_u64(TIMESTAMP));
+        assert_eq!(data.plaintext_hash, plaintext_hash);
         assert_eq!(data.public_key, public_key.to_string().as_bytes());
         assert_eq!(data.aes_key, &vec![3; 30]);
         assert_eq!(data.aes_payload, &vec![4; 40]);
@@ -425,8 +426,7 @@ mod tests {
         let payload = encrypted.validated(None).unwrap();
         assert_eq!(payload.public_key(), &public_key);
         let decrypted = payload.decrypt(&private_key).unwrap();
-        assert_eq!(decrypted.text, data.to_string());
-        assert_eq!(decrypted.id().timestamp(), &Timestamp::from_u64(TIMESTAMP));
+        assert_eq!(decrypted, data.to_string());
 
         // Can't decrypt with another key
         let (_, private_key2) = keys(PUBLIC_KEY_2, PRIVATE_KEY_2);
@@ -482,5 +482,14 @@ mod tests {
             encrypted_bad.validated(None).unwrap_err(),
             PayloadError::ValidationError("Payload signature validation failed")
         );
+    }
+
+    #[test]
+    #[wasm_bindgen_test]
+    fn parsing() {
+        let payload1 = PayloadId::new(Timestamp::from_u64(10), StableHash::hash_string("foo"));
+        let payload2 = PayloadId::parse(&payload1.to_string()).unwrap();
+        assert_eq!(payload1.timestamp, payload2.timestamp);
+        assert_eq!(payload1.hash, payload2.hash);
     }
 }

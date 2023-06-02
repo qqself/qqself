@@ -1,4 +1,7 @@
-use crate::storage::{account::AccountStorage, payload::PayloadStorage};
+use crate::{
+    storage::{account::AccountStorage, payload_storage::PayloadStorage},
+    time::TimeProvider,
+};
 
 use super::{HttpErrorType, Timestamp};
 
@@ -12,7 +15,7 @@ use qqself_core::{
     date_time::datetime::Duration,
     encryption::{
         keys::PublicKey,
-        payload::{Payload, PayloadBytes, PayloadError},
+        payload::{Payload, PayloadBytes, PayloadError, PayloadId},
         tokens::{DeleteToken, SearchToken},
     },
 };
@@ -27,19 +30,23 @@ async fn set(
     req: String,
     payload_storage: Data<Box<dyn PayloadStorage + Sync + Send>>,
     account_storage: Data<Box<dyn AccountStorage + Sync + Send>>,
+    time: Data<Box<dyn TimeProvider + Sync + Send>>,
 ) -> Result<impl Responder, HttpErrorType> {
-    let payload = validate_payload(req).await?;
+    let now = time.now().await;
+    let payload = validate_payload(req, now).await?;
     validate_account(&account_storage, payload.public_key()).await?;
-    save_payload(&payload_storage, payload).await?;
-    Ok("")
+    let payload_id = save_payload(&payload_storage, payload, now).await?;
+    Ok(payload_id.to_string())
 }
 
 async fn find(
     req: String,
     payload_storage: Data<Box<dyn PayloadStorage + Sync + Send>>,
     account_storage: Data<Box<dyn AccountStorage + Sync + Send>>,
+    time: Data<Box<dyn TimeProvider + Sync + Send>>,
 ) -> Result<HttpResponse, HttpErrorType> {
-    let search_token = validate_search_token(req)?;
+    let now = time.now().await;
+    let search_token = validate_search_token(req, now)?;
     validate_account(&account_storage, search_token.public_key()).await?;
     let items = payload_storage
         .find(
@@ -47,7 +54,11 @@ async fn find(
             search_token.search_timestamp().to_owned(),
         )
         .map_err(|_| HttpErrorType::IOError("Streaming error".to_string()))
-        .map(|v| v.map(|v| web::Bytes::from(format!("{}\n", v.data()))));
+        .map(|v| {
+            v.map(|(payload_id, payload_bytes)| {
+                web::Bytes::from(format!("{}:{}\n", payload_id, payload_bytes.data()))
+            })
+        });
     Ok(HttpResponse::Ok()
         .content_type("text/event-stream")
         .streaming(items))
@@ -57,8 +68,10 @@ async fn delete(
     req: String,
     payload_storage: Data<Box<dyn PayloadStorage + Sync + Send>>,
     account_storage: Data<Box<dyn AccountStorage + Sync + Send>>,
+    time: Data<Box<dyn TimeProvider + Sync + Send>>,
 ) -> Result<impl Responder, HttpErrorType> {
-    let delete_token = validate_delete_token(req)?;
+    let now = time.now().await;
+    let delete_token = validate_delete_token(req, now)?;
     validate_account(&account_storage, delete_token.public_key()).await?;
     if let Err(err) = payload_storage.delete(delete_token.public_key()).await {
         return Err(HttpErrorType::IOError(format!("{:#?}", err)));
@@ -70,7 +83,7 @@ async fn not_found() -> Result<String, HttpErrorType> {
     Err(HttpErrorType::NotFound)
 }
 
-async fn validate_payload(payload_data: String) -> Result<Payload, HttpErrorType> {
+async fn validate_payload(payload_data: String, now: Timestamp) -> Result<Payload, HttpErrorType> {
     let encoded = BinaryToText::new_from_encoded(payload_data)
         .ok_or_else(|| HttpErrorType::BadInput("Error validating encoded payload".to_string()))?;
     let payload_bytes = PayloadBytes::new_from_encrypted(encoded)
@@ -78,24 +91,25 @@ async fn validate_payload(payload_data: String) -> Result<Payload, HttpErrorType
 
     // Validation is CPU heavy and may take about 2ms, use thread pool to avoid blocking event loop
     // TODO What about SearchToken and DeleteToken, those are implicitly validated and blocks the event loop
-    let payload = tokio::task::spawn_blocking(move || {
-        payload_bytes.validated(Some(Timestamp::now() - MAX_PAYLOAD_AGE))
-    })
-    .await
-    .map_err(|_| HttpErrorType::IOError("Error calling payload verification".to_string()))?;
+    let payload =
+        tokio::task::spawn_blocking(move || payload_bytes.validated(Some(now - MAX_PAYLOAD_AGE)))
+            .await
+            .map_err(|_| {
+                HttpErrorType::IOError("Error calling payload verification".to_string())
+            })?;
     payload.map_err(|err| match err {
         PayloadError::TimestampIsTooOld => HttpErrorType::OutdatedPayload,
         _ => HttpErrorType::BadInput(format!("Payload validation failure. {}", err)),
     })
 }
 
-fn validate_search_token(data: String) -> Result<SearchToken, HttpErrorType> {
-    SearchToken::new_from_encoded(data, Some(Timestamp::now() - MAX_PAYLOAD_AGE))
+fn validate_search_token(data: String, now: Timestamp) -> Result<SearchToken, HttpErrorType> {
+    SearchToken::new_from_encoded(data, Some(now - MAX_PAYLOAD_AGE))
         .map_err(|err| HttpErrorType::BadInput(format!("Error encoding search token. {}", err)))
 }
 
-fn validate_delete_token(data: String) -> Result<DeleteToken, HttpErrorType> {
-    DeleteToken::new_from_encoded(data)
+fn validate_delete_token(data: String, now: Timestamp) -> Result<DeleteToken, HttpErrorType> {
+    DeleteToken::new_from_encoded(data, Some(now - MAX_PAYLOAD_AGE))
         .map_err(|err| HttpErrorType::BadInput(format!("Error encoding delete token. {}", err)))
 }
 
@@ -112,16 +126,19 @@ async fn validate_account(
 async fn save_payload(
     storage: &Data<Box<dyn PayloadStorage + Sync + Send>>,
     payload: Payload,
-) -> Result<(), HttpErrorType> {
-    if let Err(err) = storage.set(payload).await {
+    now: Timestamp,
+) -> Result<PayloadId, HttpErrorType> {
+    let payload_id = PayloadId::new(now, payload.plaintext_hash().clone());
+    if let Err(err) = storage.set(payload, payload_id.clone()).await {
         return Err(HttpErrorType::IOError(format!("{:#?}", err)));
     }
-    Ok(())
+    Ok(payload_id)
 }
 
 pub fn http_config(
     payload_storage: Data<Box<dyn PayloadStorage + Send + Sync>>,
     account_storage: Data<Box<dyn AccountStorage + Send + Sync>>,
+    time: Data<Box<dyn TimeProvider + Send + Sync>>,
 ) -> impl FnOnce(&mut ServiceConfig) {
     |cfg: &mut web::ServiceConfig| {
         cfg.app_data(
@@ -130,6 +147,7 @@ pub fn http_config(
         )
         .app_data(payload_storage)
         .app_data(account_storage)
+        .app_data(time)
         .route("/health", web::get().to(health))
         .route("/set", web::post().to(set))
         .route("/find", web::post().to(find))
@@ -142,7 +160,8 @@ pub fn http_config(
 mod tests {
     use crate::{
         http::HttpError,
-        storage::{account_mem::MemoryAccountStorage, payload_mem::MemoryPayloadStorage},
+        storage::{account_mem::MemoryAccountStorage, payload_storage_mem::PayloadStorageMemory},
+        time::TimeStatic,
     };
 
     use super::*;
@@ -167,26 +186,25 @@ mod tests {
         (public_key, private_key)
     }
 
-    type Storage = Data<Box<dyn AccountStorage + Send + Sync>>;
+    type Payload = Data<Box<dyn AccountStorage + Send + Sync>>;
     type Account = Data<Box<dyn PayloadStorage + Send + Sync>>;
+    type Time = Data<Box<dyn TimeProvider + Send + Sync>>;
     // That madness caused by inability to return actix_web:App and passing function to `App.configure` is a recommended way
     // It's fine for configuring an app, but we want to share entry/account storages in tests so this beast was created
     // Essentially lazy_static should have been a perfect fit here to share storages across the tests but that didn't work with some weird errors
-    fn test_app() -> (Storage, Account, impl FnOnce(&mut ServiceConfig)) {
+    fn test_app() -> (Payload, Account, Time, impl FnOnce(&mut ServiceConfig)) {
         let entry_storage = Data::new(
-            Box::new(MemoryPayloadStorage::new()) as Box<dyn PayloadStorage + Send + Sync>
+            Box::new(PayloadStorageMemory::new()) as Box<dyn PayloadStorage + Send + Sync>
         );
         let account_storage = Data::new(
             Box::new(MemoryAccountStorage::new()) as Box<dyn AccountStorage + Send + Sync>
         );
-        let entry_storage_clone = entry_storage.clone();
-        let account_storage_clone = account_storage.clone();
+        let time = Data::new(Box::new(TimeStatic::new(1662750865)) as Box<dyn TimeProvider + Send + Sync>);
         (
-            account_storage,
-            entry_storage,
-            |cfg: &mut web::ServiceConfig| {
-                http_config(entry_storage_clone, account_storage_clone)(cfg)
-            },
+            account_storage.clone(),
+            entry_storage.clone(),
+            time.clone(),
+            |cfg: &mut web::ServiceConfig| http_config(entry_storage, account_storage, time)(cfg),
         )
     }
 
@@ -219,15 +237,15 @@ mod tests {
         payload_storage
             .find(public_key, None)
             .map(|v| v.unwrap())
-            .map(|v| v.validated(None).unwrap())
-            .map(|v| v.decrypt(private_key).unwrap().text().to_string())
+            .map(|(_, data)| data.validated(None).unwrap())
+            .map(|v| v.decrypt(private_key).unwrap())
             .collect::<Vec<_>>()
             .await
     }
 
     #[actix_web::test]
     async fn test_health() {
-        let (_, _, configure) = test_app();
+        let (_, _, _, configure) = test_app();
         let init_service = test::init_service(App::new().configure(configure)).await;
         let app = init_service;
         let req = test::TestRequest::get().uri("/health").to_request();
@@ -237,7 +255,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_set_bad_json() {
-        let (_, _, configure) = test_app();
+        let (_, _, _, configure) = test_app();
         let app = test::init_service(App::new().configure(configure)).await;
         let req = test::TestRequest::post()
             .uri("/set")
@@ -251,7 +269,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_not_found() {
-        let (_, _, configure) = test_app();
+        let (_, _, _, configure) = test_app();
         let app = test::init_service(App::new().configure(configure)).await;
         let req = test::TestRequest::post().uri("/invalid").to_request();
         let resp: HttpError = test::call_and_read_body_json(&app, req).await;
@@ -261,7 +279,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_too_old_payload() {
-        let (_, _, configure) = test_app();
+        let (_, _, _, configure) = test_app();
         let app = test::init_service(App::new().configure(configure)).await;
         let (public_key, private_key) = keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
         let encrypted = PayloadBytes::encrypt(
@@ -280,7 +298,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_set_bad_input() {
-        let (_, _, configure) = test_app();
+        let (_, _, _, configure) = test_app();
         let app = test::init_service(App::new().configure(configure)).await;
         let (public_key, private_key) = keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
         let encrypted =
@@ -297,20 +315,26 @@ mod tests {
 
     #[actix_web::test]
     async fn test_set_add() {
-        let (_, payload_storage, configure) = test_app();
+        let (_, payload_storage, time, configure) = test_app();
         let app = test::init_service(App::new().configure(configure)).await;
         let (public_key, private_key) = keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
-        for ts in [1, 3, 2] {
+        for (ts, expected) in [
+            (1, b"00000000001662750866|SWxyLukYqS63bYMvfwoj8f"),
+            (3, b"00000000001662750869|R85af9xML6WR7fNUXNgi5V"),
+            (2, b"00000000001662750871|93i31rxkhgVVzHahAA2LBF"),
+        ] {
+            time.sleep(ts).await;
             let encrypted = PayloadBytes::encrypt(
                 &public_key,
                 &private_key,
-                Timestamp::from_u64(Timestamp::now().as_u64() + ts),
+                time.now().await,
                 &ts.to_string(),
                 None,
             )
             .unwrap();
             let resp = test::call_service(&app, req_set(encrypted.data()).to_request()).await;
-            assert_eq!(resp.status(), 200)
+            assert_eq!(resp.status(), 200);
+            assert_eq!(test::read_body(resp).await.to_vec(), expected);
         }
         let got = items_plaintext(&payload_storage, &public_key, &private_key).await;
         assert_eq!(got, vec!["1", "3", "2"])
@@ -318,7 +342,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_set_replace() {
-        let (_, payload_storage, configure) = test_app();
+        let (_, payload_storage, _, configure) = test_app();
         let app = test::init_service(App::new().configure(configure)).await;
         let (public_key, private_key) = keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
         let mut replace_id = None;
@@ -338,11 +362,14 @@ mod tests {
             )
             .unwrap();
             let payload = encrypted.validated(None).unwrap();
-            if ts == 2 {
-                replace_id.replace(payload.id().clone());
-            }
             let resp = test::call_service(&app, req_set(payload.data().data()).to_request()).await;
-            assert_eq!(resp.status(), 200)
+            assert_eq!(resp.status(), 200);
+            if ts == 2 {
+                let body = test::read_body(resp).await.to_vec();
+                let body = String::from_utf8(body).unwrap();
+                let payload_id = PayloadId::parse(&body).unwrap();
+                replace_id.replace(payload_id);
+            }
         }
         let got = items_plaintext(&payload_storage, &public_key, &private_key).await;
         assert_eq!(got, vec!["1", "3", "4"])
@@ -350,11 +377,12 @@ mod tests {
 
     #[actix_web::test]
     async fn test_find() {
-        let (_, _, configure) = test_app();
+        let (_, _, time, configure) = test_app();
         let app = test::init_service(App::new().configure(configure)).await;
         let (public_key, private_key) = keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
-        let time_start = Timestamp::now();
+        let time_start = time.now().await;
         for ts in [1, 2, 3] {
+            time.sleep(ts).await;
             let encrypted = PayloadBytes::encrypt(
                 &public_key,
                 &private_key,
@@ -370,11 +398,13 @@ mod tests {
             let s = String::from_utf8(data.to_vec()).unwrap();
             let mut output = Vec::new();
             for s in s.lines() {
-                let binary_text = BinaryToText::new_from_encoded(s.to_string()).unwrap();
+                let payload_start_pos = s.find(':').unwrap() + 1;
+                let binary_text =
+                    BinaryToText::new_from_encoded(s[payload_start_pos..].to_string()).unwrap();
                 let bytes = PayloadBytes::new_from_encrypted(binary_text).unwrap();
                 let valid = bytes.validated(None).unwrap();
                 let plaintext = valid.decrypt(&private_key).unwrap();
-                output.push(plaintext.text().to_string());
+                output.push(plaintext);
             }
             output
         };
@@ -388,7 +418,7 @@ mod tests {
         let body = SearchToken::encode(
             &public_key,
             &private_key,
-            Timestamp::now(),
+            time.now().await,
             Some(Timestamp::from_u64(time_start.as_u64() + 2)),
         )
         .unwrap();
@@ -409,7 +439,7 @@ mod tests {
             keys(PUBLIC_KEY_1, PRIVATE_KEY_1),
             keys(PUBLIC_KEY_2, PRIVATE_KEY_2),
         ] {
-            let (_, payload_storage, configure) = test_app();
+            let (_, payload_storage, _, configure) = test_app();
             let app = test::init_service(App::new().configure(configure)).await;
             let time_start = Timestamp::now();
             let encrypted = PayloadBytes::encrypt(

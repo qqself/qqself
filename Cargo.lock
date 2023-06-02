@@ -1914,7 +1914,7 @@ dependencies = [
 
 [[package]]
 name = "qqself-api-sync"
-version = "0.0.1"
+version = "0.0.0"
 dependencies = [
  "actix-web",
  "async-trait",
@@ -1933,7 +1933,7 @@ dependencies = [
 
 [[package]]
 name = "qqself-client-cli"
-version = "0.0.1"
+version = "0.0.0"
 dependencies = [
  "chrono",
  "qqself-core",
@@ -1948,7 +1948,7 @@ dependencies = [
 
 [[package]]
 name = "qqself-client-web-bridge"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "console_error_panic_hook",
  "qqself-core",

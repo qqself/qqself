@@ -15,13 +15,13 @@ use qqself_core::{
     },
 };
 
-use super::payload::{PayloadStorage, StorageErr};
+use super::payload_storage::{PayloadIdString, PayloadStorage, StorageErr};
 
-pub struct FSPayloadStorage {
+pub struct PayloadStorageFS {
     path: PathBuf,
 }
 
-impl FSPayloadStorage {
+impl PayloadStorageFS {
     pub fn new(path: &str) -> Self {
         let path = Path::new(path);
         Self {
@@ -41,12 +41,7 @@ impl FSPayloadStorage {
         id: &PayloadId,
         data: Option<String>,
     ) -> Result<(), StorageErr> {
-        let name = format!(
-            "{}|{}|{}",
-            public_key.hash_string(),
-            id.timestamp(),
-            id.hash()
-        );
+        let name = format!("{}|{}", public_key.hash_string(), id);
         match data {
             Some(data) => std::fs::write(self.path.join(name), data)
                 .map_err(|err| StorageErr::IOError(format!("Failed to write payload: {err}"))),
@@ -60,11 +55,10 @@ impl FSPayloadStorage {
         &self,
         public_key: &PublicKey,
         after_timestamp: Option<Timestamp>,
-    ) -> Result<Vec<PayloadBytes>, StorageErr> {
+    ) -> Result<Vec<(PayloadIdString, PayloadBytes)>, StorageErr> {
         let mut found = Vec::new();
         let listing = read_dir(&self.path)
             .map_err(|_| StorageErr::IOError("Failed to read_dir".to_string()))?;
-        let timestamp = after_timestamp.unwrap_or_default();
         for file in listing {
             let file =
                 file.map_err(|_| StorageErr::IOError("Failed to read folder file".to_string()))?;
@@ -76,29 +70,28 @@ impl FSPayloadStorage {
             if !name.starts_with(&prefix) {
                 continue; // File for other public_key
             }
-            let prefix_time = format!("{}|{}|", public_key.hash_string(), timestamp);
-            if name.len() < prefix_time.len() {
-                continue; // Some invalid file
-            }
-            let file_time_prefix = name[..prefix_time.len()].to_string();
-            if file_time_prefix < prefix_time {
-                continue; // File older than what we find
+            let payload_id = PayloadId::parse(&name.as_str()[prefix.len()..])
+                .expect("Files should have a valid payload_id names");
+            if after_timestamp.map_or(false, |min_timestamp| {
+                *payload_id.timestamp() < min_timestamp
+            }) {
+                continue;
             }
             let data = std::fs::read(file.path())
                 .map_err(|_| StorageErr::IOError("Failed to read file data".to_string()))?;
-            let data_string = String::from_utf8(data)
-                .map_err(|_| StorageErr::IOError("Failed to convert file data to string".to_string()))?;
+            let data_string = String::from_utf8(data).map_err(|_| {
+                StorageErr::IOError("Failed to convert file data to string".to_string())
+            })?;
             let encoded = BinaryToText::new_from_encoded(data_string).ok_or_else(|| {
                 StorageErr::IOError("Failed to read file as encoded data".to_string())
             })?;
             let payload = PayloadBytes::new_from_encrypted(encoded).map_err(|_| {
                 StorageErr::IOError("Failed to read file as payload bytes".to_string())
             })?;
-            found.push((file_time_prefix, payload))
+            found.push((payload_id.to_string(), payload))
         }
         // File system may return files in random order, sort it here
         found.sort_by(|a, b| a.0.cmp(&b.0));
-        let found: Vec<_> = found.into_iter().map(|v| v.1).collect();
         Ok(found)
     }
 
@@ -124,13 +117,13 @@ impl FSPayloadStorage {
 }
 
 #[async_trait]
-impl PayloadStorage for FSPayloadStorage {
-    async fn set(&self, payload: Payload) -> Result<(), StorageErr> {
+impl PayloadStorage for PayloadStorageFS {
+    async fn set(&self, payload: Payload, payload_id: PayloadId) -> Result<(), StorageErr> {
         // We can't use public_key as a file name as it can be much bigger than file names limits
         // FSStorage is mostly used for local deployments, so using hash instead is fine
         self.save_file(
             payload.public_key(),
-            payload.id(),
+            &payload_id,
             Some(payload.data().data()),
         )?;
         if let Some(prev) = payload.previous_version() {
@@ -143,7 +136,7 @@ impl PayloadStorage for FSPayloadStorage {
         &self,
         public_key: &PublicKey,
         after_timestamp: Option<Timestamp>,
-    ) -> Pin<Box<dyn Stream<Item = Result<PayloadBytes, StorageErr>>>> {
+    ) -> Pin<Box<dyn Stream<Item = Result<(PayloadIdString, PayloadBytes), StorageErr>>>> {
         let files = match self.find_files(public_key, after_timestamp) {
             Ok(v) => v,
             Err(err) => return Box::pin(stream::iter(vec![Err(err)])),

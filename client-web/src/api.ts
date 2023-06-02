@@ -66,7 +66,7 @@ if (import.meta.vitest) {
 
       // Get those back
       const got = await find(keys)
-      const plaintext = got.map((v) => keys.decrypt(v))
+      const plaintext = got.map((v) => keys.decrypt(v.split(":")[1]))
       expect(plaintext.sort()).toEqual(["msg1", "msg2"]) // Sort order of items with the same timestamp is not defined
 
       // Delete it all

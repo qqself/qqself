@@ -2,10 +2,10 @@ use std::collections::HashMap;
 use std::pin::Pin;
 
 use async_trait::async_trait;
-use aws_sdk_dynamodb::Client;
 use aws_sdk_dynamodb::error::SdkError;
 use aws_sdk_dynamodb::operation::query::QueryError;
-use aws_sdk_dynamodb::types::{AttributeValue, WriteRequest, DeleteRequest, Select};
+use aws_sdk_dynamodb::types::{AttributeValue, DeleteRequest, Select, WriteRequest};
+use aws_sdk_dynamodb::Client;
 use futures::{Stream, StreamExt, TryStreamExt};
 use log::warn;
 use qqself_core::binary_text::BinaryToText;
@@ -13,14 +13,14 @@ use qqself_core::date_time::timestamp::Timestamp;
 use qqself_core::encryption::keys::PublicKey;
 use qqself_core::encryption::payload::{Payload, PayloadBytes, PayloadId};
 
-use super::payload::{PayloadStorage, StorageErr};
+use super::payload_storage::{PayloadIdString, PayloadStorage, StorageErr};
 
-pub struct DynamoDBStorage {
+pub struct PayloadStorageDynamoDB {
     client: Client,
     table: &'static str,
 }
 
-impl DynamoDBStorage {
+impl PayloadStorageDynamoDB {
     pub async fn new(table: &'static str) -> Self {
         let shared_config = aws_config::load_from_env().await;
         let client = Client::new(&shared_config);
@@ -79,11 +79,11 @@ impl DynamoDBStorage {
 }
 
 #[async_trait]
-impl PayloadStorage for DynamoDBStorage {
-    async fn set(&self, payload: Payload) -> Result<(), StorageErr> {
+impl PayloadStorage for PayloadStorageDynamoDB {
+    async fn set(&self, payload: Payload, payload_id: PayloadId) -> Result<(), StorageErr> {
         self.put_item(
             payload.public_key(),
-            payload.id(),
+            &payload_id,
             Some(payload.data().data()),
         )
         .await?;
@@ -97,7 +97,7 @@ impl PayloadStorage for DynamoDBStorage {
         &self,
         public_key: &PublicKey,
         after_timestamp: Option<Timestamp>,
-    ) -> Pin<Box<dyn Stream<Item = Result<PayloadBytes, StorageErr>>>> {
+    ) -> Pin<Box<dyn Stream<Item = Result<(PayloadIdString, PayloadBytes), StorageErr>>>> {
         let filter = if after_timestamp.is_none() {
             "pk = :pk"
         } else {
@@ -166,20 +166,30 @@ impl PayloadStorage for DynamoDBStorage {
 
 fn process_stream_item(
     item: Result<HashMap<String, AttributeValue>, SdkError<QueryError>>,
-) -> Result<PayloadBytes, StorageErr> {
+) -> Result<(PayloadIdString, PayloadBytes), StorageErr> {
     let data = match item {
         Err(err) => return Err(StorageErr::IOError(err.to_string())),
         Ok(v) => v,
     };
-    let attribute = data
+
+    // Get the payload
+    let payload = data
         .get("payload")
         .ok_or_else(|| StorageErr::IOError("Payload missing".to_string()))?;
-    let payload_string = attribute
+    let payload_string = payload
         .as_s()
         .map_err(|_| StorageErr::IOError("Non string payload".to_string()))?;
     let encoded = BinaryToText::new_from_encoded(payload_string.to_owned())
         .ok_or_else(|| StorageErr::IOError("Payload cannot be decoded".to_string()))?;
     let payload = PayloadBytes::new_from_encrypted(encoded)
         .map_err(|_| StorageErr::IOError("Payload cannot be read as payload bytes".to_string()))?;
-    Ok(payload)
+
+    // Get payloadId which is encoded as id attribute
+    let payload_id = data
+        .get("id")
+        .ok_or_else(|| StorageErr::IOError("Payload missing an id".to_string()))?;
+    let payload_id_string = payload_id
+        .as_s()
+        .map_err(|_| StorageErr::IOError("Non string payload id".to_string()))?;
+    Ok((payload_id_string.clone(), payload))
 }
