@@ -1,6 +1,12 @@
 import { Keys } from "../bridge/pkg/qqself_client_web_bridge"
+import { EncryptedEntry } from "./api"
 import { InputType, OutputType } from "./encryptionPool.worker"
 import { log } from "./logger"
+
+export interface DecryptedEntry {
+  id: string
+  text: string
+}
 
 // Encrypting, decrypting and generating keys are very CPU intensive operations
 // and in the world of JavaScript may block event loop for the very long time.
@@ -57,18 +63,17 @@ export class EncryptionPool {
   }
 
   private sendPayload(
-    kind: "Encrypt" | "Decrypt",
-    value: string,
-    callback: (result: Error | string) => void
+    input: { kind: "Encrypt"; value: string } | { kind: "Decrypt"; value: EncryptedEntry },
+    callback: (result: Error | DecryptedEntry) => void
   ) {
     const worker = this.getWorker()
-    this.sendMessage(worker, { kind, value })
+    this.sendMessage(worker, input)
     worker.onmessage = (event: any) => {
       const result: OutputType = event.data
       if (result.kind == "Error") {
         callback(result.error)
       } else if (result.kind == "Plaintext") {
-        callback(result.plaintext)
+        callback(result.decrypted)
       } else {
         callback(new Error("Unexpected result from worker: " + JSON.stringify(result)))
       }
@@ -96,26 +101,30 @@ export class EncryptionPool {
 
   // Queue message for decryption. Once result is available the provided callback will be called
   // Callback based API is more convenient for use cases when we have many messages to decrypt
-  async queueForDecryption(msg: string, keys: Keys, callback: (result: Error | string) => void) {
+  async queueForDecryption(
+    msg: EncryptedEntry,
+    keys: Keys,
+    callback: (result: Error | DecryptedEntry) => void
+  ) {
     await this.ensureInitialized(keys)
-    this.sendPayload("Decrypt", msg, callback)
+    this.sendPayload({ kind: "Decrypt", value: msg }, callback)
   }
 
-  async decryptAll(msgs: string[], keys: Keys): Promise<string[]> {
+  async decryptAll(msgs: EncryptedEntry[], keys: Keys): Promise<DecryptedEntry[]> {
     if (!msgs.length) {
       return Promise.resolve([])
     }
     await this.ensureInitialized(keys)
-    const finished: string[] = []
+    const finished: DecryptedEntry[] = []
     return new Promise((resolve, reject) => {
-      const cb = (result: Error | string) => {
-        if (typeof result == "string") {
+      const cb = (result: Error | DecryptedEntry) => {
+        if (result instanceof Error) {
+          reject(result)
+        } else {
           finished.push(result)
           if (finished.length == msgs.length) {
             resolve(finished)
           }
-        } else {
-          reject(result)
         }
       }
       for (const msg of msgs) {
@@ -126,8 +135,12 @@ export class EncryptionPool {
 
   // Queue message for encryption. Once result is available the provided callback will be called
   // Callback based API is more convenient for use cases when we have many messages to decrypt
-  async queueForEncryption(msg: string, keys: Keys, callback: (result: Error | string) => void) {
+  async queueForEncryption(
+    msg: string,
+    keys: Keys,
+    callback: (result: Error | DecryptedEntry) => void
+  ) {
     await this.ensureInitialized(keys)
-    this.sendPayload("Encrypt", msg, callback)
+    this.sendPayload({ kind: "Encrypt", value: msg }, callback)
   }
 }

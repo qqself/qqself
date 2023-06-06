@@ -8,6 +8,7 @@ import "../components/journal"
 import "../components/skills"
 import { EncryptionPool } from "../encryptionPool"
 import { log } from "../logger"
+import { Storage } from "../storage"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -36,23 +37,43 @@ export class ProgressPage extends LitElement {
   @state()
   error = ""
 
+  async loadCachedData(): Promise<string | null> {
+    const storage = await Storage.init(this.keys!.public_key_hash(), true)
+    let lastId = null
+    let loaded = 0
+    for (const entry of await storage.values()) {
+      lastId = entry.key
+      this.app!.add_entry(entry.value)
+      loaded++
+    }
+    log(`Loaded ${loaded} entries from cache with last one ${lastId}`)
+    return lastId
+  }
+
+  async loadServerData(lastId: string | null) {
+    const storage = await Storage.init(this.keys!.public_key_hash(), true)
+    const start = performance.now()
+    // TODO Probably should be also outside of the component
+    const lines = await find(this.keys!, lastId)
+    const requestFinished = performance.now()
+    const decrypted = await this.encryptionPool!.decryptAll(lines, this.keys!)
+    const end = performance.now()
+    log(
+      `${decrypted.length} entries loaded in ${Math.floor(end - start)}ms. API=${Math.floor(
+        requestFinished - start
+      )}ms Decryption=${Math.floor(end - requestFinished)}ms`
+    )
+    for (const entry of decrypted) {
+      this.app!.add_entry(entry.text)
+      await storage.setItem(entry.id, entry.text)
+    }
+  }
+
   async connectedCallback() {
     super.connectedCallback()
     try {
-      const start = performance.now()
-      // TODO Probably should be also outside of the component
-      const lines = await find(this.keys!)
-      const requestFinished = performance.now()
-      const plainText = await this.encryptionPool!.decryptAll(lines, this.keys!)
-      const end = performance.now()
-      log(
-        `${plainText.length} entries loaded in ${Math.floor(end - start)}ms. API=${Math.floor(
-          requestFinished - start
-        )}ms Decryption=${Math.floor(end - requestFinished)}ms`
-      )
-      for (const entry of plainText) {
-        this.app!.add_entry(entry)
-      }
+      const lastId = await this.loadCachedData()
+      await this.loadServerData(lastId)
       this.journalData = this.app!.journal_day(DateDay.fromDate(this.today))
     } catch (ex: any) {
       this.error = ex as any

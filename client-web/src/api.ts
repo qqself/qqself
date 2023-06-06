@@ -23,13 +23,19 @@ const http = async (req: Request): Promise<Response> => {
 }
 
 // Call Set sync API endpoint
-export const set = async (keys: Keys, msg: string): Promise<void> => {
-  await http(API.createApiSetRequest(keys, msg))
+export const set = async (keys: Keys, msg: string): Promise<string> => {
+  const resp = await http(API.createApiSetRequest(keys, msg))
+  return resp.text()
+}
+
+export interface EncryptedEntry {
+  id: string
+  payload: string
 }
 
 // Call Find sync API endpoint
-export const find = async (keys: Keys): Promise<string[]> => {
-  const resp = await http(API.createApiFindRequest(keys))
+export const find = async (keys: Keys, lastId: string | null): Promise<EncryptedEntry[]> => {
+  const resp = await http(API.createApiFindRequest(keys, lastId || undefined))
   if (!resp.body) {
     throw new Error("API find error: no body")
   }
@@ -37,7 +43,14 @@ export const find = async (keys: Keys): Promise<string[]> => {
   if (!lines) {
     return [] // Find returned no lines
   }
-  return lines.split("\n").filter((v) => v) // Filter out empty line
+  return lines
+    .split("\n")
+    .filter((v) => v) // Filter out empty lines
+    .map((v) => {
+      // TODO This is ugly manual id parsing, parse it properly via PayloadId::parse
+      const entry = v.split(":")
+      return { id: entry[0], payload: entry[1] }
+    })
 }
 
 // Call Delete sync API endpoint
@@ -48,6 +61,8 @@ export const deleteAccount = async (keys: Keys): Promise<void> => {
 if (import.meta.vitest) {
   const { describe, test, expect } = import.meta.vitest
 
+  const wait = (seconds: number) => new Promise((resolve) => setTimeout(resolve, seconds * 1000))
+
   describe("API", () => {
     test("Create new keys", async () => {
       const keys = Keys.createNewKeys()
@@ -57,17 +72,24 @@ if (import.meta.vitest) {
     test("API", async () => {
       // First find call no data
       const keys = Keys.createNewKeys()
-      const lines = await find(keys)
+      const lines = await find(keys, null)
       expect(lines).toEqual([])
 
       // Add couple of messages
       await set(keys, "msg1")
       await set(keys, "msg2")
 
-      // Get those back
-      const got = await find(keys)
-      const plaintext = got.map((v) => keys.decrypt(v.split(":")[1]))
-      expect(plaintext.sort()).toEqual(["msg1", "msg2"]) // Sort order of items with the same timestamp is not defined
+      // Get all messages back
+      const got = await find(keys, null)
+      const entries = got.map((entry) => keys.decrypt(entry.payload))
+      expect(entries.sort()).toEqual(["msg1", "msg2"]) // Sort order of items with the same timestamp is not defined
+
+      // Wait for a second, add a message with a new timestamp and ensure filter works
+      await wait(1)
+      const msgId = await set(keys, "msg3")
+      const filtered = await find(keys, msgId)
+      const filteredEntries = filtered.map((entry) => keys.decrypt(entry.payload))
+      expect(filteredEntries.sort()).toEqual(["msg3"])
 
       // Delete it all
       await deleteAccount(keys)

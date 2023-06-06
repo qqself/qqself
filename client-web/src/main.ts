@@ -6,6 +6,9 @@ import "./pages/login"
 import "./pages/progress"
 import { App, Keys } from "../bridge/pkg/qqself_client_web_bridge"
 import { EncryptionPool } from "./encryptionPool"
+import { Storage } from "./storage"
+import { LoadedEvent } from "./pages/loading"
+import { LoggedInEvent } from "./pages/login"
 
 type Page = "login" | "register" | "progress" | "devcards"
 
@@ -54,30 +57,47 @@ export class Main extends LitElement {
     this.state = { ...this.state, page }
   }
 
+  onLoadCompleted(sender: LoadedEvent) {
+    if (sender.detail.keys) {
+      const app = App.new(sender.detail.keys)
+      // There are cached keys, move to progress page right away
+      this.state = {
+        ...this.state,
+        initComplete: true,
+        encryptionPool: sender.detail.encryptionPool,
+        keys: sender.detail.keys,
+        page: "progress",
+        app,
+      }
+    } else {
+      // No cached keys - continue with normal login flow
+      this.state = {
+        ...this.state,
+        encryptionPool: sender.detail.encryptionPool,
+        initComplete: true,
+      }
+    }
+  }
+
+  async onLoginCompleted(sender: LoggedInEvent) {
+    const keys = sender.detail.keys
+    const storage = await Storage.initDefault(true)
+    await storage.setItem("keys", keys.serialize())
+    const app = App.new(keys)
+    this.state = { ...this.state, keys, app }
+    this.moveToPage("progress")
+  }
+
   render() {
     if (!this.state.initComplete) {
-      return html`<q-loading-page
-        @loaded=${(sender: any) => {
-          const encryptionPool = sender.detail.encryptionPool as EncryptionPool
-          this.state = {
-            ...this.state,
-            encryptionPool: encryptionPool,
-            initComplete: true,
-          }
-        }}
-      />`
+      return html`<q-loading-page @loaded=${this.onLoadCompleted} />`
     }
     switch (this.state.page) {
       case "login": {
         return html`<q-login-page
           .keys=${this.state.keys}
           .encryptionPool=${this.state.encryptionPool}
-          @loggedIn=${(sender: any) => {
-            const keys = sender.detail.keys as Keys
-            const app = App.new(keys)
-            this.state = { ...this.state, keys, app }
-            this.moveToPage("progress")
-          }}
+          @loggedIn=${this.onLoginCompleted}
           @register=${() => this.moveToPage("register")}
         />`
       }

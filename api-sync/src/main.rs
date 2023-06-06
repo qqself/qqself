@@ -49,7 +49,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::DefaultHeaders::new().add(("Access-Control-Allow-Origin", "*")))
             .wrap(Logger::default())
     })
-    .bind(("0.0.0.0", PORT))?
+    .bind(("localhost", PORT))?
     .run()
     .await
 }
