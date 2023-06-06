@@ -1,30 +1,34 @@
 import localforage from "localforage"
 
-type StorageProvider =
+type Provider =
   | { type: "persisted"; provider: LocalForage }
   | { type: "memory"; provider: { [key: string]: string } }
 
-export class Cache {
-  private storage: StorageProvider
+export class Storage {
+  private storage: Provider
 
-  private constructor(storage: StorageProvider) {
+  private constructor(storage: Provider) {
     this.storage = storage
   }
 
-  // Initializes new cache with specified name. Creates a new one if doesn't exists
-  // Set persisted=false for in memory cache
-  static async init(cacheName: string, persisted: boolean): Promise<Cache> {
+  // Initializes new storage with specified name. Creates a new one if doesn't exists
+  // Set persisted=false for in memory storage
+  static async init(name: string, persisted: boolean): Promise<Storage> {
     if (persisted) {
-      return new Cache({
+      return new Storage({
         type: "persisted" as const,
-        provider: localforage.createInstance({ name: cacheName }),
+        provider: localforage.createInstance({ name: name }),
       })
     } else {
-      return new Cache({ type: "memory" as const, provider: {} })
+      return new Storage({ type: "memory" as const, provider: {} })
     }
   }
 
-  // Cleans up the cache by removing all the keys and values
+  static async initDefault(persisted: boolean): Promise<Storage> {
+    return Storage.init("DEFAULT", persisted)
+  }
+
+  // Cleans up the storage by removing all the keys and values
   async clear(): Promise<void> {
     if (this.storage.type == "memory") {
       this.storage.provider = {}
@@ -33,7 +37,7 @@ export class Cache {
     }
   }
 
-  // Returns number of keys in a cache
+  // Returns number of keys in a storage
   async itemCount(): Promise<number> {
     if (this.storage.type == "memory") {
       return Object.keys(this.storage.provider).length
@@ -79,45 +83,45 @@ export class Cache {
 if (import.meta.vitest) {
   const { describe, test, expect } = import.meta.vitest
 
-  describe("cache", () => {
+  describe("storage", () => {
     test("getItem - setItem", async () => {
-      const cache = await Cache.init("test", false)
-      expect(await cache.getItem("foo")).toBe(null)
-      await cache.setItem("foo", "bar")
-      expect(await cache.getItem("foo")).toBe("bar")
+      const storage = await Storage.init("test", false)
+      expect(await storage.getItem("foo")).toBe(null)
+      await storage.setItem("foo", "bar")
+      expect(await storage.getItem("foo")).toBe("bar")
     })
 
     test("values", async () => {
-      const cache = await Cache.init("test", false)
-      expect(await cache.values()).toEqual([])
+      const storage = await Storage.init("test", false)
+      expect(await storage.values()).toEqual([])
       const data = [
         { key: "foo1", value: "bar1" },
         { key: "foo3", value: "bar3" },
         { key: "foo2", value: "bar2" },
       ]
       for (const { key, value } of data) {
-        await cache.setItem(key, value)
+        await storage.setItem(key, value)
       }
       // Values should be sorted by the key
-      expect(await cache.values()).toEqual(data.sort((a, b) => a.key.localeCompare(b.key)))
+      expect(await storage.values()).toEqual(data.sort((a, b) => a.key.localeCompare(b.key)))
     })
 
     test("count", async () => {
-      const cache = await Cache.init("test", false)
-      expect(await cache.itemCount()).toBe(0)
-      await cache.setItem("foo", "bar")
-      expect(await cache.itemCount()).toBe(1)
-      await cache.setItem("bar", "foo")
-      expect(await cache.itemCount()).toBe(2)
+      const storage = await Storage.init("test", false)
+      expect(await storage.itemCount()).toBe(0)
+      await storage.setItem("foo", "bar")
+      expect(await storage.itemCount()).toBe(1)
+      await storage.setItem("bar", "foo")
+      expect(await storage.itemCount()).toBe(2)
     })
 
     test("clear", async () => {
-      const cache = await Cache.init("test", false)
-      expect(await cache.itemCount()).toBe(0)
-      await cache.setItem("foo", "bar")
-      expect(await cache.itemCount()).toBe(1)
-      await cache.clear()
-      expect(await cache.itemCount()).toBe(0)
+      const storage = await Storage.init("test", false)
+      expect(await storage.itemCount()).toBe(0)
+      await storage.setItem("foo", "bar")
+      expect(await storage.itemCount()).toBe(1)
+      await storage.clear()
+      expect(await storage.itemCount()).toBe(0)
     })
   })
 }

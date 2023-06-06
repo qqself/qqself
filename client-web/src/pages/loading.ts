@@ -1,15 +1,18 @@
 import { html, LitElement } from "lit"
 import { customElement, state } from "lit/decorators.js"
-import init, { initialize } from "../../bridge/pkg"
+import init, { initialize, Keys } from "../../bridge/pkg"
 import { log } from "../logger"
 import "../components/logoBlock"
 import { EncryptionPool } from "../encryptionPool"
+import { Storage } from "../storage"
 
 declare global {
   interface HTMLElementTagNameMap {
     "q-loading-page": LoadingPage
   }
 }
+
+export type LoadedEvent = CustomEvent<{ encryptionPool: EncryptionPool; keys: Keys | null }>
 
 @customElement("q-loading-page")
 export class LoadingPage extends LitElement {
@@ -28,18 +31,18 @@ export class LoadingPage extends LitElement {
     }
     try {
       await init()
+      const storage = await Storage.initDefault(true)
+      const cachedKeys = await storage.getItem("keys")
+      const keys = cachedKeys ? Keys.deserialize(cachedKeys) : null
       setTimeout(() => {
         this.loaded = true
         const config = initialize()
         log(`Initialized:\n${config}`)
         const encryptionPool = new EncryptionPool()
-        this.dispatchEvent(
-          new CustomEvent("loaded", {
-            detail: {
-              encryptionPool,
-            },
-          })
-        )
+        const event: LoadedEvent = new CustomEvent("loaded", {
+          detail: { encryptionPool, keys },
+        })
+        this.dispatchEvent(event)
       }, 500) // TODO There has to be a better way to solve flickering of UI when checks completes very fast
     } catch (ex: any) {
       this.errors = ex.toString()

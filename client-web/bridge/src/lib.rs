@@ -8,7 +8,7 @@ use qqself_core::{
     data_views::journal::JournalDay,
     date_time::datetime::DateDay,
     db::{Record, DB},
-    encryption::{self, payload::PayloadBytes},
+    encryption::{self, payload::PayloadBytes, payload::PayloadId},
     record::Entry,
 };
 use wasm_bindgen::prelude::wasm_bindgen;
@@ -48,6 +48,9 @@ impl Keys {
             .decrypt(&self.0.private_key)
             .map_err(|v| v.to_string())?;
         Ok(decrypted)
+    }
+    pub fn public_key_hash(&self) -> String {
+        self.0.public_key.hash_string()
     }
 }
 
@@ -92,8 +95,15 @@ pub struct API {}
 
 #[wasm_bindgen]
 impl API {
-    pub fn createApiFindRequest(keys: &Keys) -> Result<Request, ApiError> {
-        let req = ApiRequest::new_find_request(&keys.0, None)?;
+    pub fn createApiFindRequest(keys: &Keys, lastId: Option<String>) -> Result<Request, ApiError> {
+        let filter_since = match lastId {
+            None => None,
+            Some(v) => Some(PayloadId::parse(&v).ok_or(ApiError {
+                code: ApiErrorType::EncodingError,
+                msg: "lastId cannot be parsed as id".to_string(),
+            })?),
+        };
+        let req = ApiRequest::new_find_request(&keys.0, filter_since.map(|v| *v.timestamp()))?;
         Ok(Request {
             url: req.url.to_string(),
             payload: req.payload,

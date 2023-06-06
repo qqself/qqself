@@ -5,7 +5,7 @@ import { EncryptionPool } from "../encryptionPool"
 import "../components/skills"
 import "../components/entryInput"
 import "../controls/panel"
-import { Cache } from "../cache"
+import { Storage } from "../storage"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -53,7 +53,7 @@ export class DevcardsPage extends LitElement {
   async connectedCallback() {
     super.connectedCallback()
 
-    const cache = await Cache.init("foo", true)
+    const cache = await Storage.init("foo", true)
 
     // Test data
     const testKeys: Keys = Keys.createNewKeys()

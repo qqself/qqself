@@ -11,6 +11,8 @@ declare global {
   }
 }
 
+export type LoggedInEvent = CustomEvent<{ keys: Keys }>
+
 // TODO Failed to support password managers for saving keys because of shadow root incompatibilities
 //      Looks like one way would be put the login form out of the shadow root, see litElement.createRenderRoot
 @customElement("q-login-page")
@@ -32,13 +34,12 @@ export class LoginPage extends LitElement {
     reader.onload = (e: any) => {
       try {
         const keys = Keys.deserialize(e.target.result)
-        this.dispatchEvent(
-          new CustomEvent("loggedIn", {
-            detail: {
-              keys,
-            },
-          })
-        )
+        const event: LoggedInEvent = new CustomEvent("loggedIn", {
+          detail: {
+            keys,
+          },
+        })
+        this.dispatchEvent(event)
       } catch (ex: any) {
         this.error = ex
       }
