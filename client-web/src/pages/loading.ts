@@ -3,7 +3,7 @@ import { customElement, state } from "lit/decorators.js"
 import init, { initialize, Keys } from "../../bridge/pkg"
 import { log } from "../logger"
 import "../components/logoBlock"
-import { EncryptionPool } from "../encryptionPool"
+import { EncryptionPool } from "../encryptionPool/pool"
 import { Storage } from "../storage"
 
 declare global {
@@ -12,7 +12,7 @@ declare global {
   }
 }
 
-export type LoadedEvent = CustomEvent<{ encryptionPool: EncryptionPool; keys: Keys | null }>
+export type LoadedEvent = CustomEvent<{ keys: Keys | null }>
 
 @customElement("q-loading-page")
 export class LoadingPage extends LitElement {
@@ -38,9 +38,8 @@ export class LoadingPage extends LitElement {
         this.loaded = true
         const config = initialize()
         log(`Initialized:\n${config}`)
-        const encryptionPool = new EncryptionPool()
         const event: LoadedEvent = new CustomEvent("loaded", {
-          detail: { encryptionPool, keys },
+          detail: { keys },
         })
         this.dispatchEvent(event)
       }, 500) // TODO There has to be a better way to solve flickering of UI when checks completes very fast

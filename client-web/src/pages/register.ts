@@ -1,10 +1,10 @@
 import { css, html, LitElement } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
-import { Keys } from "../../bridge/pkg/qqself_client_web_bridge"
+import { Keys } from "../../bridge/pkg"
 import { log } from "../logger"
 import "../components/logoBlock"
 import "../controls/button"
-import { EncryptionPool } from "../encryptionPool"
+import { EncryptionPool } from "../encryptionPool/pool"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -17,11 +17,10 @@ export class RegisterPage extends LitElement {
   @state()
   keysGenerated: Keys | null = null
 
-  @property({ type: Object })
-  encryptionPool: EncryptionPool | null = null
-
   @state()
   generating = false
+
+  encryptionPool = EncryptionPool.initKeyless()
 
   static styles = css`
     .about-keys {

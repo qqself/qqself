@@ -1,4 +1,4 @@
-import { API, Keys, Request } from "../bridge/pkg/qqself_client_web_bridge"
+import { API, Keys, Request } from "../bridge/pkg"
 
 type ApiError = {
   timestamp: number

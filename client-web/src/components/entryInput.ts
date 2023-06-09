@@ -1,6 +1,6 @@
 import { css, html, LitElement } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
-import { validateEntry } from "../../bridge/pkg/qqself_client_web_bridge"
+import { validateEntry } from "../../bridge/pkg"
 import "../controls/logo"
 
 export type EntrySaveEvent = CustomEvent<{ entry: string }>

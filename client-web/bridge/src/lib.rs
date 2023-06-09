@@ -6,7 +6,7 @@ use qqself_core::{
     api::{ApiRequest, RequestCreateErr},
     binary_text::BinaryToText,
     data_views::journal::JournalDay,
-    date_time::datetime::DateDay,
+    date_time::{datetime::DateDay, timestamp::Timestamp},
     db::{Record, DB},
     encryption::{self, payload::PayloadBytes, payload::PayloadId},
     record::Entry,
@@ -48,6 +48,17 @@ impl Keys {
             .decrypt(&self.0.private_key)
             .map_err(|v| v.to_string())?;
         Ok(decrypted)
+    }
+    pub fn encrypt(&self, plaintext: String) -> Result<String, String> {
+        let payload = PayloadBytes::encrypt(
+            &self.0.public_key,
+            &self.0.private_key,
+            Timestamp::now(),
+            &plaintext,
+            None,
+        )
+        .map_err(|err| err.to_string())?;
+        Ok(payload.data())
     }
     pub fn public_key_hash(&self) -> String {
         self.0.public_key.hash_string()
