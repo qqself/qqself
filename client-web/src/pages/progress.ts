@@ -1,12 +1,12 @@
 import { css, html, LitElement } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
-import { API, App, AppJournalDay, DateDay, Keys } from "../../bridge/pkg/qqself_client_web_bridge"
+import { API, App, AppJournalDay, DateDay, Keys } from "../../bridge/pkg"
 import { find } from "../api"
 import "../components/logoBlock"
 import "../controls/button"
 import "../components/journal"
 import "../components/skills"
-import { EncryptionPool } from "../encryptionPool"
+import { EncryptionPool } from "../encryptionPool/pool"
 import { log } from "../logger"
 import { Storage } from "../storage"
 
@@ -39,6 +39,9 @@ export class ProgressPage extends LitElement {
 
   async loadCachedData(): Promise<string | null> {
     const storage = await Storage.init(this.keys!.public_key_hash(), true)
+    // TODO lastId should be equal to the last id received from `find` call, not last saved entry
+    //      Imagine we made `find` at time=1, then after some time we added an entry at time=3.
+    //      Next `find` call should use time=1 as an timestamp, not time=3
     let lastId = null
     let loaded = 0
     for (const entry of await storage.values()) {
@@ -56,7 +59,7 @@ export class ProgressPage extends LitElement {
     // TODO Probably should be also outside of the component
     const lines = await find(this.keys!, lastId)
     const requestFinished = performance.now()
-    const decrypted = await this.encryptionPool!.decryptAll(lines, this.keys!)
+    const decrypted = await this.encryptionPool!.decryptAll(lines)
     const end = performance.now()
     log(
       `${decrypted.length} entries loaded in ${Math.floor(end - start)}ms. API=${Math.floor(

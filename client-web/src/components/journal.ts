@@ -1,6 +1,6 @@
 import { css, html, LitElement } from "lit"
 import { customElement, property } from "lit/decorators.js"
-import { AppJournalDay, Keys } from "../../bridge/pkg/qqself_client_web_bridge"
+import { AppJournalDay, Keys } from "../../bridge/pkg"
 import "../controls/logo"
 import "../components/entryInput"
 import { EntrySaveEvent } from "../components/entryInput"
@@ -43,6 +43,7 @@ export class Journal extends LitElement {
   async onSave(e: EntrySaveEvent) {
     const entry = e.detail.entry
     console.log("Saving...")
+    // TODO We should encrypt via encryptionPool instead of doing it in API
     await api.set(this.keys!, entry)
     console.log("Saved")
   }

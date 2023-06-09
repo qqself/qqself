@@ -4,8 +4,8 @@ import "./pages/loading"
 import "./pages/register"
 import "./pages/login"
 import "./pages/progress"
-import { App, Keys } from "../bridge/pkg/qqself_client_web_bridge"
-import { EncryptionPool } from "./encryptionPool"
+import { App, Keys } from "../bridge/pkg"
+import { EncryptionPool } from "./encryptionPool/pool"
 import { Storage } from "./storage"
 import { LoadedEvent } from "./pages/loading"
 import { LoggedInEvent } from "./pages/login"
@@ -64,7 +64,7 @@ export class Main extends LitElement {
       this.state = {
         ...this.state,
         initComplete: true,
-        encryptionPool: sender.detail.encryptionPool,
+        encryptionPool: EncryptionPool.initWithKeys(sender.detail.keys),
         keys: sender.detail.keys,
         page: "progress",
         app,
@@ -73,7 +73,6 @@ export class Main extends LitElement {
       // No cached keys - continue with normal login flow
       this.state = {
         ...this.state,
-        encryptionPool: sender.detail.encryptionPool,
         initComplete: true,
       }
     }
@@ -84,7 +83,7 @@ export class Main extends LitElement {
     const storage = await Storage.initDefault(true)
     await storage.setItem("keys", keys.serialize())
     const app = App.new(keys)
-    this.state = { ...this.state, keys, app }
+    this.state = { ...this.state, keys, app, encryptionPool: EncryptionPool.initWithKeys(keys) }
     this.moveToPage("progress")
   }
 
@@ -102,10 +101,7 @@ export class Main extends LitElement {
         />`
       }
       case "register": {
-        return html`<q-register-page
-          .encryptionPool=${this.state.encryptionPool}
-          @registered=${() => this.moveToPage("login")}
-        />`
+        return html`<q-register-page @registered=${() => this.moveToPage("login")} />`
       }
       case "progress": {
         return html`<q-progress-page

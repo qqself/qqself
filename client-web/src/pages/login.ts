@@ -1,9 +1,9 @@
 import { css, html, LitElement } from "lit"
 import { customElement, property, query, state } from "lit/decorators.js"
-import { Keys } from "../../bridge/pkg/qqself_client_web_bridge"
+import { Keys } from "../../bridge/pkg"
 import "../components/logoBlock"
 import "../controls/button"
-import { EncryptionPool } from "../encryptionPool"
+import { EncryptionPool } from "../encryptionPool/pool"
 
 declare global {
   interface HTMLElementTagNameMap {
