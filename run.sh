@@ -52,7 +52,7 @@ lint() {
   log "Linting all the Rust projects"
   cargo clippy --release --all-targets --all-features -- -D warnings
   log "Linting all TypeScript projects"
-  (cd client-web && yarn format:check)
+  (cd client-web && yarn lint:check)
 }
 
 # Build a new Docker container and push to the registry

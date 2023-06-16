@@ -1,10 +1,10 @@
 import { css, html, LitElement } from "lit"
 import { customElement, property } from "lit/decorators.js"
-import { AppJournalDay, Keys } from "../../bridge/pkg"
+import { AppJournalDay, Keys } from "../../../bridge/pkg/qqself_client_web_bridge"
 import "../controls/logo"
-import "../components/entryInput"
-import { EntrySaveEvent } from "../components/entryInput"
-import * as api from "../api"
+import "./entryInput"
+import { EntrySaveEvent } from "./entryInput"
+import * as api from "../../app/api"
 
 declare global {
   interface HTMLElementTagNameMap {

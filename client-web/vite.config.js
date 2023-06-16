@@ -8,7 +8,6 @@ export default defineConfig({
     "import.meta.vitest": "undefined",
   },
   test: {
-    setupFiles: "vitest.setup.ts",
     includeSource: ["src/**/*.ts"],
   },
 })

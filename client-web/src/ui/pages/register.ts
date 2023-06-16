@@ -1,10 +1,10 @@
 import { css, html, LitElement } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
-import { Keys } from "../../bridge/pkg"
-import { log } from "../logger"
+import { Keys } from "../../../bridge/pkg/qqself_client_web_bridge"
 import "../components/logoBlock"
 import "../controls/button"
-import { EncryptionPool } from "../encryptionPool/pool"
+import { Store } from "../../app/store"
+import * as Auth from "../../app/auth"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -14,13 +14,14 @@ declare global {
 
 @customElement("q-register-page")
 export class RegisterPage extends LitElement {
+  @property({ type: Object })
+  store!: Store
+
   @state()
-  keysGenerated: Keys | null = null
+  generatedKeys: Keys | null = null
 
   @state()
   generating = false
-
-  encryptionPool = EncryptionPool.initKeyless()
 
   static styles = css`
     .about-keys {
@@ -40,16 +41,18 @@ export class RegisterPage extends LitElement {
 
   async createNewKeys() {
     this.generating = true
-    log("Generating new keys...")
-    this.keysGenerated = await this.encryptionPool!.generateNewKeys()
-    log("Key generation done")
+    this.generatedKeys = await Auth.newKeys()
     this.generating = false
   }
 
   createDownloadLink() {
-    const keys = this.keysGenerated! // By that time keys always exists
+    const keys = this.generatedKeys! // By that time keys always exists
     const blob = new Blob([keys.serialize()], { type: "text/plain" })
     return window.URL.createObjectURL(blob)
+  }
+
+  onLogin() {
+    return this.store.dispatch("auth.registration.succeeded", { keys: this.generatedKeys! })
   }
 
   renderRegister() {
@@ -62,7 +65,7 @@ export class RegisterPage extends LitElement {
           the data is gone. We advice you to store the keys using password manager and store file
           with keys as well.
         </p>
-        <q-button @clicked="${this.createNewKeys}">Create new keys</q-button>
+        <q-button @clicked="${this.createNewKeys.bind(this)}">Create new keys</q-button>
       </q-logo-block>
     `
   }
@@ -82,15 +85,13 @@ export class RegisterPage extends LitElement {
         <a class="download" download="qqself_keys.txt" href="${this.createDownloadLink()}"
           >Download key file</a
         >
-        <q-button class="login" @clicked="${() => this.dispatchEvent(new Event("registered"))}"
-          >Continue to login</q-button
-        >
+        <q-button class="login" @clicked="${this.onLogin.bind(this)}">Continue to login</q-button>
       </q-logo-block>
     `
   }
 
   render() {
-    if (this.keysGenerated == null && !this.generating) {
+    if (this.generatedKeys == null && !this.generating) {
       return this.renderRegister()
     } else if (this.generating) {
       return this.renderGenerating()

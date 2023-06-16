@@ -5,8 +5,8 @@
     "watch": "rsw watch",
     "build": "wasm-pack build bridge --out-dir pkg --target web --release && tsc --noEmit && vite build",
     "test": "wasm-pack build bridge --out-dir pkg --target nodejs --release && VITE_API_HOST=https://api.qqself.com vitest --run --test-timeout 10000",
-    "format": "prettier --write 'src/**/*.ts'",
-    "format:check": "prettier --check 'src/**/*.ts'"
+    "lint": "prettier --write 'src/**/*.ts'",
+    "lint:check": "prettier --check 'src/**/*.ts'"
   },
   "dependencies": {
     "lit": "^2.4.0",

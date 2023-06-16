@@ -1,8 +1,8 @@
 import { css, html, LitElement } from "lit"
 import { customElement, property } from "lit/decorators.js"
 import { classMap } from "lit/directives/class-map.js"
-import { defaultFont } from "../constants"
-import "../controls/logo"
+import { defaultFont } from "../../constants"
+import "./logo"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -40,7 +40,7 @@ export class Button extends LitElement {
     const classes = { disabled: this.disabled, root: true }
     const buttonType = this.isSubmit ? "submit" : "button"
     return html`<div class=${classMap(classes)}>
-      <button @click="${this.onClick}" type="${buttonType}">
+      <button @click="${this.onClick.bind(this)}" type="${buttonType}">
         <slot></slot>
       </button>
     </div>`
