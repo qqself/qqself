@@ -10,5 +10,6 @@ interface ImportMeta {
   readonly env: {
     DEV: boolean
     VITE_API_HOST: string
+    VITE_LOG_LEVEL: string
   }
 }

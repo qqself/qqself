@@ -1,6 +1,6 @@
 import { css, html, LitElement } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
-import { validateEntry } from "../../bridge/pkg"
+import { validateEntry } from "../../../bridge/pkg"
 import "../controls/logo"
 
 export type EntrySaveEvent = CustomEvent<{ entry: string }>
@@ -14,10 +14,10 @@ declare global {
 @customElement("q-entry-input")
 export class EntryInput extends LitElement {
   @property()
-  entry: string = ""
+  entry = ""
 
   @state()
-  currentEntry: string = ""
+  currentEntry = ""
 
   @state()
   isEntryValid = false
@@ -61,8 +61,10 @@ export class EntryInput extends LitElement {
 
   render() {
     return html`<div class="root">
-      <input type="text" value="${this.currentEntry}" @input=${this.entryUpdated}></input>
-      <button ?disabled=${!this.isEntryValid} @click="${this.onSave}">Save</button>  
+      <input type="text" value="${this.currentEntry}" @input=${this.entryUpdated.bind(
+      this
+    )}></input>
+      <button ?disabled=${!this.isEntryValid} @click="${this.onSave.bind(this)}">Save</button>  
       <div class="error">${this.validationError}</div>
     </div>`
   }

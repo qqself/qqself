@@ -1,7 +1,7 @@
 import { css, html, LitElement } from "lit"
 import { customElement, property } from "lit/decorators.js"
-import { defaultFont } from "../constants"
-import "../controls/logo"
+import { defaultFont } from "../../constants"
+import "./logo"
 
 declare global {
   interface HTMLElementTagNameMap {

@@ -1,11 +1,11 @@
 import { html, LitElement, TemplateResult } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
-import { App, DateDay, Keys } from "../../bridge/pkg"
-import { EncryptionPool } from "../encryptionPool/pool"
+import { App, DateDay, Keys } from "../../../bridge/pkg/qqself_client_web_bridge"
+import { EncryptionPool } from "../../app/encryptionPool/pool"
 import "../components/skills"
 import "../components/entryInput"
 import "../controls/panel"
-import { Storage } from "../storage"
+import { Storage } from "../../app/storage/storage"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -14,7 +14,7 @@ declare global {
 }
 
 @customElement("q-card")
-class Card extends LitElement {
+export class Card extends LitElement {
   @property()
   name = ""
   render() {
@@ -53,7 +53,7 @@ export class DevcardsPage extends LitElement {
   async connectedCallback() {
     super.connectedCallback()
 
-    const cache = await Storage.init("foo", true)
+    const cache = await Storage.init("foo")
 
     // Test data
     const testKeys: Keys = Keys.createNewKeys()

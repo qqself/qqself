@@ -1,6 +1,6 @@
-import { API, Keys, Request } from "../bridge/pkg"
+import { API, Keys, Request } from "../../bridge/pkg/qqself_client_web_bridge"
 
-type ApiError = {
+interface ApiError {
   timestamp: number
   error_code: string
   error: string
@@ -16,7 +16,7 @@ const http = async (req: Request): Promise<Response> => {
     },
   })
   if (resp.status != 200) {
-    const err: ApiError = await resp.json()
+    const err = (await resp.json()) as ApiError
     throw new Error("API error: " + err.error)
   }
   return resp
@@ -64,7 +64,7 @@ if (import.meta.vitest) {
   const wait = (seconds: number) => new Promise((resolve) => setTimeout(resolve, seconds * 1000))
 
   describe("API", () => {
-    test("Create new keys", async () => {
+    test("Create new keys", () => {
       const keys = Keys.createNewKeys()
       expect(keys).toBeTruthy()
     })
@@ -84,8 +84,8 @@ if (import.meta.vitest) {
       const entries = got.map((entry) => keys.decrypt(entry.payload))
       expect(entries.sort()).toEqual(["msg1", "msg2"]) // Sort order of items with the same timestamp is not defined
 
-      // Wait for a second, add a message with a new timestamp and ensure filter works
-      await wait(1)
+      // Wait a bit, add a message with a new timestamp and ensure filter works
+      await wait(2)
       const msgId = await set(keys, "msg3")
       const filtered = await find(keys, msgId)
       const filteredEntries = filtered.map((entry) => keys.decrypt(entry.payload))

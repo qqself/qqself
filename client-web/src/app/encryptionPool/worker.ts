@@ -1,4 +1,4 @@
-import { Keys } from "../../bridge/pkg"
+import { Keys } from "../../../bridge/pkg/qqself_client_web_bridge"
 import { EncryptedEntry } from "../api"
 import { DecryptedEntry } from "./pool"
 
@@ -17,7 +17,11 @@ export type OutputType =
 
 export type EncryptedPayload = Pick<EncryptedEntry, "payload">
 
-export type WorkerResult = { workerId: string; taskId: string; output: OutputType }
+export interface WorkerResult {
+  workerId: string
+  taskId: string
+  output: OutputType
+}
 
 const generateKeys = () => {
   return Keys.createNewKeys().serialize()
@@ -42,23 +46,22 @@ export const processMessage = async (
 ) => {
   switch (input.kind) {
     case "GenerateKeys":
-      const newKeys = generateKeys()
-      callback({ kind: "Keys", keys: newKeys }, input.taskId)
+      callback({ kind: "Keys", keys: generateKeys() }, input.taskId)
       break
     case "Decrypt":
       try {
         const decrypted = await decrypt(input.payload, keys)
         callback({ kind: "Decrypted", decrypted }, input.taskId)
-      } catch (error: any) {
-        callback({ kind: "Error", error }, input.taskId)
+      } catch (error) {
+        callback({ kind: "Error", error: error as Error }, input.taskId)
       }
       break
     case "Encrypt":
       try {
         const encrypted = await encrypt(input.text, keys)
         callback({ kind: "Encrypted", encrypted }, input.taskId)
-      } catch (error: any) {
-        callback({ kind: "Error", error }, input.taskId)
+      } catch (error) {
+        callback({ kind: "Error", error: error as Error }, input.taskId)
       }
       break
     default:

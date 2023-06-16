@@ -1,9 +1,9 @@
-import { Keys } from "../../bridge/pkg"
+import { Keys } from "../../../bridge/pkg/qqself_client_web_bridge"
 import { EncryptedEntry } from "../api"
 import { InputType, WorkerResult } from "./worker"
-import { log } from "../logger"
+import { info } from "../../logger"
 import { ThreadWorker } from "./thread-worker"
-import { isBrowser } from "../utils"
+import { isBrowser } from "../../utils"
 
 export interface DecryptedEntry {
   id: string
@@ -22,14 +22,14 @@ const getCpuCount = () => {
   }
 }
 
-type PoolTask = {
+interface PoolTask {
   input: InputType
   status: "pending" | "progress"
   onCompleted: (value: any) => void
   onError: (value: any) => void
 }
 
-type PoolWorker = {
+interface PoolWorker {
   worker: WorkerType
   status: "free" | "busy"
 }
@@ -43,8 +43,8 @@ interface KeylessEncryptionPool {
 // To avoid it we run multiple Worker processes that handles those operation in
 // background, kinda like a dedicated ThreadPool
 export class EncryptionPool {
-  private workers: { [id: string]: PoolWorker } = {}
-  private tasks: { [id: string]: PoolTask } = {}
+  private workers: Record<string, PoolWorker> = {}
+  private tasks: Record<string, PoolTask> = {}
   private lastTaskId = 0 // Counter to assign each task a unique identifier
 
   private constructor(keys: Keys | null) {
@@ -64,7 +64,7 @@ export class EncryptionPool {
         keys: serializedKeys,
       })
     }
-    log(`EncryptionPool started ${workersCount} workers`)
+    info(`EncryptionPool started ${workersCount} workers`)
   }
 
   static initWithKeys(keys: Keys) {
@@ -96,8 +96,8 @@ export class EncryptionPool {
     }
   }
 
-  async allocateWork() {
-    while (true) {
+  allocateWork() {
+    for (;;) {
       const nextTask = Object.entries(this.tasks).find((v) => v[1].status == "pending")
       if (!nextTask) {
         return // No tasks available
