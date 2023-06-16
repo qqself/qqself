@@ -1,6 +1,6 @@
 import { html, LitElement } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
-import { App, AppJournalDay, DateDay, Keys } from "../../../bridge/pkg/qqself_client_web_bridge"
+import { Views, AppJournalDay, DateDay, Keys } from "../../../bridge/pkg/qqself_client_web_bridge"
 import { find } from "../../app/api"
 import "../components/logoBlock"
 import "../controls/button"
@@ -8,7 +8,8 @@ import "../components/journal"
 import "../components/skills"
 import { EncryptionPool } from "../../app/encryptionPool/pool"
 import { info } from "../../logger"
-import { Storage } from "../../app/storage/storage"
+import * as Storage from "../../app/storage/storage"
+import { Store } from "../../app/store"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -19,6 +20,9 @@ declare global {
 @customElement("q-progress-page")
 export class ProgressPage extends LitElement {
   @property({ type: Object })
+  store!: Store
+
+  @property({ type: Object })
   // TODO Keys have to move to app
   keys: Keys | null = null
 
@@ -26,7 +30,7 @@ export class ProgressPage extends LitElement {
   today: Date = new Date()
 
   @property({ type: Object })
-  app: App | null = null
+  app: Views | null = null
 
   @property({ type: Object })
   encryptionPool: EncryptionPool | null = null
@@ -38,7 +42,7 @@ export class ProgressPage extends LitElement {
   error = ""
 
   async loadCachedData(): Promise<string | null> {
-    const storage = await Storage.init(this.keys!.public_key_hash())
+    const storage = Storage.newStorage(this.keys!.public_key_hash())
     // TODO lastId should be equal to the last id received from `find` call, not last saved entry
     //      Imagine we made `find` at time=1, then after some time we added an entry at time=3.
     //      Next `find` call should use time=1 as an timestamp, not time=3
@@ -54,7 +58,7 @@ export class ProgressPage extends LitElement {
   }
 
   async loadServerData(lastId: string | null) {
-    const storage = await Storage.init(this.keys!.public_key_hash())
+    const storage = Storage.newStorage(this.keys!.public_key_hash())
     const start = performance.now()
     // TODO Probably should be also outside of the component
     const lines = await find(this.keys!, lastId)
@@ -100,7 +104,7 @@ export class ProgressPage extends LitElement {
           @next=${() => this.switchDay(1)}
           @prev=${() => this.switchDay(-1)}
         ></q-journal>
-        <q-skills .data=${this.app?.view_skills().skills}></q-skills>
+        <q-skills .data=${this.app?.view_skills().skills ?? ""}></q-skills>
         ${this.error && html`<p>Error ${this.error}</p>`}
       </q-logo-block>
     `

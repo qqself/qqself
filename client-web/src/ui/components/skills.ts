@@ -10,7 +10,7 @@ declare global {
 
 @customElement("q-skills")
 export class Skills extends LitElement {
-  @property({ type: Object })
+  @property({ type: String })
   data!: string
 
   static styles = css`

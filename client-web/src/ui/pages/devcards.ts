@@ -1,11 +1,13 @@
 import { html, LitElement, TemplateResult } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
-import { App, DateDay, Keys } from "../../../bridge/pkg/qqself_client_web_bridge"
+import { Views, DateDay, Keys } from "../../../bridge/pkg/qqself_client_web_bridge"
 import { EncryptionPool } from "../../app/encryptionPool/pool"
 import "../components/skills"
 import "../components/entryInput"
 import "../controls/panel"
-import { Storage } from "../../app/storage/storage"
+import "../components/journal"
+import "../pages/progress"
+import * as Storage from "../../app/storage/storage"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -53,11 +55,11 @@ export class DevcardsPage extends LitElement {
   async connectedCallback() {
     super.connectedCallback()
 
-    const cache = await Storage.init("foo")
+    const cache = Storage.newStorage("foo")
 
     // Test data
     const testKeys: Keys = Keys.createNewKeys()
-    const testApp = App.new(testKeys)
+    const testViews = Views.new(testKeys)
     const input = `2022-07-15 00:00 00:02 qqself. skill kind=🧠. Entrepreneur 
 2022-07-15 00:00 00:03 read. skill kind=🧠. Reader
 2022-07-15 00:00 00:11 drums. skill kind=🫀. Drummer
@@ -76,7 +78,7 @@ export class DevcardsPage extends LitElement {
 2022-11-10 18:00 20:00 qqself. Refactoring all custom date and times structs to \`time\` create
 2022-11-10 21:30 23:30 qqself. Fixed all the tests, migrated fully to new date and time structures, created a PR`
     for (const entry of input.split("\n")) {
-      testApp.add_entry(entry)
+      testViews.add_entry(entry)
       await cache.setItem(entry, entry)
     }
 
@@ -87,19 +89,19 @@ export class DevcardsPage extends LitElement {
         <q-panel title="Dev panel">
           <div>Content #1</div>
           <div>Content #2</div>
-        </q-pane>
+        </q-panel>
       </q-card>
-      
+
       <!-- Components -->
       <q-card name="Journal">
         <q-journal
-          .data=${testApp.journal_day(DateDay.fromDate(new Date(2022, 10, 10)))}
+          .data=${testViews.journal_day(DateDay.fromDate(new Date(2022, 10, 10)))}
           .keys=${testKeys}
         ></q-journal>
       </q-card>
 
       <q-card name="Skills">
-        <q-skills .data=${testApp.view_skills().skills}></q-skills>
+        <q-skills .data=${testViews.view_skills().skills}></q-skills>
       </q-card>
 
       <q-card name="AddEntry - Valid">
@@ -118,7 +120,7 @@ export class DevcardsPage extends LitElement {
       <q-card name="Progress page">
         <q-progress-page
           .keys="${testKeys}"
-          .app=${testApp}
+          .app=${testViews}
           .encryptionPool=${this.encryptionPool}
           .today=${new Date(2022, 10, 10)}
         ></q-progress-page>

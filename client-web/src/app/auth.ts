@@ -1,14 +1,14 @@
-import { App, Keys } from "../../bridge/pkg/qqself_client_web_bridge"
+import { Views, Keys } from "../../bridge/pkg/qqself_client_web_bridge"
 import { EncryptionPool } from "./encryptionPool/pool"
 import { Store } from "./store"
-import { Storage } from "./storage/storage"
+import * as Storage from "./storage/storage"
 
 export const loginSucceeded = async (store: Store, keys: Keys): Promise<void> => {
   await saveCredentials(keys)
   store.userState = {
     encryptionPool: EncryptionPool.initWithKeys(keys),
-    storage: Storage.init(keys.public_key_hash()),
-    views: App.new(keys),
+    storage: Storage.newStorage(keys.public_key_hash()),
+    views: Views.new(keys),
   }
 }
 
@@ -55,17 +55,17 @@ export const logoutSucceeded = async (store: Store): Promise<void> => {
 
 const STORAGE_KEYS_KEY = "keys"
 export const getCredentials = async (): Promise<Keys | null> => {
-  const storage = Storage.initDefault()
+  const storage = Storage.newDefaultStorage()
   const cachedKeys = await storage.getItem(STORAGE_KEYS_KEY)
   return cachedKeys ? Keys.deserialize(cachedKeys) : null
 }
 
 export const saveCredentials = async (keys: Keys): Promise<void> => {
-  const storage = Storage.initDefault()
+  const storage = Storage.newDefaultStorage()
   return storage.setItem(STORAGE_KEYS_KEY, keys.serialize())
 }
 
 export const deleteCredentials = async (): Promise<void> => {
-  const storage = Storage.initDefault()
+  const storage = Storage.newDefaultStorage()
   return storage.removeItem(STORAGE_KEYS_KEY)
 }

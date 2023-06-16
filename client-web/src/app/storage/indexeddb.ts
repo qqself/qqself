@@ -1,7 +1,7 @@
 import localforage from "localforage"
-import { StorageProvider } from "./storage"
+import { Storage } from "./storage"
 
-export class IndexedDbStorage implements StorageProvider {
+export class IndexedDbStorage implements Storage {
   db: LocalForage
 
   constructor(dbName: string) {
