@@ -1,10 +1,10 @@
-import { StorageProvider } from "./storage"
+import { Storage } from "./storage"
 
 // Global mutable variable to store the data while process is running
 // to behave closer to persistent storage and make testing easier
 const data: { [dbName: string]: { [key: string]: string } } = {}
 
-export class MemoryStorage implements StorageProvider {
+export class MemoryStorage implements Storage {
   dbName: string
 
   constructor(dbName: string) {

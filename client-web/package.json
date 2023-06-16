@@ -5,18 +5,22 @@
     "watch": "rsw watch",
     "build": "wasm-pack build bridge --out-dir pkg --target web --release && tsc --noEmit && vite build",
     "test": "wasm-pack build bridge --out-dir pkg --target nodejs --release && VITE_API_HOST=https://api.qqself.com vitest --run --test-timeout 10000",
-    "lint": "prettier --write 'src/**/*.ts'",
-    "lint:check": "prettier --check 'src/**/*.ts'"
+    "lint": "prettier --write 'src/**/*.ts' && eslint src/**/*.ts --fix && lit-analyzer --strict src",
+    "lint:check": "prettier --check 'src/**/*.ts' && eslint src/**/*.ts && lit-analyzer --strict src"
   },
   "dependencies": {
-    "lit": "^2.4.0",
-    "localforage": "^1.10.0"
+    "lit": "2.4.0",
+    "localforage": "1.10.0"
   },
   "devDependencies": {
-    "prettier": "^2.8.8",
-    "typescript": "^5.0.4",
-    "vite": "^4.3.9",
-    "vite-plugin-rsw": "^2.0.11",
-    "vitest": "^0.31.1"
+    "lit-analyzer": "2.0.0-pre.3",
+    "@typescript-eslint/eslint-plugin": "5.59.11",
+    "@typescript-eslint/parser": "5.59.11",
+    "eslint": "8.42.0",
+    "prettier": "2.8.8",
+    "typescript": "5.0.4",
+    "vite": "4.3.9",
+    "vite-plugin-rsw": "2.0.11",
+    "vitest": "0.31.1"
   }
 }

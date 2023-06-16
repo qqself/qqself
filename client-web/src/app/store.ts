@@ -1,5 +1,5 @@
 import { ExpectStatic } from "vitest"
-import { Keys, App } from "../../bridge/pkg/qqself_client_web_bridge"
+import { Keys, Views } from "../../bridge/pkg/qqself_client_web_bridge"
 import { EncryptionPool } from "./encryptionPool/pool"
 import { Storage } from "./storage/storage"
 import * as Auth from "./auth"
@@ -33,7 +33,7 @@ export class Store {
   userState!: {
     encryptionPool: EncryptionPool
     storage: Storage
-    views: App
+    views: Views
   }
 
   async dispatch<T extends keyof Events>(event: T, eventArgs: Events[T]): Promise<void> {
@@ -103,7 +103,7 @@ class TestStore extends Store {
 if (import.meta.vitest) {
   const { test, expect } = import.meta.vitest
 
-  test("App initialization should set user to not authenticated", async () => {
+  test("Initialization should set user to not authenticated", async () => {
     const store = new TestStore(expect)
     await store.dispatchAndExpect("init.started", null, ["auth.login.notAuthenticated"])
   })

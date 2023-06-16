@@ -161,6 +161,10 @@ impl DB {
         }
     }
 
+    pub fn count(&self) -> usize {
+        self.entries.len()
+    }
+
     // Merge new record into existing database and return ChangeEvent telling how exactly DB got changed.
     // Implementation may looks a bit complex as we need to handle all possible edge cases when
     // syncing multiple sources. Goal is that after merging all the records the DB will converge to one

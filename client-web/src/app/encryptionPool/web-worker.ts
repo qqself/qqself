@@ -22,7 +22,7 @@ let initCompleted: Promise<void> | null = null
 self.onmessage = async (event: MessageEvent<InputType>) => {
   const input = event.data
   if (input.kind == "Init") {
-    initCompleted = new Promise<void>(async (resolve, reject) => {
+    initCompleted = new Promise<void>(async (resolve) => {
       await init()
       initialize()
       id = input.workerId

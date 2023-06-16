@@ -147,7 +147,7 @@ pub struct AppJournalDay {
 }
 
 #[wasm_bindgen]
-pub struct App {
+pub struct Views {
     #[allow(unused)]
     keys: Keys,
     db: DB,
@@ -159,7 +159,7 @@ pub struct SkillsView {
 }
 
 #[wasm_bindgen]
-impl App {
+impl Views {
     pub fn new(keys: &Keys) -> Self {
         Self {
             keys: keys.clone(),
@@ -185,6 +185,10 @@ impl App {
             entries.push_str(&format!("{}\n", entry.to_string_short()));
         }
         AppJournalDay { day, entries }
+    }
+
+    pub fn entry_count(&self) -> usize {
+        self.db.count()
     }
 
     pub fn view_skills(&self) -> SkillsView {

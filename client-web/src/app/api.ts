@@ -35,7 +35,7 @@ export interface EncryptedEntry {
 
 // Call Find sync API endpoint
 export const find = async (keys: Keys, lastId: string | null): Promise<EncryptedEntry[]> => {
-  const resp = await http(API.createApiFindRequest(keys, lastId || undefined))
+  const resp = await http(API.createApiFindRequest(keys, lastId ?? undefined))
   if (!resp.body) {
     throw new Error("API find error: no body")
   }

@@ -2,7 +2,7 @@ import { isBrowser } from "../../utils"
 import { IndexedDbStorage } from "./indexeddb"
 import { MemoryStorage } from "./memory"
 
-export interface StorageProvider {
+export interface Storage {
   clear(): Promise<void>
   itemCount(): Promise<number>
   getItem(key: string): Promise<string | null>
@@ -11,43 +11,37 @@ export interface StorageProvider {
   values(): Promise<{ key: string; value: string }[]>
 }
 
-export class Storage {
-  private constructor() {
-    // Use init instead
+export const newStorage = (dbName: string): Storage => {
+  if (isBrowser) {
+    return new IndexedDbStorage(dbName)
+  } else {
+    return new MemoryStorage(dbName)
   }
+}
 
-  static init(dbName: string): StorageProvider {
-    if (isBrowser) {
-      return new IndexedDbStorage(dbName)
-    } else {
-      return new MemoryStorage(dbName)
-    }
-  }
-
-  static initDefault(): StorageProvider {
-    return Storage.init("DEFAULT")
-  }
+export const newDefaultStorage = (): Storage => {
+  return newStorage("DEFAULT")
 }
 
 if (import.meta.vitest) {
   const { describe, test, expect } = import.meta.vitest
 
-  const newStorage = async () => {
-    const storage = Storage.init("test")
+  const createStorage = async () => {
+    const storage = newStorage("test")
     await storage.clear() // ensure storage has nothing before the test
     return storage
   }
 
   describe("storage", () => {
     test("getItem - setItem", async () => {
-      const storage = await newStorage()
+      const storage = await createStorage()
       expect(await storage.getItem("foo")).toBe(null)
       await storage.setItem("foo", "bar")
       expect(await storage.getItem("foo")).toBe("bar")
     })
 
     test("values", async () => {
-      const storage = await newStorage()
+      const storage = await createStorage()
       expect(await storage.values()).toEqual([])
       const data = [
         { key: "foo1", value: "bar1" },
@@ -62,7 +56,7 @@ if (import.meta.vitest) {
     })
 
     test("count", async () => {
-      const storage = await newStorage()
+      const storage = await createStorage()
       expect(await storage.itemCount()).toBe(0)
       await storage.setItem("foo", "bar")
       expect(await storage.itemCount()).toBe(1)
@@ -71,7 +65,7 @@ if (import.meta.vitest) {
     })
 
     test("clear", async () => {
-      const storage = await newStorage()
+      const storage = await createStorage()
       expect(await storage.itemCount()).toBe(0)
       await storage.setItem("foo", "bar")
       expect(await storage.itemCount()).toBe(1)
@@ -80,10 +74,10 @@ if (import.meta.vitest) {
     })
 
     test("persistence for default", async () => {
-      const storage1 = Storage.initDefault()
+      const storage1 = newDefaultStorage()
       await storage1.setItem("foo", "bar")
 
-      const storage2 = Storage.initDefault()
+      const storage2 = newDefaultStorage()
       expect(await storage2.getItem("foo")).toEqual("bar")
     })
   })
