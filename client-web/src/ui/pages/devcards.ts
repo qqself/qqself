@@ -1,13 +1,14 @@
 import { html, LitElement, TemplateResult } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
-import { Views, DateDay, Keys } from "../../../bridge/pkg/qqself_client_web_bridge"
-import { EncryptionPool } from "../../app/encryptionPool/pool"
+import { DateDay } from "../../../bridge/pkg/qqself_client_web_bridge"
 import "../components/skills"
 import "../components/entryInput"
 import "../controls/panel"
 import "../components/journal"
 import "../pages/progress"
-import * as Storage from "../../app/storage/storage"
+import { Store } from "../../app/store"
+import { trace } from "../../logger"
+import { EntrySaveEvent } from "../components/entryInput"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -47,19 +48,18 @@ export class Card extends LitElement {
 @customElement("q-devcards-page")
 export class DevcardsPage extends LitElement {
   @property({ type: Object })
-  encryptionPool: EncryptionPool | null = null
+  store!: Store
 
   @state()
   cards: TemplateResult | null = null
 
   async connectedCallback() {
     super.connectedCallback()
+    this.store.subscribe("init.succeeded", this.configure.bind(this))
+    await this.store.dispatch("init.started", null)
+  }
 
-    const cache = Storage.newStorage("foo")
-
-    // Test data
-    const testKeys: Keys = Keys.createNewKeys()
-    const testViews = Views.new(testKeys)
+  async configure() {
     const input = `2022-07-15 00:00 00:02 qqself. skill kind=🧠. Entrepreneur 
 2022-07-15 00:00 00:03 read. skill kind=🧠. Reader
 2022-07-15 00:00 00:11 drums. skill kind=🫀. Drummer
@@ -78,8 +78,7 @@ export class DevcardsPage extends LitElement {
 2022-11-10 18:00 20:00 qqself. Refactoring all custom date and times structs to \`time\` create
 2022-11-10 21:30 23:30 qqself. Fixed all the tests, migrated fully to new date and time structures, created a PR`
     for (const entry of input.split("\n")) {
-      testViews.add_entry(entry)
-      await cache.setItem(entry, entry)
+      await this.store.dispatch("data.entry.added", { entry, callSyncAfter: false })
     }
 
     // Render all the devcards. If page hash ends with `/devcards:[CARD_NAME]` then only the card with such name will be rendered
@@ -95,17 +94,19 @@ export class DevcardsPage extends LitElement {
       <!-- Components -->
       <q-card name="Journal">
         <q-journal
-          .data=${testViews.journal_day(DateDay.fromDate(new Date(2022, 10, 10)))}
-          .keys=${testKeys}
+          .data=${this.store.userState.views.journal_day(DateDay.fromDate(new Date(2022, 10, 10)))}
         ></q-journal>
       </q-card>
 
       <q-card name="Skills">
-        <q-skills .data=${testViews.view_skills().skills}></q-skills>
+        <q-skills .data=${this.store.userState.views.view_skills().skills}></q-skills>
       </q-card>
 
       <q-card name="AddEntry - Valid">
-        <q-entry-input entry="2022-11-09 11:25 12:30 qqself. Added entry input"></q-entry-input>
+        <q-entry-input
+          entry="2022-11-09 11:25 12:30 qqself. Added entry input"
+          @save=${(e: EntrySaveEvent) => trace(JSON.stringify(e.detail))}
+        ></q-entry-input>
       </q-card>
 
       <q-card name="AddEntry - Invalid">
@@ -119,16 +120,14 @@ export class DevcardsPage extends LitElement {
       <!-- Pages -->
       <q-card name="Progress page">
         <q-progress-page
-          .keys="${testKeys}"
-          .app=${testViews}
-          .encryptionPool=${this.encryptionPool}
-          .today=${new Date(2022, 10, 10)}
+          .store="${this.store}"
+          .currentDay=${DateDay.fromDate(new Date(2022, 10, 10))}
         ></q-progress-page>
       </q-card>
     </div>`
   }
 
   render() {
-    return this.cards || html`Loading test data...`
+    return this.cards ?? html`Loading test data...`
   }
 }

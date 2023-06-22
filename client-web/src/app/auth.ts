@@ -10,6 +10,8 @@ export const loginSucceeded = async (store: Store, keys: Keys): Promise<void> =>
     storage: Storage.newStorage(keys.public_key_hash()),
     views: Views.new(keys),
   }
+  await store.dispatch("data.sync.loadCached", null)
+  return store.dispatch("data.sync.started", null)
 }
 
 export const login = (store: Store, keyString: string): Promise<void> => {

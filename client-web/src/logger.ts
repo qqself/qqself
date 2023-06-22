@@ -2,11 +2,11 @@
 // logging workflows across whole code base
 
 const logLevels = {
-  trace: 0,
-  debug: 1,
-  info: 2,
-  warn: 3,
-  error: 4,
+  trace: 1,
+  debug: 2,
+  info: 3,
+  warn: 4,
+  error: 5,
 }
 
 const logLevelDefault = logLevels.warn

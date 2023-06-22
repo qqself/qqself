@@ -37,10 +37,11 @@ export class MemoryStorage implements Storage {
     return Promise.resolve()
   }
 
-  values(): Promise<{ key: string; value: string }[]> {
+  values(keyPrefix: string | ""): Promise<{ key: string; value: string }[]> {
     return Promise.resolve(
       Object.entries(data[this.dbName])
         .map(([key, value]) => ({ key, value }))
+        .filter((v) => v.key.startsWith(keyPrefix))
         .sort((a, b) => a.key.localeCompare(b.key))
     )
   }

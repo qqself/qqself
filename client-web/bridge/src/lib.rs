@@ -1,5 +1,15 @@
 #![allow(non_snake_case)] // Use camelCase for everything exported as it's convention that TypeScript is using
 
+/*
+
+Few hard learned rules to follow when writing bridge functions:
+
+- panics/unreachable/todo should not be used as it breaks WebAssembly context and bridge stops. Return Result<T, String> instead
+- Never pass structs by value as then WebAssembly will nullify this object on JS side
+- Use crate::util::log for debugging
+
+*/
+
 use std::panic;
 
 use qqself_core::{
@@ -8,7 +18,13 @@ use qqself_core::{
     data_views::journal::JournalDay,
     date_time::{datetime::DateDay, timestamp::Timestamp},
     db::{Record, DB},
-    encryption::{self, payload::PayloadBytes, payload::PayloadId},
+    encryption::{
+        self,
+        hash::StableHash,
+        payload::PayloadBytes,
+        payload::PayloadId,
+        tokens::{DeleteToken, SearchToken},
+    },
     record::Entry,
 };
 use wasm_bindgen::prelude::wasm_bindgen;
@@ -30,15 +46,18 @@ impl Keys {
     pub fn createNewKeys() -> Keys {
         Self(encryption::keys::Keys::generate_new())
     }
+
     pub fn deserialize(data: String) -> Result<Keys, String> {
         match encryption::keys::Keys::deserialize(data) {
             Some(keys) => Ok(Self(keys)),
             None => Err("Failed to deserialize the key file".to_string()),
         }
     }
+
     pub fn serialize(&self) -> String {
         self.0.serialize()
     }
+
     pub fn decrypt(&self, data: String) -> Result<String, String> {
         let binary =
             BinaryToText::new_from_encoded(data).ok_or_else(|| "Bad data encoding".to_string())?;
@@ -49,6 +68,7 @@ impl Keys {
             .map_err(|v| v.to_string())?;
         Ok(decrypted)
     }
+
     pub fn encrypt(&self, plaintext: String) -> Result<String, String> {
         let payload = PayloadBytes::encrypt(
             &self.0.public_key,
@@ -60,6 +80,30 @@ impl Keys {
         .map_err(|err| err.to_string())?;
         Ok(payload.data())
     }
+
+    pub fn sign_delete_token(&self) -> Result<String, String> {
+        DeleteToken::encode(&self.0.public_key, &self.0.private_key, Timestamp::now())
+            .map_err(|err| err.to_string())
+    }
+
+    pub fn sign_find_token(&self, lastId: Option<String>) -> Result<String, String> {
+        // TODO API leaks implementation details that ID is [timestamp][hash]. Make it
+        //      so that API accepts whole lastId and remove any notion of timestamp
+        let filter_since = match lastId {
+            None => None,
+            Some(v) => {
+                Some(PayloadId::parse(&v).ok_or("lastId cannot be parsed as id".to_string())?)
+            }
+        };
+        SearchToken::encode(
+            &self.0.public_key,
+            &self.0.private_key,
+            Timestamp::now(),
+            filter_since.map(|v| *v.timestamp()),
+        )
+        .map_err(|err| err.to_string())
+    }
+
     pub fn public_key_hash(&self) -> String {
         self.0.public_key.hash_string()
     }
@@ -101,28 +145,27 @@ pub struct Request {
 }
 
 // TODO Temporary here, after all we should move API IO to core as well
+// TODO Whole API needs rethinking: We have one in Core, one in PWA, one in bridge,
+//      some handles encryption, some handles already encrypted payload
+// TODO Also error handling is OK, but we need to distinguish between re-triable/invisible and
+//      something that user should see
 #[wasm_bindgen]
 pub struct API {}
 
 #[wasm_bindgen]
 impl API {
-    pub fn createApiFindRequest(keys: &Keys, lastId: Option<String>) -> Result<Request, ApiError> {
-        let filter_since = match lastId {
-            None => None,
-            Some(v) => Some(PayloadId::parse(&v).ok_or(ApiError {
-                code: ApiErrorType::EncodingError,
-                msg: "lastId cannot be parsed as id".to_string(),
-            })?),
-        };
-        let req = ApiRequest::new_find_request(&keys.0, filter_since.map(|v| *v.timestamp()))?;
+    pub fn createApiFindRequest(encryptedPayload: &str) -> Result<Request, ApiError> {
+        let req = ApiRequest::new_find_request_encrypted(encryptedPayload.to_string());
         Ok(Request {
             url: req.url.to_string(),
             payload: req.payload,
             contentType: req.content_type.to_string(),
         })
     }
-    pub fn createApiSetRequest(keys: &Keys, msg: &str) -> Result<Request, ApiError> {
-        let req = ApiRequest::new_set_request(&keys.0, msg.to_string())?;
+
+    /// Creates API set request, accepts already encrypted payload
+    pub fn createApiSetRequest(encryptedPayload: &str) -> Result<Request, ApiError> {
+        let req = ApiRequest::new_set_request_encrypted(encryptedPayload.to_string());
         Ok(Request {
             url: req.url.to_string(),
             payload: req.payload,
@@ -167,24 +210,25 @@ impl Views {
         }
     }
 
-    pub fn add_entry(&mut self, input: &str) {
-        let entry = Entry::parse(input).expect("input should be parsable");
+    pub fn add_entry(&mut self, input: String) -> Result<(), String> {
+        let entry = Entry::parse(&input).map_err(|err| err.to_string())?;
         let record = Record::from_entry(entry, 1);
         self.db.add(record);
+        Ok(())
     }
 
-    pub fn journal_day(&self, day: DateDay) -> AppJournalDay {
+    pub fn journal_day(&self, day: &DateDay) -> AppJournalDay {
         let journal_day = self
             .db
             .journal()
-            .get(&day)
+            .get(day)
             .cloned()
-            .unwrap_or_else(|| JournalDay::new(day));
+            .unwrap_or_else(|| JournalDay::new(*day));
         let mut entries = String::new();
         for entry in &journal_day.entries {
             entries.push_str(&format!("{}\n", entry.to_string_short()));
         }
-        AppJournalDay { day, entries }
+        AppJournalDay { day: *day, entries }
     }
 
     pub fn entry_count(&self) -> usize {
@@ -205,4 +249,9 @@ impl Views {
 #[wasm_bindgen]
 pub fn validateEntry(input: String) -> Option<String> {
     Entry::parse(&input).map_err(|e| e.to_string()).err()
+}
+
+#[wasm_bindgen]
+pub fn stringHash(input: String) -> String {
+    StableHash::hash_string(&input).to_string()
 }

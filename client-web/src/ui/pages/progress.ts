@@ -1,15 +1,12 @@
 import { html, LitElement } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
-import { Views, AppJournalDay, DateDay, Keys } from "../../../bridge/pkg/qqself_client_web_bridge"
-import { find } from "../../app/api"
+import { AppJournalDay, DateDay } from "../../../bridge/pkg/qqself_client_web_bridge"
 import "../components/logoBlock"
 import "../controls/button"
 import "../components/journal"
 import "../components/skills"
-import { EncryptionPool } from "../../app/encryptionPool/pool"
-import { info } from "../../logger"
-import * as Storage from "../../app/storage/storage"
 import { Store } from "../../app/store"
+import { EntrySaveEvent } from "../components/entryInput"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -23,75 +20,32 @@ export class ProgressPage extends LitElement {
   store!: Store
 
   @property({ type: Object })
-  // TODO Keys have to move to app
-  keys: Keys | null = null
-
-  @property({ type: Object })
-  today: Date = new Date()
-
-  @property({ type: Object })
-  app: Views | null = null
-
-  @property({ type: Object })
-  encryptionPool: EncryptionPool | null = null
+  currentDay!: DateDay
 
   @state()
-  journalData: AppJournalDay | null = null
+  journalData!: AppJournalDay
 
   @state()
   error = ""
 
-  async loadCachedData(): Promise<string | null> {
-    const storage = Storage.newStorage(this.keys!.public_key_hash())
-    // TODO lastId should be equal to the last id received from `find` call, not last saved entry
-    //      Imagine we made `find` at time=1, then after some time we added an entry at time=3.
-    //      Next `find` call should use time=1 as an timestamp, not time=3
-    let lastId = null
-    let loaded = 0
-    for (const entry of await storage.values()) {
-      lastId = entry.key
-      this.app!.add_entry(entry.value)
-      loaded++
-    }
-    info(`Loaded ${loaded} entries from cache with last one ${lastId}`)
-    return lastId
+  onSwitchDay(diff: number) {
+    this.currentDay =
+      diff > 0 ? this.journalData.day.add_days(1) : this.journalData.day.remove_days(1)
+    this.updateJournal()
   }
 
-  async loadServerData(lastId: string | null) {
-    const storage = Storage.newStorage(this.keys!.public_key_hash())
-    const start = performance.now()
-    // TODO Probably should be also outside of the component
-    const lines = await find(this.keys!, lastId)
-    const requestFinished = performance.now()
-    const decrypted = await this.encryptionPool!.decryptAll(lines)
-    const end = performance.now()
-    info(
-      `${decrypted.length} entries loaded in ${Math.floor(end - start)}ms. API=${Math.floor(
-        requestFinished - start
-      )}ms Decryption=${Math.floor(end - requestFinished)}ms`
-    )
-    for (const entry of decrypted) {
-      this.app!.add_entry(entry.text)
-      await storage.setItem(entry.id, entry.text)
-    }
+  onEntryAdded(e: EntrySaveEvent) {
+    return this.store.dispatch("data.entry.added", { entry: e.detail.entry, callSyncAfter: true })
   }
 
-  async connectedCallback() {
+  updateJournal() {
+    this.journalData = this.store.userState.views.journal_day(this.currentDay)
+  }
+
+  connectedCallback() {
     super.connectedCallback()
-    try {
-      const lastId = await this.loadCachedData()
-      await this.loadServerData(lastId)
-      this.journalData = this.app!.journal_day(DateDay.fromDate(this.today))
-    } catch (ex) {
-      this.error = String(ex)
-      throw ex
-    }
-  }
-
-  switchDay(diff: number) {
-    const newDay =
-      diff > 0 ? this.journalData!.day.add_days(1) : this.journalData!.day.remove_days(1)
-    this.journalData = this.app!.journal_day(newDay)
+    this.store.subscribe("data.sync.succeeded", this.updateJournal.bind(this))
+    this.updateJournal()
   }
 
   render() {
@@ -100,11 +54,11 @@ export class ProgressPage extends LitElement {
         <h1>Progress</h1>
         <q-journal
           .data=${this.journalData}
-          .keys=${this.keys}
-          @next=${() => this.switchDay(1)}
-          @prev=${() => this.switchDay(-1)}
+          @next=${() => this.onSwitchDay(1)}
+          @prev=${() => this.onSwitchDay(-1)}
+          @save=${this.onEntryAdded.bind(this)}
         ></q-journal>
-        <q-skills .data=${this.app?.view_skills().skills ?? ""}></q-skills>
+        <q-skills .data=${this.store.userState.views.view_skills().skills}></q-skills>
         ${this.error && html`<p>Error ${this.error}</p>`}
       </q-logo-block>
     `
