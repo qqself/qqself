@@ -19,7 +19,7 @@ const send = (output: OutputType, taskId: string) => {
 
 let initCompleted: Promise<void> | null = null
 
-self.onmessage = async (event: MessageEvent<InputType>) => {
+self.onmessage = (event: MessageEvent<InputType>) => {
   const input = event.data
   if (input.kind == "Init") {
     initCompleted = new Promise<void>(async (resolve) => {

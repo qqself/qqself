@@ -5,6 +5,7 @@ import "./ui/pages/register"
 import "./ui/pages/login"
 import "./ui/pages/progress"
 import { Store } from "./app/store"
+import { DateDay } from "../bridge/pkg/qqself_client_web_bridge"
 
 type Page = "loading" | "login" | "register" | "progress" | "devcards"
 
@@ -37,14 +38,17 @@ export class Main extends LitElement {
         return html`<q-loading-page .store=${this.store} />`
       case "devcards":
         if (import.meta.env.DEV) {
-          return html`<q-devcards-page />`
+          return html`<q-devcards-page .store=${this.store} />`
         } else {
           throw new Error("Devcards should not be available in production")
         }
       case "login":
         return html`<q-login-page .store=${this.store} />`
       case "progress":
-        return html`<q-progress-page .store=${this.store} />`
+        return html`<q-progress-page
+          .store=${this.store}
+          .currentDay=${DateDay.fromDate(new Date())}
+        />`
       case "register":
         return html`<q-register-page .store=${this.store} />`
     }

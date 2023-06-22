@@ -18,7 +18,7 @@ export class ThreadWorker extends EventTarget {
       return
     }
 
-    processMessage(input, this.cachedKeys, this.send.bind(this))
+    return processMessage(input, this.cachedKeys, this.send.bind(this))
   }
 
   send(output: OutputType, taskId: string) {

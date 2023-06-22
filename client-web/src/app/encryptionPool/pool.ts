@@ -1,6 +1,6 @@
 import { Keys } from "../../../bridge/pkg/qqself_client_web_bridge"
 import { EncryptedEntry } from "../api"
-import { InputType, WorkerResult } from "./worker"
+import { InputType, SignInput, WorkerResult } from "./worker"
 import { info } from "../../logger"
 import { ThreadWorker } from "./thread-worker"
 import { isBrowser } from "../../utils"
@@ -145,6 +145,23 @@ export class EncryptionPool {
       this.allocateWork()
     })
     return task as Promise<EncryptedPayload>
+  }
+
+  async sign(data: SignInput): Promise<string> {
+    const task = new Promise((resolve, reject) => {
+      const taskId = String(this.lastTaskId++)
+      const task: PoolTask = {
+        input: { kind: "Sign", taskId, data },
+        status: "pending",
+        onCompleted: (output: { payload: string }) => {
+          resolve(output.payload)
+        },
+        onError: reject,
+      }
+      this.tasks[taskId] = task
+      this.allocateWork()
+    })
+    return task as Promise<string>
   }
 
   async decrypt(payload: EncryptedEntry): Promise<DecryptedEntry> {

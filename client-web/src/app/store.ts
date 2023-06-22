@@ -4,6 +4,7 @@ import { EncryptionPool } from "./encryptionPool/pool"
 import { Storage } from "./storage/storage"
 import * as Auth from "./auth"
 import * as Init from "./init"
+import { DataEvents } from "./data"
 import { debug, info, warn } from "../logger"
 
 // Events are application wide activities that causes some side effect
@@ -21,13 +22,23 @@ interface Events {
   "auth.registration.succeeded": { keys: Keys }
   "auth.logout.started": null
   "auth.logout.succeeded": null
+  // Data
+  "data.entry.added": { entry: string; callSyncAfter: boolean } // User entered new entry
+  "data.sync.loadCached": null // Load cached data from storage
+  "data.sync.outdated": { lastSync: Date } // Last sync happened too long time ago
+  "data.sync.becomeOnline": null // App become online after being offline
+  "data.sync.started": null // Data sync started because of some conditions or requested manually
+  "data.sync.errored": { error: Error } // Data sync finished with an error
+  "data.sync.succeeded": { duration: string; added: number; fetched: number } // Data sync succeeded
 }
 
 export class Store {
   private eventTarget = new EventTarget()
+  private dataEvents: DataEvents
 
   constructor() {
     debug("Store created")
+    this.dataEvents = new DataEvents(this)
   }
 
   userState!: {
@@ -59,6 +70,17 @@ export class Store {
       await Auth.logoutStarted(this)
     } else if (event == "auth.logout.succeeded") {
       await Auth.logoutSucceeded(this)
+    } else if (event == "data.sync.becomeOnline") {
+      await this.dataEvents.onBecomeOnline()
+    } else if (event == "data.sync.outdated") {
+      await this.dataEvents.onSyncOutdated()
+    } else if (event == "data.sync.started") {
+      await this.dataEvents.onSyncStarted()
+    } else if (event == "data.sync.loadCached") {
+      await this.dataEvents.onLoadCached()
+    } else if (event == "data.entry.added") {
+      const args = eventArgs as Events["data.entry.added"]
+      await this.dataEvents.onEntryAdded(args.entry, args.callSyncAfter)
     } else {
       warn(`Unhandled event: ${event}`)
     }

@@ -17,10 +17,6 @@ export class Journal extends LitElement {
   @property({ type: Object })
   data: AppJournalDay | null = null
 
-  @property({ type: Object })
-  // TODO Keys have to move to app
-  keys: Keys | null = null
-
   static styles = css`
     .journal h2 {
       text-align: center;
@@ -40,12 +36,13 @@ export class Journal extends LitElement {
     e.preventDefault()
   }
 
-  async onSave(e: EntrySaveEvent) {
-    const entry = e.detail.entry
-    console.log("Saving...")
-    // TODO We should encrypt via encryptionPool instead of doing it in API
-    await api.set(this.keys!, entry)
-    console.log("Saved")
+  onSave(e: EntrySaveEvent) {
+    const event: EntrySaveEvent = new CustomEvent("save", {
+      detail: {
+        entry: e.detail.entry,
+      },
+    })
+    this.dispatchEvent(event)
   }
 
   render() {
@@ -56,12 +53,12 @@ export class Journal extends LitElement {
     const entries = this.data.entries.split("\n")
     return html`<div class="journal">
       <h2>
-        <a href="#" @click=${this.onPrev}>⏴</a>
+        <a href="#" @click=${this.onPrev.bind(this)}>⏴</a>
         ${day.toString()}
-        <a href="#" @click=${this.onNext}>⏵</a>
+        <a href="#" @click=${this.onNext.bind(this)}>⏵</a>
       </h2>
       ${entries.map((v) => html`<p>${v}</p>`)}
-      <q-entry-input @save=${this.onSave}></q-entry-input>
+      <q-entry-input @save=${this.onSave.bind(this)}></q-entry-input>
     </div>`
   }
 }

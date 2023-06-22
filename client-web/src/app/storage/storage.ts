@@ -8,7 +8,7 @@ export interface Storage {
   getItem(key: string): Promise<string | null>
   setItem(key: string, value: string): Promise<void>
   removeItem(key: string): Promise<void>
-  values(): Promise<{ key: string; value: string }[]>
+  values(keyPrefix: string | ""): Promise<{ key: string; value: string }[]>
 }
 
 export const newStorage = (dbName: string): Storage => {
@@ -42,17 +42,22 @@ if (import.meta.vitest) {
 
     test("values", async () => {
       const storage = await createStorage()
-      expect(await storage.values()).toEqual([])
+      expect(await storage.values("")).toEqual([])
       const data = [
-        { key: "foo1", value: "bar1" },
-        { key: "foo3", value: "bar3" },
-        { key: "foo2", value: "bar2" },
+        { key: "foo.1", value: "bar1" },
+        { key: "foo.2", value: "bar3" },
+        { key: "zzz.1", value: "bar2" },
       ]
       for (const { key, value } of data) {
         await storage.setItem(key, value)
       }
       // Values should be sorted by the key
-      expect(await storage.values()).toEqual(data.sort((a, b) => a.key.localeCompare(b.key)))
+      expect(await storage.values("")).toEqual(data.sort((a, b) => a.key.localeCompare(b.key)))
+
+      // Values with prefix
+      expect(await storage.values("foo")).toEqual(
+        data.filter((v) => v.key.startsWith("foo")).sort((a, b) => a.key.localeCompare(b.key))
+      )
     })
 
     test("count", async () => {

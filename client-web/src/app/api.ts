@@ -23,8 +23,8 @@ const http = async (req: Request): Promise<Response> => {
 }
 
 // Call Set sync API endpoint
-export const set = async (keys: Keys, msg: string): Promise<string> => {
-  const resp = await http(API.createApiSetRequest(keys, msg))
+export const set = async (encryptedPayload: string): Promise<string> => {
+  const resp = await http(API.createApiSetRequest(encryptedPayload))
   return resp.text()
 }
 
@@ -34,8 +34,8 @@ export interface EncryptedEntry {
 }
 
 // Call Find sync API endpoint
-export const find = async (keys: Keys, lastId: string | null): Promise<EncryptedEntry[]> => {
-  const resp = await http(API.createApiFindRequest(keys, lastId ?? undefined))
+export const find = async (encryptedPayload: string): Promise<EncryptedEntry[]> => {
+  const resp = await http(API.createApiFindRequest(encryptedPayload))
   if (!resp.body) {
     throw new Error("API find error: no body")
   }
@@ -72,22 +72,22 @@ if (import.meta.vitest) {
     test("API", async () => {
       // First find call no data
       const keys = Keys.createNewKeys()
-      const lines = await find(keys, null)
+      const lines = await find(keys.sign_find_token())
       expect(lines).toEqual([])
 
       // Add couple of messages
-      await set(keys, "msg1")
-      await set(keys, "msg2")
+      await set(keys.encrypt("msg1"))
+      await set(keys.encrypt("msg2"))
 
       // Get all messages back
-      const got = await find(keys, null)
+      const got = await find(keys.sign_find_token())
       const entries = got.map((entry) => keys.decrypt(entry.payload))
       expect(entries.sort()).toEqual(["msg1", "msg2"]) // Sort order of items with the same timestamp is not defined
 
       // Wait a bit, add a message with a new timestamp and ensure filter works
       await wait(2)
-      const msgId = await set(keys, "msg3")
-      const filtered = await find(keys, msgId)
+      const msgId = await set(keys.encrypt("msg3"))
+      const filtered = await find(keys.sign_find_token(msgId))
       const filteredEntries = filtered.map((entry) => keys.decrypt(entry.payload))
       expect(filteredEntries.sort()).toEqual(["msg3"])
 
