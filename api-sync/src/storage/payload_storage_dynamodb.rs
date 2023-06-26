@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::future::ready;
 use std::pin::Pin;
 
 use async_trait::async_trait;
@@ -10,10 +11,11 @@ use futures::{Stream, StreamExt, TryStreamExt};
 use log::warn;
 use qqself_core::binary_text::BinaryToText;
 use qqself_core::date_time::timestamp::Timestamp;
+use qqself_core::encryption::hash::StableHash;
 use qqself_core::encryption::keys::PublicKey;
 use qqself_core::encryption::payload::{Payload, PayloadBytes, PayloadId};
 
-use super::payload_storage::{PayloadIdString, PayloadStorage, StorageErr};
+use super::payload_storage::{PayloadStorage, StorageErr};
 
 pub struct PayloadStorageDynamoDB {
     client: Client,
@@ -96,12 +98,12 @@ impl PayloadStorage for PayloadStorageDynamoDB {
     fn find(
         &self,
         public_key: &PublicKey,
-        after_timestamp: Option<Timestamp>,
-    ) -> Pin<Box<dyn Stream<Item = Result<(PayloadIdString, PayloadBytes), StorageErr>>>> {
-        let filter = if after_timestamp.is_none() {
+        last_known_id: Option<(Timestamp, StableHash)>,
+    ) -> Pin<Box<dyn Stream<Item = Result<(PayloadId, PayloadBytes), StorageErr>>>> {
+        let filter = if last_known_id.is_none() {
             "pk = :pk"
         } else {
-            "pk = :pk AND id > :id"
+            "pk = :pk AND id > :timestamp"
         };
         let mut attributes = HashMap::new();
         attributes.insert(":pk".to_string(), AttributeValue::S(public_key.to_string()));
@@ -111,8 +113,12 @@ impl PayloadStorage for PayloadStorageDynamoDB {
             ":payloadType".to_string(),
             AttributeValue::S("S".to_string()),
         );
-        if let Some(timestamp) = after_timestamp {
-            attributes.insert(":id".to_string(), AttributeValue::S(timestamp.to_string()));
+        if let Some((timestamp, _)) = &last_known_id {
+            // We want all the entries after last known id timestamp
+            attributes.insert(
+                ":timestamp".to_string(),
+                AttributeValue::S(timestamp.to_string()),
+            );
         }
         let res = self
             .client
@@ -121,7 +127,23 @@ impl PayloadStorage for PayloadStorageDynamoDB {
             .key_condition_expression(filter)
             .filter_expression("attribute_type(payload,:payloadType)")
             .set_expression_attribute_values(Some(attributes));
-        let res = res.into_paginator().items().send().map(process_stream_item);
+        let filter_id = last_known_id
+            .map(|(timestamp, hash)| PayloadId::encode(timestamp, hash).to_string())
+            .unwrap_or_default();
+        let res = res
+            .into_paginator()
+            .items()
+            .send()
+            .map(process_stream_item)
+            .filter(move |v| {
+                // Filter out entry with id equal to last known id
+                if let Ok(v) = v {
+                    if v.0.to_string() == filter_id {
+                        return ready(false);
+                    }
+                }
+                ready(true)
+            });
         Box::pin(res)
     }
 
@@ -166,7 +188,7 @@ impl PayloadStorage for PayloadStorageDynamoDB {
 
 fn process_stream_item(
     item: Result<HashMap<String, AttributeValue>, SdkError<QueryError>>,
-) -> Result<(PayloadIdString, PayloadBytes), StorageErr> {
+) -> Result<(PayloadId, PayloadBytes), StorageErr> {
     let data = match item {
         Err(err) => return Err(StorageErr::IOError(err.to_string())),
         Ok(v) => v,
@@ -191,5 +213,5 @@ fn process_stream_item(
     let payload_id_string = payload_id
         .as_s()
         .map_err(|_| StorageErr::IOError("Non string payload id".to_string()))?;
-    Ok((payload_id_string.clone(), payload))
+    Ok((PayloadId::new_encoded(payload_id_string.clone()), payload))
 }
