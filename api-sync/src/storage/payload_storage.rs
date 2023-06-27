@@ -5,6 +5,7 @@ use futures::Stream;
 use qqself_core::{
     date_time::timestamp::Timestamp,
     encryption::{
+        hash::StableHash,
         keys::PublicKey,
         payload::{Payload, PayloadBytes, PayloadId},
     },
@@ -16,10 +17,8 @@ pub enum StorageErr {
     IOError(String),
 }
 
-// No sense to parse serialised payloadId just to deserialise it again for HTTP response
-pub type PayloadIdString = String;
+type FindItem = Result<(PayloadId, PayloadBytes), StorageErr>;
 
-type FindItem = Result<(PayloadIdString, PayloadBytes), StorageErr>;
 #[async_trait]
 pub trait PayloadStorage {
     /// Perists the given payload
@@ -29,7 +28,7 @@ pub trait PayloadStorage {
     fn find(
         &self,
         public_key: &PublicKey,
-        after_timestamp: Option<Timestamp>,
+        last_known_id: Option<(Timestamp, StableHash)>,
     ) -> Pin<Box<dyn Stream<Item = FindItem>>>;
 
     /// Delete all payloads for the given public key
@@ -38,9 +37,7 @@ pub trait PayloadStorage {
 
 #[cfg(test)]
 mod tests {
-    use crate::storage::{
-        payload_storage_fs::PayloadStorageFS, payload_storage_mem::PayloadStorageMemory,
-    };
+    use crate::storage::payload_storage_mem::PayloadStorageMemory;
 
     use super::*;
     use futures::StreamExt;
@@ -70,9 +67,9 @@ mod tests {
     async fn items_raw<S: PayloadStorage>(
         keys: &Keys,
         s: &S,
-        after_timestamp: Option<u64>,
-    ) -> Vec<(PayloadIdString, Payload)> {
-        s.find(&keys.public, after_timestamp.map(Timestamp::from_u64))
+        min_payload_id: Option<(Timestamp, StableHash)>,
+    ) -> Vec<(PayloadId, Payload)> {
+        s.find(&keys.public, min_payload_id)
             .map(|v| v.unwrap())
             .map(|(id, data)| (id, data.validated(None).unwrap()))
             .collect::<Vec<_>>()
@@ -82,13 +79,22 @@ mod tests {
     async fn items<S: PayloadStorage>(
         keys: &Keys,
         s: &S,
-        after_timestamp: Option<u64>,
+        min_payload_id: Option<u64>,
     ) -> Vec<String> {
-        items_raw(keys, s, after_timestamp)
-            .await
-            .into_iter()
-            .map(|(_, data)| data.decrypt(&keys.private).unwrap())
-            .collect()
+        items_raw(
+            keys,
+            s,
+            min_payload_id.map(|v| {
+                (
+                    Timestamp::from_u64(v),
+                    StableHash::hash_string(&v.to_string()),
+                )
+            }),
+        )
+        .await
+        .into_iter()
+        .map(|(_, data)| data.decrypt(&keys.private).unwrap())
+        .collect()
     }
 
     fn payload(
@@ -110,7 +116,7 @@ mod tests {
     }
 
     fn id(timestamp: u64) -> PayloadId {
-        PayloadId::new(
+        PayloadId::encode(
             Timestamp::from_u64(timestamp),
             StableHash::hash_string(&timestamp.to_string()),
         )
@@ -143,7 +149,7 @@ mod tests {
         assert!(items(keys2, &storage, None).await.is_empty());
 
         // Return items after timestamp
-        assert_eq!(items(keys1, &storage, Some(2)).await, vec!["2", "3"]);
+        assert_eq!(items(keys1, &storage, Some(1)).await, vec!["2", "3"]);
 
         // Add entires for other keys
         storage
@@ -156,23 +162,18 @@ mod tests {
         // Reset value
         let existing = items_raw(keys1, &storage, None).await;
         storage
-            .set(
-                payload(keys1, 4, 4, Some(PayloadId::parse(&existing[0].0).unwrap())),
-                id(4),
-            )
+            .set(payload(keys1, 4, 4, Some(existing[0].0.clone())), id(4))
             .await
             .unwrap();
         assert_eq!(items(keys1, &storage, None).await, vec!["2", "3", "4"]);
 
         // Additional entry with the same timestamp, but different hash should be appended and not overwrite the existing entry
-        let new_id = PayloadId::new(Timestamp::from_u64(4), StableHash::hash_string("5"));
+        let new_id = PayloadId::encode(Timestamp::from_u64(4), StableHash::hash_string("5"));
         storage
             .set(payload(keys1, 4, 5, None), new_id)
             .await
             .unwrap();
-        let mut got = items(keys1, &storage, Some(4)).await;
-        got.sort(); // Storages returns items sorted by timestamp but for enrties with the same timestamp order is not defined
-        assert_eq!(got, vec!["4", "5"]);
+        assert_eq!(items(keys1, &storage, Some(4)).await, vec!["5"]);
 
         // Delete all
         storage.delete(&keys1.public).await.unwrap();
@@ -186,12 +187,8 @@ mod tests {
         test_storage(PayloadStorageMemory::new()).await;
     }
 
-    #[tokio::test]
-    async fn fs_storage() {
-        test_storage(PayloadStorageFS::new_temp()).await;
-    }
-
     /// To run test locally use appropriate environment variables e.g. AWS_PROFILE=test-dynamo
+    /// To see AWS logs add `env_logger::init();` at the beggining of a test and set log env variable `RUST_LOG=trace`
     #[cfg(feature = "storage-dynamodb")]
     #[tokio::test]
     async fn dynamo_storage() {

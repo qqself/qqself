@@ -1,5 +1,4 @@
 use core::fmt;
-use std::fmt::Write;
 
 use crate::{binary_text::BinaryToText, date_time::timestamp::Timestamp};
 
@@ -27,37 +26,32 @@ pub enum PayloadError {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub struct PayloadId {
-    timestamp: Timestamp,
-    hash: StableHash,
-}
+pub struct PayloadId(String);
 
 impl PayloadId {
-    pub fn new(timestamp: Timestamp, hash: StableHash) -> Self {
-        Self { timestamp, hash }
+    pub fn new_encoded(data: String) -> Self {
+        Self(data)
     }
-    pub fn parse(s: &str) -> Option<Self> {
-        let timestamp = Timestamp::from_string(&s[..20])?;
+
+    pub fn encode(timestamp: Timestamp, hash: StableHash) -> Self {
+        let data = format!("{}|{}", timestamp, hash);
+        PayloadId::new_encoded(data)
+    }
+
+    pub fn decode(&self) -> Option<(Timestamp, StableHash)> {
         // timestamp is 20 characters + separator, rest is a hash
-        if s.len() < 22 {
-            return None; // String
+        if self.0.len() < 22 {
+            return None;
         }
-        let hash = StableHash::parse(&s[21..])?;
-        Some(Self { timestamp, hash })
-    }
-    pub fn timestamp(&self) -> &Timestamp {
-        &self.timestamp
-    }
-    pub fn hash(&self) -> &StableHash {
-        &self.hash
+        let timestamp = Timestamp::from_string(&self.0[..20])?;
+        let hash = StableHash::parse(&self.0[21..])?;
+        Some((timestamp, hash))
     }
 }
 
 impl fmt::Display for PayloadId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.timestamp().to_string())?;
-        f.write_char('|')?;
-        f.write_str(&self.hash().to_string())
+        f.write_str(self.0.as_str())
     }
 }
 
@@ -242,7 +236,7 @@ impl<'a> PayloadBinary<'a> {
                 let (hash_bytes, idx) = PayloadBinary::read_bytes(data, idx, 16)?;
                 let hash = StableHash::new_from_bytes(hash_bytes.try_into().ok()?);
                 (
-                    Some(PayloadId::new(Timestamp::from_u64(timestamp), hash)),
+                    Some(PayloadId::encode(Timestamp::from_u64(timestamp), hash)),
                     idx,
                 )
             }
@@ -301,9 +295,10 @@ impl<'a> PayloadBinary<'a> {
         // If previous version is set
         match previous {
             Some(id) => {
+                let (timestamp, hash) = id.decode()?;
                 data.push(0x01);
-                data.extend_from_slice(&id.timestamp.as_u64().to_le_bytes());
-                data.extend_from_slice(&id.hash.as_bytes());
+                data.extend_from_slice(&timestamp.as_u64().to_le_bytes());
+                data.extend_from_slice(&hash.as_bytes());
             }
             None => data.push(0x00),
         }
@@ -382,7 +377,7 @@ mod tests {
         // No previous
         let plaintext_hash = StableHash::hash_string("entry");
         let (public_key, private_key) = keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
-        let previous_id = PayloadId::new(
+        let previous_id = PayloadId::encode(
             Timestamp::from_u64(TIMESTAMP),
             StableHash::hash_string("entry"),
         );
@@ -487,9 +482,8 @@ mod tests {
     #[test]
     #[wasm_bindgen_test]
     fn parsing() {
-        let payload1 = PayloadId::new(Timestamp::from_u64(10), StableHash::hash_string("foo"));
-        let payload2 = PayloadId::parse(&payload1.to_string()).unwrap();
-        assert_eq!(payload1.timestamp, payload2.timestamp);
-        assert_eq!(payload1.hash, payload2.hash);
+        let payload1 = PayloadId::encode(Timestamp::from_u64(10), StableHash::hash_string("foo"));
+        let payload2 = PayloadId::new_encoded(payload1.to_string());
+        assert_eq!(payload1.decode(), payload2.decode());
     }
 }

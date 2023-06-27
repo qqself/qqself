@@ -87,19 +87,12 @@ impl Keys {
     }
 
     pub fn sign_find_token(&self, lastId: Option<String>) -> Result<String, String> {
-        // TODO API leaks implementation details that ID is [timestamp][hash]. Make it
-        //      so that API accepts whole lastId and remove any notion of timestamp
-        let filter_since = match lastId {
-            None => None,
-            Some(v) => {
-                Some(PayloadId::parse(&v).ok_or("lastId cannot be parsed as id".to_string())?)
-            }
-        };
+        let min_payload_id = lastId.map(PayloadId::new_encoded);
         SearchToken::encode(
             &self.0.public_key,
             &self.0.private_key,
             Timestamp::now(),
-            filter_since.map(|v| *v.timestamp()),
+            min_payload_id,
         )
         .map_err(|err| err.to_string())
     }

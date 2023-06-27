@@ -2,7 +2,7 @@ use crate::{
     date_time::timestamp::Timestamp,
     encryption::{
         keys::Keys,
-        payload::{PayloadBytes, PayloadError},
+        payload::{PayloadBytes, PayloadError, PayloadId},
         tokens::{DeleteToken, SearchToken, TokenErr},
     },
 };
@@ -29,13 +29,13 @@ impl ApiRequest {
     /// Encrypt payload and create new Find request for sync API
     pub fn new_find_request(
         keys: &Keys,
-        timestamp_search: Option<Timestamp>,
+        min_payload_id: Option<PayloadId>,
     ) -> Result<Self, RequestCreateErr> {
         let payload = SearchToken::encode(
             &keys.public_key,
             &keys.private_key,
             Timestamp::now(),
-            timestamp_search,
+            min_payload_id
         )?;
         Ok(ApiRequest::new_find_request_encrypted(payload))
     }

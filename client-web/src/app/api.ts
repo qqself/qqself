@@ -87,9 +87,11 @@ if (import.meta.vitest) {
       // Wait a bit, add a message with a new timestamp and ensure filter works
       await wait(2)
       const msgId = await set(keys.encrypt("msg3"))
+      await wait(2)
+      await set(keys.encrypt("msg4"))
       const filtered = await find(keys.sign_find_token(msgId))
       const filteredEntries = filtered.map((entry) => keys.decrypt(entry.payload))
-      expect(filteredEntries.sort()).toEqual(["msg3"])
+      expect(filteredEntries.sort()).toEqual(["msg4"])
 
       // Delete it all
       await deleteAccount(keys)
