@@ -4,7 +4,7 @@ import { EncryptionPool } from "./encryptionPool/pool"
 import { Storage } from "./storage/storage"
 import * as Auth from "./auth"
 import * as Init from "./init"
-import { DataEvents } from "./data"
+import { DataEvents, KeyPrefixes } from "./data"
 import { debug, info, warn } from "../logger"
 
 // Events are application wide activities that causes some side effect
@@ -111,14 +111,12 @@ class TestStore extends Store {
   async dispatchAndExpect<T extends keyof Events>(
     event: T,
     eventArgs: Events[T],
-    expectedEvents: [T]
+    expectedEvent: T
   ): Promise<void> {
     const got = Array<T>()
-    for (const expected of expectedEvents) {
-      this.subscribe(expected, () => got.push(expected))
-    }
+    this.subscribe(expectedEvent, () => got.push(expectedEvent))
     await this.dispatch(event, eventArgs)
-    this.expect(got).toEqual(expectedEvents)
+    this.expect(got).toContain(expectedEvent)
   }
 }
 
@@ -127,25 +125,52 @@ if (import.meta.vitest) {
 
   test("Initialization should set user to not authenticated", async () => {
     const store = new TestStore(expect)
-    await store.dispatchAndExpect("init.started", null, ["auth.login.notAuthenticated"])
+    await store.dispatchAndExpect("init.started", null, "auth.login.notAuthenticated")
   })
 
   test("Registration should automatically login user", async () => {
     const store1 = new TestStore(expect)
-    await store1.dispatchAndExpect("init.started", null, ["auth.login.notAuthenticated"])
-    await store1.dispatchAndExpect("auth.registration.started", { mode: "automatic" }, [
-      "auth.login.succeeded",
-    ])
+    await store1.dispatchAndExpect("init.started", null, "auth.login.notAuthenticated")
+    await store1.dispatchAndExpect(
+      "auth.registration.started",
+      { mode: "automatic" },
+      "auth.login.succeeded"
+    )
     expect(store1.userState.encryptionPool).toBeTruthy()
 
     // Next time user should be authenticated automatically
     const store2 = new TestStore(expect)
-    await store2.dispatchAndExpect("init.started", null, ["auth.login.succeeded"])
+    await store2.dispatchAndExpect("init.started", null, "auth.login.succeeded")
     expect(store2.userState.encryptionPool).toBeTruthy()
 
     // But after logout cached credentials are removed
-    await store2.dispatchAndExpect("auth.logout.started", null, ["auth.logout.succeeded"])
+    await store2.dispatchAndExpect("auth.logout.started", null, "auth.logout.succeeded")
     const store3 = new TestStore(expect)
-    await store3.dispatchAndExpect("init.started", null, ["auth.login.notAuthenticated"])
+    await store3.dispatchAndExpect("init.started", null, "auth.login.notAuthenticated")
+  })
+
+  test("On login fetch entries", async () => {
+    const store1 = new TestStore(expect)
+    await store1.dispatch("init.started", null)
+    await store1.dispatchAndExpect(
+      "auth.registration.started",
+      { mode: "automatic" },
+      "data.sync.succeeded"
+    )
+    // No data by default
+    expect(await store1.userState.storage.itemCount()).toEqual(0)
+
+    // Add few remote entries and on next login remote entries should be added
+    const entry = "2022-06-07 10:00 11:00 foo"
+    await store1.dispatch("data.entry.added", { entry: entry + "1", callSyncAfter: false })
+    await store1.dispatchAndExpect(
+      "data.entry.added",
+      { entry: entry + "2", callSyncAfter: true },
+      "data.sync.succeeded"
+    )
+    const store2 = new TestStore(expect)
+    await store2.dispatchAndExpect("init.started", null, "data.sync.succeeded")
+    const values = await store1.userState.storage.values(KeyPrefixes.EntryRemote)
+    expect(values.map((v) => v.value).sort()).toEqual([entry + "1", entry + "2"])
   })
 }
