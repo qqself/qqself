@@ -5,7 +5,7 @@ import { stringHash } from "../../bridge/pkg"
 import * as API from "../app/api"
 
 // We have one KV storage, to differentiate values we are using different prefixes for the keys
-const KeyPrefixes = {
+export const KeyPrefixes = {
   EntryLocal: "entry.local.",
   EntryRemote: "entry.remote.",
   LastSync: "sync.lastId.",
