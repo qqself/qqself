@@ -1,8 +1,8 @@
-import { trace, warn } from "../logger"
+import { trace } from "../logger"
 import { isBrowser } from "../utils"
 import { Store } from "./store"
 import { stringHash } from "../../bridge/pkg"
-import * as API from "../app/api"
+import { APIProvider } from "../app/api"
 
 // We have one KV storage, to differentiate values we are using different prefixes for the keys
 export const KeyPrefixes = {
@@ -14,9 +14,11 @@ export const KeyPrefixes = {
 export class DataEvents {
   private lastSync: Date | null = null
   private store: Store
+  private api: APIProvider
 
-  constructor(store: Store) {
+  constructor(store: Store, api: APIProvider) {
     this.store = store
+    this.api = api
     setInterval(() => this.onTimerTick.bind(this), 60 * 1000)
     if (isBrowser) {
       window.addEventListener("online", () => {
@@ -26,7 +28,7 @@ export class DataEvents {
     }
   }
 
-  async onLoadCached() {
+  async onSyncInit() {
     trace(`DataEvents loading cached entries`)
     const storage = this.store.userState.storage
     let loadedRemote = 0
@@ -40,6 +42,11 @@ export class DataEvents {
       loadedLocal++
     }
     trace(`DataEvents loaded cached data: remote=${loadedRemote}, local=${loadedLocal}`)
+    if (loadedLocal) {
+      // There are pending local changes, update the status
+      await this.store.dispatch("status.sync", { status: "pending" })
+    }
+    return this.store.dispatch("data.sync.started", null)
   }
 
   onSyncOutdated(): Promise<void> {
@@ -51,20 +58,31 @@ export class DataEvents {
   }
 
   async onSyncStarted(): Promise<void> {
-    const start = performance.now()
-    const sentToServer = await this.sendLocalChanges()
-    const receivedFromServer = await this.receiveRemoteChanges()
-    const syncTime = `${Math.floor(performance.now() - start)}ms`
-    return this.store.dispatch("data.sync.succeeded", {
-      duration: syncTime,
-      added: sentToServer,
-      fetched: receivedFromServer,
-    })
+    try {
+      const start = performance.now()
+      const sentToServer = await this.sendLocalChanges()
+      await this.store.dispatch("status.sync", { status: "completed" })
+      await this.store.dispatch("status.currentOperation", { operation: "Fetching entries" })
+      const receivedFromServer = await this.receiveRemoteChanges()
+      trace(`DataEvents sync completed in: ${Math.floor(performance.now() - start)}ms`)
+      await this.store.dispatch("status.currentOperation", { operation: null })
+      return this.store.dispatch("data.sync.succeeded", {
+        added: sentToServer,
+        fetched: receivedFromServer,
+      })
+    } catch (ex) {
+      // TODO While it may be handy to show an error to the user when we going to hide it?
+      await this.store.dispatch("status.currentOperation", {
+        operation: "Sync error: " + String(ex),
+      })
+      return this.store.dispatch("data.sync.errored", { error: ex as Error })
+    }
   }
 
   async onEntryAdded(entry: string, callSyncAfter: boolean): Promise<void> {
     this.store.userState.views.add_entry(entry)
     await this.addEntryToCache(entry, null)
+    await this.store.dispatch("status.sync", { status: "pending" })
     if (callSyncAfter) {
       return this.store.dispatch("data.sync.started", null)
     }
@@ -96,29 +114,23 @@ export class DataEvents {
     const sendStart = performance.now()
     for (const entry of localEntries) {
       const payload = await this.store.userState.encryptionPool.encrypt(entry.value)
-      try {
-        const remoteEntryId = await API.set(payload.payload)
-        // TODO Storage should support transactional change of the key
-        const newId = KeyPrefixes.EntryRemote + remoteEntryId
-        await storage.setItem(newId, entry.value)
-        await storage.removeItem(entry.key)
-        trace(`DataEvents local entry saved: ${entry.key} -> ${newId}`)
-      } catch (ex) {
-        warn(`DataEvents - sync failed: ${String(ex)}`)
-        void this.store.dispatch("data.sync.errored", { error: ex as Error })
-        throw ex
-      }
+      const remoteEntryId = await this.api.set(payload.payload)
+      // TODO Storage should support transactional change of the key
+      const newId = KeyPrefixes.EntryRemote + remoteEntryId
+      await storage.setItem(newId, entry.value)
+      await storage.removeItem(entry.key)
+      trace(`DataEvents local entry saved: ${entry.key} -> ${newId}`)
     }
     trace(`DataEvents sending finished in:${Math.floor(performance.now() - sendStart)}ms`)
     return localEntries.length
   }
 
   private async receiveRemoteChanges(): Promise<number> {
-    trace(`DataEvents sending find request`)
     const start = performance.now()
     const lastSyncId = await this.loadLastSyncId()
+    trace(`DataEvents sending find request, lastSyncId=${String(lastSyncId)}`)
     const findToken = await this.store.userState.encryptionPool.sign({ kind: "find", lastSyncId })
-    const remoteEntries = await API.find(findToken)
+    const remoteEntries = await this.api.find(findToken)
     const requestFinished = performance.now()
     const decrypted = await this.store.userState.encryptionPool.decryptAll(remoteEntries)
     for (const entry of decrypted) {
