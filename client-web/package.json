@@ -9,7 +9,7 @@
     "lint:check": "prettier --check 'src/**/*.ts' && eslint src/**/*.ts && lit-analyzer --strict src"
   },
   "dependencies": {
-    "lit": "2.4.0",
+    "lit": "2.7.5",
     "localforage": "1.10.0"
   },
   "devDependencies": {
