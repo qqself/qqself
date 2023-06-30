@@ -6,6 +6,7 @@ import "./ui/pages/login"
 import "./ui/pages/progress"
 import { Store } from "./app/store"
 import { DateDay } from "../bridge/pkg/qqself_client_web_bridge"
+import { ServerApi } from "./app/api"
 
 type Page = "loading" | "login" | "register" | "progress" | "devcards"
 
@@ -14,7 +15,7 @@ export class Main extends LitElement {
   @state()
   page: Page = "loading"
 
-  store = new Store()
+  store = new Store(new ServerApi())
 
   async firstUpdated() {
     if (import.meta.env.DEV) {

@@ -3,8 +3,9 @@ import { customElement, property, state } from "lit/decorators.js"
 import { DateDay } from "../../../bridge/pkg/qqself_client_web_bridge"
 import "../components/skills"
 import "../components/entryInput"
-import "../controls/panel"
 import "../components/journal"
+import "../components/statusBar"
+import "../controls/panel"
 import "../pages/progress"
 import { Store } from "../../app/store"
 import { trace } from "../../logger"
@@ -115,6 +116,14 @@ export class DevcardsPage extends LitElement {
 
       <q-card name="AddEntry - Empty">
         <q-entry-input></q-entry-input>
+      </q-card>
+
+      <q-card name="Status bar - Default">
+        <q-status-bar> </q-status-bar>
+      </q-card>
+
+      <q-card name="Status bar - Pending">
+        <q-status-bar status="pending" currentOp="Fetching data..."> </q-status-bar>
       </q-card>
 
       <!-- Pages -->
