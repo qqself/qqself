@@ -15,7 +15,7 @@
   "devDependencies": {
     "lit-analyzer": "2.0.0-pre.3",
     "@typescript-eslint/eslint-plugin": "5.60.1",
-    "@typescript-eslint/parser": "5.59.11",
+    "@typescript-eslint/parser": "5.60.1",
     "eslint": "8.44.0",
     "prettier": "2.8.8",
     "typescript": "5.1.6",
