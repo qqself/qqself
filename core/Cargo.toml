@@ -18,7 +18,7 @@ wasm-bindgen = { version = "0.2.86", optional = true }
 js-sys = {version = "0.3.64", optional = true }
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3.36"
+wasm-bindgen-test = "0.3.37"
 
 [features]
 default = []
