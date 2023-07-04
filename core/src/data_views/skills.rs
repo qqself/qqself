@@ -12,13 +12,18 @@ pub struct SkillsView {
     data: Vec<Skill>,
 }
 
+pub enum SkillsUpdate {
+    LevelUp(String),
+    HourProgress(String),
+}
+
 impl SkillsView {
-    pub fn update(&mut self, all: Iter<DateTimeRange, Record>, _: &ChangeEvent) {
+    pub fn update(&mut self, all: Iter<DateTimeRange, Record>, _: &ChangeEvent) -> Option<SkillsUpdate> {
         // TODO We can optimize by processing added records instead of recalculating things every time
-        self.recalculate(all);
+        self.recalculate(all)
     }
 
-    fn recalculate(&mut self, records: Iter<DateTimeRange, Record>) {
+    fn recalculate(&mut self, records: Iter<DateTimeRange, Record>) -> Option<SkillsUpdate> {
         self.data.clear(); // Start over discarding all existing skills
         for (_, record) in records {
             let entry = match record {
@@ -48,6 +53,7 @@ impl SkillsView {
             }
         }
         self.data.sort(); // Keep skills sorted
+        None
     }
 
     pub fn data(&self) -> &Vec<Skill> {

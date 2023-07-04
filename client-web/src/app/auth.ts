@@ -1,6 +1,6 @@
 import { Views, Keys } from "../../bridge/pkg/qqself_client_web_bridge"
 import { EncryptionPool } from "./encryptionPool/pool"
-import { Store } from "./store"
+import { Store, ViewUpdate } from "./store"
 import * as Storage from "./storage/storage"
 
 export const loginSucceeded = async (store: Store, keys: Keys): Promise<void> => {
@@ -8,7 +8,21 @@ export const loginSucceeded = async (store: Store, keys: Keys): Promise<void> =>
   store.userState = {
     encryptionPool: EncryptionPool.initWithKeys(keys),
     storage: Storage.newStorage(keys.public_key_hash()),
-    views: Views.new(keys),
+    views: Views.new(keys, (argsMap: Map<string, string>) => {
+      // HACK This callback is called from `Views.add_entry` which captured Views as
+      //      `&mut self`. If any store subscribers for the following events will try
+      //      to call Views functions with capturing &self then Rust/WS will break.
+      //      setTimeout allows callback to complete, freeing `Views &mut self` and
+      //      schedules actual callback logic for the next event loop cycle
+      setTimeout(() => {
+        const update = Object.fromEntries(argsMap) as ViewUpdate
+        if (update.view == "Journal") {
+          void store.dispatch("views.update.journal", { update })
+        } else {
+          void store.dispatch("views.update.skills", { update })
+        }
+      }, 0)
+    }),
   }
 }
 

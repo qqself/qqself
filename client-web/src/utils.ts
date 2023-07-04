@@ -1,1 +1,1 @@
-export const isBrowser = typeof window != "undefined"
+export const isBrowser = typeof navigator != "undefined" && !navigator.userAgent.includes("jsdom")

@@ -3,8 +3,8 @@ use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::rc::Weak;
 use std::vec;
 
-use crate::data_views::journal::{JournalDay, JournalView};
-use crate::data_views::skills::SkillsView;
+use crate::data_views::journal::{JournalDay, JournalUpdate, JournalView};
+use crate::data_views::skills::{SkillsUpdate, SkillsView};
 use crate::date_time::datetime::{DateDay, DateTimeRange};
 use crate::parsing::parser::{ParseError, Parser};
 use crate::progress::skill::Skill;
@@ -107,6 +107,11 @@ pub enum ChangeEvent {
     },
 }
 
+pub enum ViewUpdate {
+    Journal(JournalUpdate),
+    Skills(SkillsUpdate),
+}
+
 pub trait DBSubscriber {
     fn notify(&self, all: Iter<DateTimeRange, Record>, event: &ChangeEvent);
 }
@@ -118,6 +123,7 @@ pub struct DB {
     sync_queue: VecDeque<ChangeEvent>,
     view_skills: SkillsView,
     view_journal: JournalView,
+    on_view_update: Option<Box<dyn Fn(ViewUpdate)>>,
 }
 
 impl DB {
@@ -128,6 +134,7 @@ impl DB {
             sync_queue: VecDeque::new(),
             view_skills: SkillsView::default(),
             view_journal: JournalView::default(),
+            on_view_update: None,
         }
     }
 
@@ -141,9 +148,15 @@ impl DB {
 
     pub fn add(&mut self, record: Record) {
         if let Some(event) = self.merge(record) {
-            // TODO Shouldn't views be subscribers?
-            self.view_skills.update(self.entries.iter(), &event);
-            self.view_journal.update(self.entries.iter(), &event);
+            // Update all the views and emit update view event if needed
+            let update = self.view_journal.update(self.entries.iter(), &event);
+            if let (Some(update), Some(cb)) = (update, &self.on_view_update) {
+                cb(ViewUpdate::Journal(update))
+            }
+            let update = self.view_skills.update(self.entries.iter(), &event);
+            if let (Some(update), Some(cb)) = (update, &self.on_view_update) {
+                cb(ViewUpdate::Skills(update))
+            }
 
             // Inform all subscribers about new entry
             let mut cleanup = false;
@@ -258,9 +271,13 @@ impl DB {
         Ok(vec![])
     }
 
-    pub fn subscribe(&mut self, subscriber: Weak<dyn DBSubscriber>) {
+    pub fn subscribe_entry_updates(&mut self, subscriber: Weak<dyn DBSubscriber>) {
         self.subscribers.push(subscriber);
         // TODO Immediately call new subscriber with existing data if we have anything
+    }
+
+    pub fn subscribe_view_updates(&mut self, cb: Box<dyn Fn(ViewUpdate)>) {
+        self.on_view_update.replace(cb);
     }
 }
 
@@ -401,7 +418,7 @@ mod tests {
             let sub = Rc::new(TestSubscriber {
                 events: Mutex::new(Vec::new()),
             });
-            db.subscribe(Rc::downgrade(&(sub.clone() as Rc<dyn DBSubscriber>)));
+            db.subscribe_entry_updates(Rc::downgrade(&(sub.clone() as Rc<dyn DBSubscriber>)));
             Self { db, sub }
         }
         fn add(&mut self, record: Record) {
@@ -434,7 +451,7 @@ mod tests {
             });
             db.add(parse_entry("00:01 a", 0));
             assert_eq!(sub.events.lock().unwrap().len(), 0);
-            db.subscribe(Rc::downgrade(&(sub.clone() as Rc<dyn DBSubscriber>)));
+            db.subscribe_entry_updates(Rc::downgrade(&(sub.clone() as Rc<dyn DBSubscriber>)));
             db.add(parse_entry("00:02 b", 0));
             assert_eq!(sub.events.lock().unwrap().len(), 1);
             assert_eq!(db.subscribers.len(), 1);

@@ -1,6 +1,6 @@
 import { css, html, LitElement } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
-import { AppJournalDay, DateDay } from "../../../bridge/pkg/qqself_client_web_bridge"
+import { AppJournalDay, DateDay } from "../../../bridge/pkg"
 import "../components/logoBlock"
 import "../controls/button"
 import "../components/journal"
@@ -8,7 +8,6 @@ import "../components/skills"
 import "../components/statusBar"
 import { Store } from "../../app/store"
 import { EntrySaveEvent } from "../components/entryInput"
-import { warn } from "../../logger"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -57,7 +56,12 @@ export class ProgressPage extends LitElement {
 
   connectedCallback() {
     super.connectedCallback()
-    this.store.subscribe("data.sync.succeeded", this.updateJournal.bind(this))
+    this.store.subscribe("views.update.journal", (event) => {
+      if (event.update.day == this.currentDay.toString()) {
+        // Update and rerender only if update day is the current one
+        this.updateJournal()
+      }
+    })
     this.store.subscribe("status.sync", (e) => (this.status = { ...this.status, status: e.status }))
     this.store.subscribe(
       "status.currentOperation",

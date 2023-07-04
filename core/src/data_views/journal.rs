@@ -26,12 +26,30 @@ pub struct JournalView {
     data: BTreeMap<DateDay, JournalDay>,
 }
 
+pub enum JournalUpdate {
+    DayUpdated(DateDay),
+}
+
 impl JournalView {
-    pub fn update(&mut self, all: Iter<DateTimeRange, Record>, _: &ChangeEvent) {
-        self.recalculate(all) // TODO Use change event to make it efficient
+    pub fn update(
+        &mut self,
+        all: Iter<DateTimeRange, Record>,
+        event: &ChangeEvent,
+    ) -> Option<JournalUpdate> {
+        // TODO Terribly inefficient, but we re-create whole journal every time we add a new entry
+        //      Done as a part of PoC, rewrite to append an event instead and avoid extra work
+        self.recalculate(all);
+        // TODO As we recalculate whole thing every time there is no way to emit proper JournalUpdate
+        //      We can use ChangeEvent as a shortcut for now
+        if let ChangeEvent::Added(Record::Value(RecordValue::Entry(entry))) = event {
+            return Some(JournalUpdate::DayUpdated(
+                entry.entry().date_range().start().date(),
+            ));
+        }
+        None
     }
 
-    fn recalculate(&mut self, records: Iter<DateTimeRange, Record>) {
+    fn recalculate(&mut self, records: Iter<DateTimeRange, Record>) -> Option<JournalUpdate> {
         self.data.clear();
         for (_, record) in records {
             let entry = match record {
@@ -64,6 +82,7 @@ impl JournalView {
                 );
             }
         }
+        None
     }
 
     pub fn data(&self) -> &BTreeMap<DateDay, JournalDay> {

@@ -7,17 +7,24 @@ Few hard learned rules to follow when writing bridge functions:
 - panics/unreachable/todo should not be used as it breaks WebAssembly context and bridge stops. Return Result<T, String> instead
 - Never pass structs by value as then WebAssembly will nullify this object on JS side
 - Use crate::util::log for debugging
+- Careful with recursion - if Rust calls passed JS function (e.g. callback) which in turn calls Rust again it may create a
+  situation where struct is borrowed as `&mut self` and `&self` which causes a crash with cryptic error message and bad stacktrace.
+  To break recursion use `setTimeout(logic, 0)` on JS side
+  To make things worse it's not crashing in NodeJS. Stable and simple way is to use interior mutability and avoid `&mut self` in the bridge
 
 */
 
-use std::panic;
+use std::{cell::RefCell, panic};
 
 use qqself_core::{
     api::{ApiRequest, RequestCreateErr},
     binary_text::BinaryToText,
-    data_views::journal::JournalDay,
+    data_views::{
+        journal::{JournalDay, JournalUpdate},
+        skills::SkillsUpdate,
+    },
     date_time::{datetime::DateDay, timestamp::Timestamp},
-    db::{Record, DB},
+    db::{Record, ViewUpdate, DB},
     encryption::{
         self,
         hash::StableHash,
@@ -27,7 +34,9 @@ use qqself_core::{
     },
     record::Entry,
 };
-use wasm_bindgen::prelude::wasm_bindgen;
+use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
+
+use crate::util::error;
 
 mod util;
 
@@ -186,7 +195,7 @@ pub struct AppJournalDay {
 pub struct Views {
     #[allow(unused)]
     keys: Keys,
-    db: DB,
+    db: RefCell<DB>,
 }
 
 #[wasm_bindgen(getter_with_clone)]
@@ -196,23 +205,49 @@ pub struct SkillsView {
 
 #[wasm_bindgen]
 impl Views {
-    pub fn new(keys: &Keys) -> Self {
+    pub fn new(keys: &Keys, onUpdate: js_sys::Function) -> Self {
+        let mut db = DB::default();
+        db.subscribe_view_updates(Box::new(move |update| {
+            let obj = js_sys::Map::new();
+            match update {
+                ViewUpdate::Journal(JournalUpdate::DayUpdated(update)) => {
+                    obj.set(&"view".into(), &"Journal".into());
+                    obj.set(&"type".into(), &"DayUpdated".into());
+                    obj.set(&"day".into(), &update.to_string().into());
+                }
+                ViewUpdate::Skills(SkillsUpdate::HourProgress(update)) => {
+                    obj.set(&"view".into(), &"Skills".into());
+                    obj.set(&"type".into(), &"HourProgress".into());
+                    obj.set(&"message".into(), &update.into());
+                }
+                ViewUpdate::Skills(SkillsUpdate::LevelUp(update)) => {
+                    obj.set(&"view".into(), &"Skills".into());
+                    obj.set(&"type".into(), &"LevelUp".into());
+                    obj.set(&"message".into(), &update.into());
+                }
+            };
+            if let Err(err) = onUpdate.call1(&JsValue::NULL, &obj) {
+                error(&err);
+            }
+        }));
         Self {
             keys: keys.clone(),
-            db: DB::default(),
+            db: RefCell::new(db),
         }
     }
 
-    pub fn add_entry(&mut self, input: String) -> Result<(), String> {
+    pub fn add_entry(&self, input: String) -> Result<(), String> {
         let entry = Entry::parse(&input).map_err(|err| err.to_string())?;
         let record = Record::from_entry(entry, 1);
-        self.db.add(record);
+        let mut db = self.db.borrow_mut();
+        db.add(record);
         Ok(())
     }
 
     pub fn journal_day(&self, day: &DateDay) -> AppJournalDay {
         let journal_day = self
             .db
+            .borrow()
             .journal()
             .get(day)
             .cloned()
@@ -225,12 +260,13 @@ impl Views {
     }
 
     pub fn entry_count(&self) -> usize {
-        self.db.count()
+        self.db.borrow().count()
     }
 
     pub fn view_skills(&self) -> SkillsView {
         let skills = self
             .db
+            .borrow()
             .skills()
             .iter()
             .map(|v| format!("{} {} {}", v.kind(), v.title(), v.progress().level))

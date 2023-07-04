@@ -1,50 +1,6 @@
 import { expect, test } from "vitest"
-import { Events, Store } from "./store"
-import { APIProvider, ServerApi } from "./api"
 import { KeyPrefixes } from "./data"
-
-class TestStore extends Store {
-  gotEvents = new Map()
-
-  constructor(api?: APIProvider) {
-    super(api ?? new ServerApi())
-  }
-
-  override async dispatch<T extends keyof Events>(event: T, eventArgs: Events[T]): Promise<void> {
-    this.gotEvents.set(event, eventArgs)
-    return super.dispatch(event, eventArgs)
-  }
-
-  async dispatchAndExpect<T1 extends keyof Events, T2 extends keyof Events>(
-    event: T1,
-    eventArgs: Events[T1],
-    expectedEvent: T2,
-    expectedEventArgs?: Events[T2]
-  ): Promise<void> {
-    this.gotEvents = new Map()
-    await this.dispatch(event, eventArgs)
-    if (!this.gotEvents.has(expectedEvent)) {
-      // Fail if expected event didn't occur
-      expect([...this.gotEvents.keys()]).toContain(expectedEvent)
-    }
-    if (expectedEventArgs) {
-      // Check for event argument if we check for those
-      expect(this.gotEvents.get(expectedEvent)).toEqual(expectedEventArgs)
-    }
-  }
-}
-
-class OfflineApi implements APIProvider {
-  set() {
-    return Promise.reject()
-  }
-  find() {
-    return Promise.reject()
-  }
-  deleteAccount() {
-    return Promise.reject()
-  }
-}
+import { OfflineApi, TestStore } from "../utilsTests"
 
 test("Initialization should set user to not authenticated", async () => {
   const store = new TestStore()

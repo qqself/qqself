@@ -24,7 +24,6 @@ usage() {
 deps() {
   cargo fetch
   (cd client-web && yarn install) 
-  curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 }
 
 # Builds everything
@@ -41,7 +40,8 @@ test() {
   cargo test --release
 
   log "Testing WebAssembly"
-  (cd core && wasm-pack test --release --node --features wasm)
+  # Rely on wasm-pack coming with client-web
+  (cd core && ../client-web/node_modules/.bin/wasm-pack test --release --node --features wasm)
 
   log "Testing all Typescript projects"
   (cd client-web && yarn test)
