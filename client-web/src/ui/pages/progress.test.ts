@@ -1,12 +1,12 @@
 import { html, render } from "lit"
 import { OfflineApi, TestStore } from "../../utilsTests"
-import { describe, test } from "vitest"
+import { describe, test, expect } from "vitest"
 import { DateDay } from "../../../bridge/pkg"
 import "./progress"
 
 describe("progress", () => {
   test("render", async () => {
-    const store = new TestStore(new OfflineApi())
+    const store = new TestStore(expect, new OfflineApi())
     await store.dispatch("init.started", null)
     await store.dispatch("auth.registration.started", { mode: "automatic" })
     render(

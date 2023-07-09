@@ -49,7 +49,7 @@ export class Card extends LitElement {
 // Custom page with all UI elements, used mostly for development, kinda like storybooks
 @customElement("q-devcards-page")
 export class DevcardsPage extends LitElement {
-  store = new TestStore(new OfflineApi())
+  store = new TestStore(undefined, new OfflineApi())
 
   @state()
   cards: TemplateResult | null = null
