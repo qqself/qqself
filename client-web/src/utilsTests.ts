@@ -1,11 +1,14 @@
 import { APIProvider, ServerApi } from "./app/api"
 import { Events, Store } from "./app/store"
+import { type ExpectStatic } from "vitest"
 
 export class TestStore extends Store {
   gotEvents = new Map()
+  expect?: ExpectStatic
 
-  constructor(api?: APIProvider) {
+  constructor(expect?: ExpectStatic, api?: APIProvider) {
     super(api ?? new ServerApi())
+    this.expect = expect
   }
 
   override async dispatch<T extends keyof Events>(event: T, eventArgs: Events[T]): Promise<void> {
@@ -20,20 +23,22 @@ export class TestStore extends Store {
     expectedEventArgs?: Events[T2]
   ): Promise<void> {
     this.gotEvents = new Map()
+    if (!this.expect) {
+      throw new Error("Expect is missing")
+    }
     await this.dispatch(event, eventArgs)
     // Dynamically load `expect` as it's sometimes useful to use TestStore outside of testing context.
     // Importing `vitest` causes errors if imported outside of vitest context
-    const { expect } = await import("vitest")
     // TODO: Still it gives warning during production build, accept `expect` as a parameter
 
     if (!this.gotEvents.has(expectedEvent)) {
       // Fail if expected event didn't occur
       console.log(this.gotEvents.keys())
-      expect([...this.gotEvents.keys()]).toContain(expectedEvent)
+      this.expect([...this.gotEvents.keys()]).toContain(expectedEvent)
     }
     if (expectedEventArgs) {
       // Check for event argument if we check for those
-      expect(this.gotEvents.get(expectedEvent)).toEqual(expectedEventArgs)
+      this.expect(this.gotEvents.get(expectedEvent)).toEqual(expectedEventArgs)
     }
   }
 }
