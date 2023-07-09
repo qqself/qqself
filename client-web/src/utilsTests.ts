@@ -1,6 +1,5 @@
 import { APIProvider, ServerApi } from "./app/api"
 import { Events, Store } from "./app/store"
-import { expect } from "vitest"
 
 export class TestStore extends Store {
   gotEvents = new Map()
@@ -22,6 +21,11 @@ export class TestStore extends Store {
   ): Promise<void> {
     this.gotEvents = new Map()
     await this.dispatch(event, eventArgs)
+    // Dynamically load `expect` as it's sometimes useful to use TestStore outside of testing context.
+    // Importing `vitest` causes errors if imported outside of vitest context
+    const { expect } = await import("vitest")
+    // TODO: Still it gives warning during production build, accept `expect` as a parameter
+
     if (!this.gotEvents.has(expectedEvent)) {
       // Fail if expected event didn't occur
       console.log(this.gotEvents.keys())

@@ -16,7 +16,7 @@ Skill examples: Running, Drums, Programming, Sculpture, etc.
 */
 
 /// Skill represents progression of certain activity
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Skill {
     selector: Selector,
     kind: String,
@@ -24,9 +24,22 @@ pub struct Skill {
     duration_minutes: u64,
 }
 
+#[derive(Default, Debug)]
 pub struct SkillProgress {
     pub level: u64,
     pub minutes_till_next: u64,
+    pub duration_minutes: u64,
+}
+
+impl SkillProgress {
+    pub fn new(duration_minutes: u64) -> Self {
+        let (level, minutes_till_next) = skill_level(duration_minutes);
+        SkillProgress {
+            level,
+            minutes_till_next,
+            duration_minutes,
+        }
+    }
 }
 
 impl Skill {
@@ -58,11 +71,7 @@ impl Skill {
 
     /// Returns skill progress - current level and minutes till the next level
     pub fn progress(&self) -> SkillProgress {
-        let (level, minutes_till_next) = skill_level(self.duration_minutes);
-        SkillProgress {
-            level,
-            minutes_till_next,
-        }
+        SkillProgress::new(self.duration_minutes)
     }
 
     pub fn selector(&self) -> &Selector {

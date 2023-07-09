@@ -1,8 +1,8 @@
-use std::collections::{btree_map::Iter, BTreeMap};
+use std::collections::BTreeMap;
 
 use crate::{
-    date_time::datetime::{DateDay, DateTimeRange},
-    db::{ChangeEvent, Record, RecordValue},
+    date_time::datetime::{DateDay},
+    db::{ChangeEvent, Record, RecordValue, ViewUpdate},
     record::Entry,
 };
 
@@ -26,66 +26,61 @@ pub struct JournalView {
     data: BTreeMap<DateDay, JournalDay>,
 }
 
-pub enum JournalUpdate {
-    DayUpdated(DateDay),
+#[derive(PartialEq, Debug)]
+pub struct JournalUpdate {
+    pub day: DateDay,
 }
 
 impl JournalView {
     pub fn update(
         &mut self,
-        all: Iter<DateTimeRange, Record>,
         event: &ChangeEvent,
-    ) -> Option<JournalUpdate> {
-        // TODO Terribly inefficient, but we re-create whole journal every time we add a new entry
-        //      Done as a part of PoC, rewrite to append an event instead and avoid extra work
-        self.recalculate(all);
-        // TODO As we recalculate whole thing every time there is no way to emit proper JournalUpdate
-        //      We can use ChangeEvent as a shortcut for now
-        if let ChangeEvent::Added(Record::Value(RecordValue::Entry(entry))) = event {
-            return Some(JournalUpdate::DayUpdated(
-                entry.entry().date_range().start().date(),
-            ));
+        on_view_update: &Option<Box<dyn Fn(ViewUpdate)>>,
+    ) {
+        let ChangeEvent::Added(Record::Value(RecordValue::Entry(entry))) = event else { return };
+        let entry_day = entry.entry().date_range().start().date();
+        let journal_day = self.data.entry(entry_day).or_insert(JournalDay {
+            day: entry_day,
+            entries: vec![],
+        });
+        journal_day.entries.push(entry.entry().clone());
+        if let Some(update) = on_view_update {
+            update(ViewUpdate::Journal(JournalUpdate { day: entry_day }));
         }
-        None
-    }
-
-    fn recalculate(&mut self, records: Iter<DateTimeRange, Record>) -> Option<JournalUpdate> {
-        self.data.clear();
-        for (_, record) in records {
-            let entry = match record {
-                Record::Value(RecordValue::Entry(entry)) => entry.entry(),
-                _ => continue, // We don't care about non entries
-            };
-            let entry_day = entry.date_range().start().date();
-            if self.data.is_empty() {
-                self.data.insert(
-                    entry_day,
-                    JournalDay {
-                        day: entry_day,
-                        entries: vec![],
-                    },
-                );
-            }
-            let cur_day = self.data.entry(entry_day).or_insert(JournalDay {
-                day: entry_day,
-                entries: vec![],
-            });
-            if cur_day.day == entry_day {
-                cur_day.entries.push(entry.clone());
-            } else {
-                self.data.insert(
-                    entry_day,
-                    JournalDay {
-                        day: entry_day,
-                        entries: vec![entry.clone()],
-                    },
-                );
-            }
-        }
-        None
     }
 
     pub fn data(&self) -> &BTreeMap<DateDay, JournalDay> {
         &self.data
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use crate::db::RecordEntry;
+
+    use super::*;
+
+    fn change_event(s: &str) -> ChangeEvent {
+        ChangeEvent::Added(Record::Value(RecordValue::Entry(RecordEntry::new(
+            1,
+            Entry::parse(s).unwrap(),
+        ))))
+    }
+
+    fn expect_entries(journal: &JournalView, day: DateDay, length: usize) {
+        assert_eq!(journal.data().get(&day).unwrap().entries.len(), length);
+    }
+
+    #[test]
+    fn update() {
+        let mut journal = JournalView::default();
+        // New day
+        journal.update(&change_event("2020-03-07 10:00 11:00 qqself"), &None);
+        expect_entries(&journal, DateDay::new(2020, 3, 7), 1);
+
+        // Add entry to the same day
+        journal.update(&change_event("2020-03-07 13:00 14:00 qqself"), &None);
+        expect_entries(&journal, DateDay::new(2020, 3, 7), 2);
     }
 }

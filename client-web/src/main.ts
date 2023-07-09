@@ -39,7 +39,7 @@ export class Main extends LitElement {
         return html`<q-loading-page .store=${this.store} />`
       case "devcards":
         if (import.meta.env.DEV) {
-          return html`<q-devcards-page .store=${this.store} />`
+          return html`<q-devcards-page />`
         } else {
           throw new Error("Devcards should not be available in production")
         }
