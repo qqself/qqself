@@ -1,10 +1,10 @@
 use std::collections::btree_map::Iter;
-use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::collections::{BTreeMap, BTreeSet};
 use std::rc::Weak;
 use std::vec;
 
 use crate::data_views::journal::{JournalDay, JournalUpdate, JournalView};
-use crate::data_views::skills::{SkillsUpdate, SkillsView};
+use crate::data_views::skills::{SkillsNotification, SkillsUpdate, SkillsView};
 use crate::date_time::datetime::{DateDay, DateTimeRange};
 use crate::parsing::parser::{ParseError, Parser};
 use crate::progress::skill::Skill;
@@ -82,7 +82,7 @@ impl Record {
             Record::Conflict(v) => v.revision,
         }
     }
-    fn daterange(&self) -> DateTimeRange {
+    pub fn daterange(&self) -> DateTimeRange {
         match self {
             Record::Value(v) => v.date_range(),
             Record::Conflict(v) => v.date_range(),
@@ -107,9 +107,17 @@ pub enum ChangeEvent {
     },
 }
 
+/// Emitted when view data got updated and clients need to re-render the view
+#[derive(PartialEq, Debug)]
 pub enum ViewUpdate {
     Journal(JournalUpdate),
     Skills(SkillsUpdate),
+}
+
+/// Emitter when user interactively added a new record and progress notification has
+/// to be shown to the user
+pub enum Notification {
+    Skills(SkillsNotification),
 }
 
 pub trait DBSubscriber {
@@ -119,26 +127,27 @@ pub trait DBSubscriber {
 // Parsed collection of all active entries and goals
 pub struct DB {
     entries: BTreeMap<DateTimeRange, Record>,
-    subscribers: Vec<Weak<dyn DBSubscriber>>,
-    sync_queue: VecDeque<ChangeEvent>,
-    view_skills: SkillsView,
-    view_journal: JournalView,
+    // TODO: DBSubscriber is an old functionality from PoC and should be removed
+    on_new_record: Vec<Weak<dyn DBSubscriber>>,
+    on_notification: Option<Box<dyn Fn(Notification)>>,
     on_view_update: Option<Box<dyn Fn(ViewUpdate)>>,
+    view_journal: JournalView,
+    view_skills: SkillsView,
 }
 
 impl DB {
     pub fn new() -> Self {
         DB {
             entries: BTreeMap::new(),
-            subscribers: vec![],
-            sync_queue: VecDeque::new(),
+            on_new_record: vec![],
             view_skills: SkillsView::default(),
             view_journal: JournalView::default(),
             on_view_update: None,
+            on_notification: None,
         }
     }
 
-    pub fn skills(&self) -> &Vec<Skill> {
+    pub fn skills(&self) -> &BTreeMap<String, Skill> {
         self.view_skills.data()
     }
 
@@ -146,31 +155,47 @@ impl DB {
         self.view_journal.data()
     }
 
-    pub fn add(&mut self, record: Record) {
-        if let Some(event) = self.merge(record) {
-            // Update all the views and emit update view event if needed
-            let update = self.view_journal.update(self.entries.iter(), &event);
-            if let (Some(update), Some(cb)) = (update, &self.on_view_update) {
-                cb(ViewUpdate::Journal(update))
-            }
-            let update = self.view_skills.update(self.entries.iter(), &event);
-            if let (Some(update), Some(cb)) = (update, &self.on_view_update) {
-                cb(ViewUpdate::Skills(update))
-            }
+    /// Adds new record to the DB. Interactively means user is adding a record right now. If records are restored from
+    /// cache, fetched from API then it's considered not interactive and simple `DB::add` should be called instead.
+    /// In interactive mode user may benefit from `Notifications`, so those are emitted in case of noticeable progress
+    pub fn add_interactively(&mut self, record: Record, now: DateDay) {
+        let Some(event) = self.merge(record) else { return };
+        self.view_journal.update(&event, &self.on_view_update);
+        self.view_skills.update(
+            self.entries.iter(),
+            &event,
+            true,
+            Some(now),
+            &self.on_view_update,
+            &self.on_notification,
+        );
+    }
 
-            // Inform all subscribers about new entry
-            let mut cleanup = false;
-            for s in self.subscribers.iter() {
-                if let Some(subscriber) = s.upgrade() {
-                    subscriber.notify(self.entries.iter(), &event)
-                } else {
-                    cleanup = true;
-                }
+    /// Adds new record to the DB. Notifications are not emitted as adding considered not interactive
+    pub fn add(&mut self, record: Record, interactive: bool) {
+        let Some(event) = self.merge(record) else { return };
+
+        self.view_journal.update(&event, &self.on_view_update);
+        self.view_skills.update(
+            self.entries.iter(),
+            &event,
+            interactive,
+            None,
+            &self.on_view_update,
+            &self.on_notification,
+        );
+
+        // TODO: Remove when `on_new_record` will be removed
+        let mut cleanup = false;
+        for s in self.on_new_record.iter() {
+            if let Some(subscriber) = s.upgrade() {
+                subscriber.notify(self.entries.iter(), &event)
+            } else {
+                cleanup = true;
             }
-            if cleanup {
-                self.subscribers.retain(|s| s.upgrade().is_some());
-            }
-            self.sync_queue.push_back(event);
+        }
+        if cleanup {
+            self.on_new_record.retain(|s| s.upgrade().is_some());
         }
     }
 
@@ -268,16 +293,19 @@ impl DB {
     }
 
     pub fn query(&self, _: Query) -> Result<Vec<Entry>, QueryError> {
-        Ok(vec![])
+        todo!()
     }
 
     pub fn subscribe_entry_updates(&mut self, subscriber: Weak<dyn DBSubscriber>) {
-        self.subscribers.push(subscriber);
-        // TODO Immediately call new subscriber with existing data if we have anything
+        self.on_new_record.push(subscriber);
     }
 
-    pub fn subscribe_view_updates(&mut self, cb: Box<dyn Fn(ViewUpdate)>) {
+    pub fn on_view_update(&mut self, cb: Box<dyn Fn(ViewUpdate)>) {
         self.on_view_update.replace(cb);
+    }
+
+    pub fn on_notification(&mut self, cb: Box<dyn Fn(Notification)>) {
+        self.on_notification.replace(cb);
     }
 }
 
@@ -319,7 +347,8 @@ impl Selector {
         false
     }
 }
-// To query entries filtered by certain conditions
+
+/// To query entries filtered by certain conditions
 #[derive(PartialEq, Eq, Debug, Clone, Default)]
 pub struct Query {
     pub selector: Selector,
@@ -422,7 +451,7 @@ mod tests {
             Self { db, sub }
         }
         fn add(&mut self, record: Record) {
-            self.db.add(record)
+            self.db.add(record, false)
         }
         fn assert_events(&self, want: Vec<ChangeEvent>) {
             let got = self.sub.events.lock().unwrap();
@@ -449,15 +478,15 @@ mod tests {
             let sub = Rc::new(TestSubscriber {
                 events: Mutex::new(Vec::new()),
             });
-            db.add(parse_entry("00:01 a", 0));
+            db.add(parse_entry("00:01 a", 0), false);
             assert_eq!(sub.events.lock().unwrap().len(), 0);
             db.subscribe_entry_updates(Rc::downgrade(&(sub.clone() as Rc<dyn DBSubscriber>)));
-            db.add(parse_entry("00:02 b", 0));
+            db.add(parse_entry("00:02 b", 0), false);
             assert_eq!(sub.events.lock().unwrap().len(), 1);
-            assert_eq!(db.subscribers.len(), 1);
+            assert_eq!(db.on_new_record.len(), 1);
         }
-        db.add(parse_entry("00:03 c", 0));
-        assert_eq!(db.subscribers.len(), 0)
+        db.add(parse_entry("00:03 c", 0), false);
+        assert_eq!(db.on_new_record.len(), 0)
     }
 
     #[test]

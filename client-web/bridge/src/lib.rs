@@ -19,10 +19,7 @@ use std::{cell::RefCell, panic};
 use qqself_core::{
     api::{ApiRequest, RequestCreateErr},
     binary_text::BinaryToText,
-    data_views::{
-        journal::{JournalDay, JournalUpdate},
-        skills::SkillsUpdate,
-    },
+    data_views::journal::JournalDay,
     date_time::{datetime::DateDay, timestamp::Timestamp},
     db::{Record, ViewUpdate, DB},
     encryption::{
@@ -207,23 +204,16 @@ pub struct SkillsView {
 impl Views {
     pub fn new(keys: &Keys, onUpdate: js_sys::Function) -> Self {
         let mut db = DB::default();
-        db.subscribe_view_updates(Box::new(move |update| {
+        db.on_view_update(Box::new(move |update| {
             let obj = js_sys::Map::new();
             match update {
-                ViewUpdate::Journal(JournalUpdate::DayUpdated(update)) => {
+                ViewUpdate::Journal(update) => {
                     obj.set(&"view".into(), &"Journal".into());
-                    obj.set(&"type".into(), &"DayUpdated".into());
-                    obj.set(&"day".into(), &update.to_string().into());
+                    obj.set(&"day".into(), &update.day.to_string().into());
                 }
-                ViewUpdate::Skills(SkillsUpdate::HourProgress(update)) => {
+                ViewUpdate::Skills(update) => {
                     obj.set(&"view".into(), &"Skills".into());
-                    obj.set(&"type".into(), &"HourProgress".into());
-                    obj.set(&"message".into(), &update.into());
-                }
-                ViewUpdate::Skills(SkillsUpdate::LevelUp(update)) => {
-                    obj.set(&"view".into(), &"Skills".into());
-                    obj.set(&"type".into(), &"LevelUp".into());
-                    obj.set(&"message".into(), &update.into());
+                    obj.set(&"message".into(), &update.skill.into());
                 }
             };
             if let Err(err) = onUpdate.call1(&JsValue::NULL, &obj) {
@@ -236,11 +226,11 @@ impl Views {
         }
     }
 
-    pub fn add_entry(&self, input: String) -> Result<(), String> {
+    pub fn add_entry(&self, input: String, interactive: bool) -> Result<(), String> {
         let entry = Entry::parse(&input).map_err(|err| err.to_string())?;
         let record = Record::from_entry(entry, 1);
         let mut db = self.db.borrow_mut();
-        db.add(record);
+        db.add(record, interactive);
         Ok(())
     }
 
@@ -264,10 +254,10 @@ impl Views {
     }
 
     pub fn view_skills(&self) -> SkillsView {
-        let skills = self
-            .db
-            .borrow()
-            .skills()
+        let db = self.db.borrow();
+        let mut skills = db.skills().iter().map(|(_, v)| v).collect::<Vec<_>>();
+        skills.sort();
+        let skills = skills
             .iter()
             .map(|v| format!("{} {} {}", v.kind(), v.title(), v.progress().level))
             .fold(String::new(), |a, b| a + &b + "\n");

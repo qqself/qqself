@@ -10,6 +10,7 @@ import "../pages/progress"
 import { Store } from "../../app/store"
 import { trace } from "../../logger"
 import { EntrySaveEvent } from "../components/entryInput"
+import { OfflineApi, TestStore } from "../../utilsTests"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -48,8 +49,7 @@ export class Card extends LitElement {
 // Custom page with all UI elements, used mostly for development, kinda like storybooks
 @customElement("q-devcards-page")
 export class DevcardsPage extends LitElement {
-  @property({ type: Object })
-  store!: Store
+  store = new TestStore(new OfflineApi())
 
   @state()
   cards: TemplateResult | null = null

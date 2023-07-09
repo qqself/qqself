@@ -15,7 +15,7 @@ export const loginSucceeded = async (store: Store, keys: Keys): Promise<void> =>
       //      setTimeout allows callback to complete, freeing `Views &mut self` and
       //      schedules actual callback logic for the next event loop cycle
       setTimeout(() => {
-        const update = Object.fromEntries(argsMap) as ViewUpdate
+        const update = Object.fromEntries(argsMap) as unknown as ViewUpdate
         if (update.view == "Journal") {
           void store.dispatch("views.update.journal", { update })
         } else {

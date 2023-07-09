@@ -7,16 +7,14 @@ import { DataEvents } from "./data"
 import { debug, info } from "../logger"
 import { APIProvider } from "./api"
 
-// TODO ViewUpdate is a complex nested enum, maybe there is some way to generate TypeScript definition for it from Rust?
 export interface JournalViewUpdate {
   view: "Journal"
-  type: "DayUpdated"
   day: string
 }
-export type SkillsViewUpdate =
-  | { view: "Skills"; type: "HourProgress"; message: string }
-  | { view: "Skills"; type: "LevelUp"; message: string }
-
+export interface SkillsViewUpdate {
+  view: "Skills"
+  message: string
+}
 export type ViewUpdate = JournalViewUpdate | SkillsViewUpdate
 
 // Events are application wide activities that causes some side effect

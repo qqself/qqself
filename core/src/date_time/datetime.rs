@@ -180,6 +180,24 @@ impl DateDay {
     pub fn day(&self) -> usize {
         self.0.day() as usize
     }
+    pub fn days_from_monday(&self) -> u8 {
+        self.0.weekday().number_days_from_monday()
+    }
+    pub fn as_start_of_week(&self) -> Self {
+        self.remove_days(self.days_from_monday().into())
+    }
+    pub fn as_start_of_month(&self) -> Self {
+        self.remove_days(self.day() - 1)
+    }
+    pub fn as_start_of_year(&self) -> Self {
+        DateDay::new(
+            self.year()
+                .try_into()
+                .expect("Cannot get a year from DateDay"),
+            1,
+            1,
+        )
+    }
 }
 
 impl Display for DateDay {
@@ -336,12 +354,14 @@ mod tests {
     use super::*;
 
     #[test]
+    #[wasm_bindgen_test::wasm_bindgen_test]
     fn datetime_format() {
         let datetime = DateTime::new(DateDay::new(2022, 11, 23), Time::new(12, 49));
         assert_eq!(datetime.to_string(), "2022-11-23 12:49")
     }
 
     #[test]
+    #[wasm_bindgen_test::wasm_bindgen_test]
     fn datetime_parse() {
         assert_eq!(
             "2022-11-23 12:49".parse::<DateTime>().unwrap(),
@@ -350,6 +370,7 @@ mod tests {
     }
 
     #[test]
+    #[wasm_bindgen_test::wasm_bindgen_test]
     fn datetime_compare() {
         let datetime = DateTime::new(DateDay::new(2022, 11, 23), Time::new(12, 49));
         let datetime_time = DateTime::new(DateDay::new(2022, 11, 23), Time::new(12, 50));
@@ -360,17 +381,37 @@ mod tests {
 
     #[cfg(feature = "wasm")]
     #[wasm_bindgen_test::wasm_bindgen_test]
-    fn date_now() {
+    fn datetime_now() {
         let date = DateTime::now();
         assert_eq!(date.to_string().len(), 16);
     }
 
     #[test]
-    fn date_format() {
+    #[wasm_bindgen_test::wasm_bindgen_test]
+    fn dateday_format() {
         assert_eq!(DateDay::new(2022, 5, 9).to_string(), "2022-05-09")
     }
 
     #[test]
+    #[wasm_bindgen_test::wasm_bindgen_test]
+    fn dateday_day_of_week() {
+        let day = DateDay::new(2023, 7, 6);
+        assert_eq!(day.days_from_monday(), 3); // Thursday is 3 days from Monday
+        assert_eq!(day.remove_days(3).days_from_monday(), 0); // Finding beginning of the week - Monday
+        assert_eq!(day.add_days(3).days_from_monday(), 6); // Finding end of the week - Sunday
+    }
+
+    #[test]
+    #[wasm_bindgen_test::wasm_bindgen_test]
+    fn dateday_as_start() {
+        let day = DateDay::new(2023, 7, 6);
+        assert_eq!(day.as_start_of_week(), DateDay::new(2023, 7, 3));
+        assert_eq!(day.as_start_of_month(), DateDay::new(2023, 7, 1));
+        assert_eq!(day.as_start_of_year(), DateDay::new(2023, 1, 1));
+    }
+
+    #[test]
+    #[wasm_bindgen_test::wasm_bindgen_test]
     fn date_parse() {
         assert_eq!(
             "2022-05-09".parse::<DateDay>().unwrap(),
@@ -392,6 +433,7 @@ mod tests {
     }
 
     #[test]
+    #[wasm_bindgen_test::wasm_bindgen_test]
     fn date_compare() {
         let date = DateDay::new(2022, 5, 5);
         assert!(date < DateDay::new(2022, 5, 6));
@@ -400,11 +442,13 @@ mod tests {
     }
 
     #[test]
+    #[wasm_bindgen_test::wasm_bindgen_test]
     fn time_display() {
         assert_eq!(Time::new(1, 1).to_string(), "01:01");
     }
 
     #[test]
+    #[wasm_bindgen_test::wasm_bindgen_test]
     fn time_parse() {
         assert_eq!("01:01".parse::<Time>().unwrap(), Time::new(1, 1));
         assert_eq!("23:59".parse::<Time>().unwrap(), Time::new(23, 59));
@@ -413,6 +457,7 @@ mod tests {
     }
 
     #[test]
+    #[wasm_bindgen_test::wasm_bindgen_test]
     fn time_compare() {
         let time = Time::new(10, 10);
         assert!(time < Time::new(10, 11));
@@ -420,6 +465,7 @@ mod tests {
     }
 
     #[test]
+    #[wasm_bindgen_test::wasm_bindgen_test]
     fn datetimerange_parse_short() {
         let got = "2022-11-23 12:49 18:32".parse::<DateTimeRange>().unwrap();
         assert_eq!(
@@ -433,6 +479,7 @@ mod tests {
     }
 
     #[test]
+    #[wasm_bindgen_test::wasm_bindgen_test]
     fn datetimerange_parse_long() {
         let got = "2022-11-23 12:49 - 2022-11-24 18:32"
             .parse::<DateTimeRange>()
@@ -448,6 +495,7 @@ mod tests {
     }
 
     #[test]
+    #[wasm_bindgen_test::wasm_bindgen_test]
     fn datetimerange_format_long() {
         // Long notation
         let start = DateTime::new(DateDay::new(2022, 11, 23), Time::new(12, 49));
@@ -457,6 +505,7 @@ mod tests {
     }
 
     #[test]
+    #[wasm_bindgen_test::wasm_bindgen_test]
     fn datetimerange_format_short() {
         let start = DateTime::new(DateDay::new(2022, 11, 23), Time::new(12, 49));
         let end = start;
@@ -465,6 +514,7 @@ mod tests {
     }
 
     #[test]
+    #[wasm_bindgen_test::wasm_bindgen_test]
     fn datetimerange_duration() {
         let from = DateTime::new(DateDay::new(2022, 11, 23), Time::new(12, 49));
         let to = DateTime::new(DateDay::new(2022, 11, 23), Time::new(12, 55));

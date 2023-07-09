@@ -34,11 +34,11 @@ export class DataEvents {
     let loadedRemote = 0
     let loadedLocal = 0
     for (const entry of await storage.values(KeyPrefixes.EntryRemote)) {
-      this.store.userState.views.add_entry(entry.value)
+      this.store.userState.views.add_entry(entry.value, false)
       loadedRemote++
     }
     for (const entry of await storage.values(KeyPrefixes.EntryLocal)) {
-      this.store.userState.views.add_entry(entry.value)
+      this.store.userState.views.add_entry(entry.value, false)
       loadedLocal++
     }
     trace(`DataEvents loaded cached data: remote=${loadedRemote}, local=${loadedLocal}`)
@@ -80,7 +80,7 @@ export class DataEvents {
   }
 
   async onEntryAdded(entry: string, callSyncAfter: boolean): Promise<void> {
-    this.store.userState.views.add_entry(entry)
+    this.store.userState.views.add_entry(entry, true)
     await this.addEntryToCache(entry, null)
     await this.store.dispatch("status.sync", { status: "pending" })
     if (callSyncAfter) {
@@ -134,7 +134,7 @@ export class DataEvents {
     const requestFinished = performance.now()
     const decrypted = await this.store.userState.encryptionPool.decryptAll(remoteEntries)
     for (const entry of decrypted) {
-      this.store.userState.views.add_entry(entry.text)
+      this.store.userState.views.add_entry(entry.text, false)
       await this.addEntryToCache(entry.text, entry.id)
     }
     if (decrypted.length > 1) {
