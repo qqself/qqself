@@ -172,7 +172,7 @@ impl DB {
     }
 
     /// Adds new record to the DB. Notifications are not emitted as adding considered not interactive
-    pub fn add(&mut self, record: Record, interactive: bool) {
+    pub fn add(&mut self, record: Record, interactive: bool, now: Option<DateDay>) {
         let Some(event) = self.merge(record) else { return };
 
         self.view_journal.update(&event, &self.on_view_update);
@@ -180,7 +180,7 @@ impl DB {
             self.entries.iter(),
             &event,
             interactive,
-            None,
+            now,
             &self.on_view_update,
             &self.on_notification,
         );
@@ -451,7 +451,7 @@ mod tests {
             Self { db, sub }
         }
         fn add(&mut self, record: Record) {
-            self.db.add(record, false)
+            self.db.add(record, false, None)
         }
         fn assert_events(&self, want: Vec<ChangeEvent>) {
             let got = self.sub.events.lock().unwrap();
@@ -478,14 +478,14 @@ mod tests {
             let sub = Rc::new(TestSubscriber {
                 events: Mutex::new(Vec::new()),
             });
-            db.add(parse_entry("00:01 a", 0), false);
+            db.add(parse_entry("00:01 a", 0), false, None);
             assert_eq!(sub.events.lock().unwrap().len(), 0);
             db.subscribe_entry_updates(Rc::downgrade(&(sub.clone() as Rc<dyn DBSubscriber>)));
-            db.add(parse_entry("00:02 b", 0), false);
+            db.add(parse_entry("00:02 b", 0), false, None);
             assert_eq!(sub.events.lock().unwrap().len(), 1);
             assert_eq!(db.on_new_record.len(), 1);
         }
-        db.add(parse_entry("00:03 c", 0), false);
+        db.add(parse_entry("00:03 c", 0), false, None);
         assert_eq!(db.on_new_record.len(), 0)
     }
 

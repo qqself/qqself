@@ -57,7 +57,7 @@ pub fn report(opts: ReportOpts) {
         // Parse the record to see if it's a valid one
         let entry = Entry::parse(&line)
             .unwrap_or_else(|err| panic!("error parsing the line '{line}' - {err}"));
-        db.add(Record::from_entry(entry, 0), false)
+        db.add(Record::from_entry(entry, 0), false, None)
     });
     println!("Skills:");
     db.skills().iter().for_each(|(_, skill)| {
