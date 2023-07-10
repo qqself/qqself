@@ -34,6 +34,13 @@ mod tests {
         let keys = Keys::generate_new();
         let http = Http::new();
 
+        // Find by default returns nothing
+        let req = ApiRequest::new_find_request(&keys, None).unwrap();
+        let resp = http.send(req).await.unwrap();
+        assert_eq!(resp.status(), 200);
+        let body = resp.text().await.unwrap();
+        assert_eq!(body.lines().count(), 0);
+
         // Set
         let msg = "2022-10-10 00:00 01:00 test app=client_cli source=test_set";
         let req = ApiRequest::new_set_request(&keys, msg.to_string()).unwrap();
