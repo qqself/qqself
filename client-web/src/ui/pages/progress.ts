@@ -3,9 +3,11 @@ import { customElement, property, state } from "lit/decorators.js"
 import { AppJournalDay, DateDay } from "../../../bridge/pkg"
 import "../components/logoBlock"
 import "../controls/button"
+import "../controls/notification"
 import "../components/journal"
 import "../components/skills"
 import "../components/statusBar"
+
 import { Store } from "../../app/store"
 import { EntrySaveEvent } from "../components/entryInput"
 
@@ -27,7 +29,13 @@ export class ProgressPage extends LitElement {
   journalData!: AppJournalDay
 
   @state()
+  skillsData = ""
+
+  @state()
   error = ""
+
+  @state()
+  notifications: string[] = []
 
   @state()
   status: { status: "pending" | "completed"; op: string | null } = { status: "completed", op: null }
@@ -37,6 +45,13 @@ export class ProgressPage extends LitElement {
       position: fixed;
       bottom: 10px;
       right: 10px;
+    }
+    .notification {
+      position: fixed;
+      width: 50%;
+      height: 50%;
+      top: 25%;
+      left: 25%;
     }
   `
 
@@ -54,6 +69,10 @@ export class ProgressPage extends LitElement {
     this.journalData = this.store.userState.views.journal_day(this.currentDay)
   }
 
+  updateSkills() {
+    this.skillsData = this.store.userState.views.view_skills().skills
+  }
+
   connectedCallback() {
     super.connectedCallback()
     this.store.subscribe("views.update.journal", (event) => {
@@ -62,6 +81,12 @@ export class ProgressPage extends LitElement {
         this.updateJournal()
       }
     })
+    this.store.subscribe("views.update.skills", () => {
+      this.updateSkills()
+    })
+    this.store.subscribe("views.notification.skills", (notification) => {
+      this.notifications = [...this.notifications, notification.update.message]
+    })
     this.store.subscribe("status.sync", (e) => (this.status = { ...this.status, status: e.status }))
     this.store.subscribe(
       "status.currentOperation",
@@ -69,6 +94,26 @@ export class ProgressPage extends LitElement {
     )
     this.updateJournal()
     return this.store.dispatch("data.sync.init", null)
+  }
+
+  onNotificationDismiss(dismissed: string) {
+    this.notifications = this.notifications.filter((v) => v != dismissed)
+  }
+
+  renderNotifications() {
+    if (!this.notifications.length) return
+    return html`
+            ${this.notifications.map(
+              (v) =>
+                html`<div class="notification">
+                  <q-notification
+                    text=${v}
+                    @clicked=${this.onNotificationDismiss.bind(this, v)}
+                  ></q-notification>
+                </div>`
+            )}
+      </div>
+    `
   }
 
   render() {
@@ -81,8 +126,8 @@ export class ProgressPage extends LitElement {
           @prev=${() => this.onSwitchDay(-1)}
           @save=${this.onEntryAdded.bind(this)}
         ></q-journal>
-        <q-skills .data=${this.store.userState.views.view_skills().skills}></q-skills>
-        ${this.error && html`<p>Error ${this.error}</p>`}
+        <q-skills .data=${this.skillsData}></q-skills>
+        ${this.error && html`<p>Error ${this.error}</p>`} ${this.renderNotifications()}
         <q-status-bar
           class="status"
           .status=${this.status.status}
