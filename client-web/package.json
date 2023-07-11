@@ -22,7 +22,7 @@
     "typescript": "5.1.6",
     "vite-plugin-rsw": "2.0.11",
     "vite": "4.4.2",
-    "vitest": "0.32.2",
+    "vitest": "0.33.0",
     "wasm-pack": "0.12.1"
   }
 }
