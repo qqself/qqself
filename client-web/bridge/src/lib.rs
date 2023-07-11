@@ -19,9 +19,9 @@ use std::{cell::RefCell, panic};
 use qqself_core::{
     api::{ApiRequest, RequestCreateErr},
     binary_text::BinaryToText,
-    data_views::journal::JournalDay,
+    data_views::{journal::JournalDay, skills::SkillsNotification},
     date_time::{datetime::DateDay, timestamp::Timestamp},
-    db::{Record, ViewUpdate, DB},
+    db::{Notification, Record, ViewUpdate, DB},
     encryption::{
         self,
         hash::StableHash,
@@ -202,21 +202,37 @@ pub struct SkillsView {
 
 #[wasm_bindgen]
 impl Views {
-    pub fn new(keys: &Keys, onUpdate: js_sys::Function) -> Self {
+    pub fn new(keys: &Keys, onUpdate: js_sys::Function, onNotification: js_sys::Function) -> Self {
         let mut db = DB::default();
         db.on_view_update(Box::new(move |update| {
-            let obj = js_sys::Map::new();
+            let data = js_sys::Map::new();
             match update {
                 ViewUpdate::Journal(update) => {
-                    obj.set(&"view".into(), &"Journal".into());
-                    obj.set(&"day".into(), &update.day.to_string().into());
+                    data.set(&"view".into(), &"Journal".into());
+                    data.set(&"day".into(), &update.day.to_string().into());
                 }
                 ViewUpdate::Skills(update) => {
-                    obj.set(&"view".into(), &"Skills".into());
-                    obj.set(&"message".into(), &update.skill.into());
+                    data.set(&"view".into(), &"Skills".into());
+                    data.set(&"message".into(), &update.skill.into());
                 }
             };
-            if let Err(err) = onUpdate.call1(&JsValue::NULL, &obj) {
+            if let Err(err) = onUpdate.call1(&JsValue::NULL, &data) {
+                error(&err);
+            }
+        }));
+        db.on_notification(Box::new(move |notification| {
+            let data = js_sys::Map::new();
+            match notification {
+                Notification::Skills(SkillsNotification::HourProgress(msg)) => {
+                    data.set(&"view".into(), &"Skills".into());
+                    data.set(&"message".into(), &msg.into())
+                }
+                Notification::Skills(SkillsNotification::LevelUp(msg)) => {
+                    data.set(&"view".into(), &"Skills".into());
+                    data.set(&"message".into(), &msg.into())
+                }
+            };
+            if let Err(err) = onNotification.call1(&JsValue::NULL, &data) {
                 error(&err);
             }
         }));
@@ -226,11 +242,16 @@ impl Views {
         }
     }
 
-    pub fn add_entry(&self, input: String, interactive: bool) -> Result<(), String> {
+    pub fn add_entry(
+        &self,
+        input: String,
+        interactive: bool,
+        now: Option<DateDay>,
+    ) -> Result<(), String> {
         let entry = Entry::parse(&input).map_err(|err| err.to_string())?;
         let record = Record::from_entry(entry, 1);
         let mut db = self.db.borrow_mut();
-        db.add(record, interactive);
+        db.add(record, interactive, now);
         Ok(())
     }
 

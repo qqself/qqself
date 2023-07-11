@@ -1,3 +1,5 @@
+use std::pin::Pin;
+
 use crate::{
     storage::{account::AccountStorage, payload_storage::PayloadStorage},
     time::TimeProvider,
@@ -10,6 +12,7 @@ use actix_web::{
     HttpResponse, Responder,
 };
 use futures::{StreamExt, TryStreamExt};
+use log::{info, warn};
 use qqself_core::{
     binary_text::BinaryToText,
     date_time::{datetime::Duration, timestamp::Timestamp},
@@ -48,7 +51,7 @@ async fn find(
     let now = time.now().await;
     let search_token = validate_search_token(req, now)?;
     validate_account(&account_storage, search_token.public_key()).await?;
-    let items = payload_storage
+    let mut items = payload_storage
         .find(
             search_token.public_key(),
             search_token
@@ -56,12 +59,25 @@ async fn find(
                 .to_owned()
                 .and_then(|v| v.decode()),
         )
-        .map_err(|_| HttpErrorType::IOError("Streaming error".to_string()))
+        .map_err(|err| {
+            warn!("Storage find error {:?}", err);
+            HttpErrorType::IOError("Streaming error".to_string())
+        })
         .map(|v| {
             v.map(|(payload_id, payload_bytes)| {
                 web::Bytes::from(format!("{}:{}\n", payload_id, payload_bytes.data()))
             })
-        });
+        })
+        .peekable();
+
+    // HACK For some reason when we are behind AWS ELB and client makes multiple HTTP requests where
+    //      one of the responses is streamed (like with /find) then it may be truncated with only headers
+    //      transferred. No idea what causes that, but following (accidentally discovered) fix helps.
+    //      We are using ELB via AWS AppRunner, so no logs are available, maybe it's just AppRunner thing?
+    if (Pin::new(&mut items).peek().await).is_none() {
+        info!("No entries found for /find");
+        return Ok(HttpResponse::Ok().body(""));
+    }
     Ok(HttpResponse::Ok()
         .content_type("text/event-stream")
         .streaming(items))
