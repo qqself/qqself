@@ -1,28 +1,35 @@
 import { Views, Keys } from "../../bridge/pkg/qqself_client_web_bridge"
 import { EncryptionPool } from "./encryptionPool/pool"
-import { Store, ViewUpdate } from "./store"
+import { Store, ViewNotification, ViewUpdate } from "./store"
 import * as Storage from "./storage/storage"
 
 export const loginSucceeded = async (store: Store, keys: Keys): Promise<void> => {
   await saveCredentials(keys)
+  const onViewUpdate = (data: Map<string, string>) => {
+    const update = Object.fromEntries(data) as unknown as ViewUpdate
+    if (update.view == "Journal") {
+      void store.dispatch("views.update.journal", { update })
+    } else {
+      void store.dispatch("views.update.skills", { update })
+    }
+  }
+  const onViewNotification = (data: Map<string, string>) => {
+    const update = Object.fromEntries(data) as unknown as ViewNotification
+    void store.dispatch("views.notification.skills", { update })
+  }
   store.userState = {
     encryptionPool: EncryptionPool.initWithKeys(keys),
     storage: Storage.newStorage(keys.public_key_hash()),
-    views: Views.new(keys, (argsMap: Map<string, string>) => {
-      // HACK This callback is called from `Views.add_entry` which captured Views as
-      //      `&mut self`. If any store subscribers for the following events will try
-      //      to call Views functions with capturing &self then Rust/WS will break.
-      //      setTimeout allows callback to complete, freeing `Views &mut self` and
-      //      schedules actual callback logic for the next event loop cycle
-      setTimeout(() => {
-        const update = Object.fromEntries(argsMap) as unknown as ViewUpdate
-        if (update.view == "Journal") {
-          void store.dispatch("views.update.journal", { update })
-        } else {
-          void store.dispatch("views.update.skills", { update })
-        }
-      }, 0)
-    }),
+    // HACK This callback is called from `Views.add_entry` which captured Views as
+    //      `&mut self`. If any store subscribers for the following events will try
+    //      to call Views functions with capturing &self then Rust/WS will break.
+    //      setTimeout allows callback to complete, freeing `Views &mut self` and
+    //      schedules actual callback logic for the next event loop cycle
+    views: Views.new(
+      keys,
+      (data: Map<string, string>) => setTimeout(() => onViewUpdate(data), 0),
+      (data: Map<string, string>) => setTimeout(() => onViewNotification(data), 0)
+    ),
   }
 }
 
