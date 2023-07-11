@@ -14,7 +14,7 @@ describe("progress", () => {
         .store=${store}
         .currentDay=${DateDay.fromDate(new Date("2022-06-07"))}
       />`,
-      document.body
+      document.body,
     )
     // Check that adding an entry doesn't cause any errors
     await store.dispatch("data.entry.added", {

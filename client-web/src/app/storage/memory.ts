@@ -42,7 +42,7 @@ export class MemoryStorage implements Storage {
       Object.entries(data[this.dbName])
         .map(([key, value]) => ({ key, value }))
         .filter((v) => v.key.startsWith(keyPrefix))
-        .sort((a, b) => a.key.localeCompare(b.key))
+        .sort((a, b) => a.key.localeCompare(b.key)),
     )
   }
 }

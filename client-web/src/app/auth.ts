@@ -28,7 +28,7 @@ export const loginSucceeded = async (store: Store, keys: Keys): Promise<void> =>
     views: Views.new(
       keys,
       (data: Map<string, string>) => setTimeout(() => onViewUpdate(data), 0),
-      (data: Map<string, string>) => setTimeout(() => onViewNotification(data), 0)
+      (data: Map<string, string>) => setTimeout(() => onViewNotification(data), 0),
     ),
   }
 }
@@ -49,7 +49,7 @@ export const newKeys = async (): Promise<Keys> => {
 
 export const registrationStarted = async (
   store: Store,
-  mode: "interactive" | "automatic"
+  mode: "interactive" | "automatic",
 ): Promise<void> => {
   if (mode == "automatic") {
     const keys = await newKeys()

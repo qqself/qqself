@@ -56,7 +56,7 @@ if (import.meta.vitest) {
 
       // Values with prefix
       expect(await storage.values("foo")).toEqual(
-        data.filter((v) => v.key.startsWith("foo")).sort((a, b) => a.key.localeCompare(b.key))
+        data.filter((v) => v.key.startsWith("foo")).sort((a, b) => a.key.localeCompare(b.key)),
       )
     })
 
