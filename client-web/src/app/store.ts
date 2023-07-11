@@ -16,6 +16,11 @@ export interface SkillsViewUpdate {
   message: string
 }
 export type ViewUpdate = JournalViewUpdate | SkillsViewUpdate
+export interface SkillsViewNotification {
+  view: "Skills"
+  message: string
+}
+export type ViewNotification = SkillsViewNotification
 
 // Events are application wide activities that causes some side effect
 export interface Events {
@@ -46,6 +51,7 @@ export interface Events {
   // Views
   "views.update.journal": { update: JournalViewUpdate } // Journal view updated
   "views.update.skills": { update: SkillsViewUpdate } // Skills view updated
+  "views.notification.skills": { update: SkillsViewNotification } // Notification from Skills view
 }
 
 export class Store {

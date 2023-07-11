@@ -1,7 +1,7 @@
 import { trace } from "../logger"
 import { isBrowser } from "../utils"
 import { Store } from "./store"
-import { stringHash } from "../../bridge/pkg"
+import { DateDay, stringHash } from "../../bridge/pkg"
 import { APIProvider } from "../app/api"
 
 // We have one KV storage, to differentiate values we are using different prefixes for the keys
@@ -80,7 +80,7 @@ export class DataEvents {
   }
 
   async onEntryAdded(entry: string, callSyncAfter: boolean): Promise<void> {
-    this.store.userState.views.add_entry(entry, true)
+    this.store.userState.views.add_entry(entry, true, DateDay.fromDate(new Date()))
     await this.addEntryToCache(entry, null)
     await this.store.dispatch("status.sync", { status: "pending" })
     if (callSyncAfter) {
