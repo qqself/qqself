@@ -6,8 +6,8 @@ import "../components/entryInput"
 import "../components/journal"
 import "../components/statusBar"
 import "../controls/panel"
+import "../controls/notification"
 import "../pages/progress"
-import { Store } from "../../app/store"
 import { trace } from "../../logger"
 import { EntrySaveEvent } from "../components/entryInput"
 import { OfflineApi, TestStore } from "../../utilsTests"
@@ -90,6 +90,10 @@ export class DevcardsPage extends LitElement {
           <div>Content #1</div>
           <div>Content #2</div>
         </q-panel>
+      </q-card>
+
+      <q-card name="Notification">
+        <q-notification text="Running skill level increased to 53"> </q-notification>
       </q-card>
 
       <!-- Components -->
