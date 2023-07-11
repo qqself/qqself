@@ -13,7 +13,7 @@ test("Registration should automatically login user", async () => {
   await store1.dispatchAndExpect(
     "auth.registration.started",
     { mode: "automatic" },
-    "auth.login.succeeded"
+    "auth.login.succeeded",
   )
   expect(store1.userState.encryptionPool).toBeTruthy()
 
@@ -46,7 +46,7 @@ test("On login fetch entries", async () => {
     "data.entry.added",
     { entry: entry + "2", callSyncAfter: true },
     "data.sync.succeeded",
-    { added: 2, fetched: 2 }
+    { added: 2, fetched: 2 },
   )
   // TODO Unstable test, put back once we have milliseconds precision for timestamp
   // const store2 = new TestStore(expect)
@@ -67,7 +67,7 @@ test("Status pending when new local entries exists", async () => {
     "data.entry.added",
     { entry: "2022-06-07 10:00 11:00 foo", callSyncAfter: false },
     "status.sync",
-    { status: "pending" }
+    { status: "pending" },
   )
   const checkEntries = async (entries: { local: number; remote: number }) => {
     const storage = store.userState.storage
@@ -87,6 +87,6 @@ test("Status remains pending when sending failed", async () => {
     "data.entry.added",
     { entry: "2022-06-07 10:00 11:00 foo", callSyncAfter: true },
     "status.sync",
-    { status: "pending" }
+    { status: "pending" },
   )
 })

@@ -20,7 +20,7 @@ export class TestStore extends Store {
     event: T1,
     eventArgs: Events[T1],
     expectedEvent: T2,
-    expectedEventArgs?: Events[T2]
+    expectedEventArgs?: Events[T2],
   ): Promise<void> {
     this.gotEvents = new Map()
     if (!this.expect) {

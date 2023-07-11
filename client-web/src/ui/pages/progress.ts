@@ -90,7 +90,7 @@ export class ProgressPage extends LitElement {
     this.store.subscribe("status.sync", (e) => (this.status = { ...this.status, status: e.status }))
     this.store.subscribe(
       "status.currentOperation",
-      (e) => (this.status = { ...this.status, op: e.operation })
+      (e) => (this.status = { ...this.status, op: e.operation }),
     )
     this.updateJournal()
     return this.store.dispatch("data.sync.init", null)
@@ -110,7 +110,7 @@ export class ProgressPage extends LitElement {
                     text=${v}
                     @clicked=${this.onNotificationDismiss.bind(this, v)}
                   ></q-notification>
-                </div>`
+                </div>`,
             )}
       </div>
     `

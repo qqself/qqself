@@ -86,7 +86,7 @@ export class Store {
     } else if (event == "auth.registration.succeeded") {
       await Auth.registrationSucceeded(
         this,
-        (eventArgs as Events["auth.registration.succeeded"]).keys
+        (eventArgs as Events["auth.registration.succeeded"]).keys,
       )
     } else if (event == "auth.logout.started") {
       await Auth.logoutStarted(this)
@@ -110,7 +110,7 @@ export class Store {
 
   subscribe<T extends keyof Events>(
     eventName: T,
-    handler: (eventArgs: Events[T]) => unknown
+    handler: (eventArgs: Events[T]) => unknown,
   ): () => Promise<void> {
     this.eventTarget.addEventListener(eventName, (event: Event) => {
       const customEvent = event as CustomEvent<Events[T]>
