@@ -1,4 +1,7 @@
+use std::time::Duration;
+
 use actix_web::{
+    http::KeepAlive,
     middleware::{self, Logger},
     web::Data,
     HttpServer,
@@ -49,6 +52,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::DefaultHeaders::new().add(("Access-Control-Allow-Origin", "*")))
             .wrap(Logger::default())
     })
+    .keep_alive(KeepAlive::Timeout(Duration::from_secs(300))) // To make it bigger than AppRunner max keep alive ELB
     .bind(("0.0.0.0", PORT))?
     .run()
     .await
