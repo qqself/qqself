@@ -48,15 +48,16 @@ test("On login fetch entries", async () => {
     "data.sync.succeeded",
     { added: 2, fetched: 2 },
   )
-  // TODO Unstable test, put back once we have milliseconds precision for timestamp
-  // const store2 = new TestStore(expect)
-  // await store2.dispatch("init.started", null)
-  // await store2.dispatchAndExpect("data.sync.init", null, "data.sync.succeeded", {
-  //   added: 0,
-  //   fetched: 1, // As there are two entries with the same timestamp we see here another one from what we send via lastKnownId
-  // })
-  // const values = await store1.userState.storage.values(KeyPrefixes.EntryRemote)
-  // expect(values.map((v) => v.value).sort()).toEqual([entry + "1", entry + "2"])
+
+  // No sync events after next login
+  const store2 = new TestStore(expect)
+  await store2.dispatch("init.started", null)
+  await store2.dispatchAndExpect("data.sync.init", null, "data.sync.succeeded", {
+    added: 0,
+    fetched: 0,
+  })
+  const values = await store1.userState.storage.values(KeyPrefixes.EntryRemote)
+  expect(values.map((v) => v.value).sort()).toEqual([entry + "1", entry + "2"])
 })
 
 test("Status pending when new local entries exists", async () => {
