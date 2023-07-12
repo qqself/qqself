@@ -6,15 +6,15 @@ use qqself_core::date_time::timestamp::Timestamp;
 #[async_trait]
 pub trait TimeProvider {
     async fn now(&self) -> Timestamp;
-    async fn sleep(&self, seconds: u64);
+    async fn sleep(&self, duration: Duration);
 }
 
 /// StaticTime provides static pure timer. Sleep advances internal timestamp and returns immediately
 pub struct TimeStatic(Mutex<u64>);
 
 impl TimeStatic {
-    pub fn new(initial_seconds: u64) -> Self {
-        Self(Mutex::from(initial_seconds))
+    pub fn new(milliseconds: u64) -> Self {
+        Self(Mutex::from(milliseconds))
     }
 }
 
@@ -24,9 +24,9 @@ impl TimeProvider for TimeStatic {
         let time = self.0.lock().unwrap();
         Timestamp::from_u64(*time)
     }
-    async fn sleep(&self, seconds: u64) {
+    async fn sleep(&self, duration: Duration) {
         let mut time = self.0.lock().unwrap();
-        *time += seconds;
+        *time += duration.as_millis() as u64;
     }
 }
 
@@ -39,7 +39,7 @@ impl TimeProvider for TimeOs {
     async fn now(&self) -> Timestamp {
         Timestamp::now()
     }
-    async fn sleep(&self, seconds: u64) {
-        tokio::time::sleep(Duration::from_secs(seconds)).await;
+    async fn sleep(&self, duration: Duration) {
+        tokio::time::sleep(duration).await;
     }
 }
