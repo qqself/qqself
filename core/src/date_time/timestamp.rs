@@ -2,10 +2,10 @@ use std::{fmt::Display, ops::Sub};
 
 use super::datetime::Duration;
 
-/// Second precision timestamp that supports sorting in lexicographic order when converted to string
+/// Milliseconds precision timestamp that supports sorting in lexicographic order when converted to string
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Timestamp(u64); // u32::MAX will be reached in January 19, 2038, so use u64
+pub struct Timestamp(u64);
 
 impl Timestamp {
     #[cfg(not(target_arch = "wasm32"))]
@@ -14,24 +14,26 @@ impl Timestamp {
             std::time::SystemTime::now()
                 .duration_since(std::time::SystemTime::UNIX_EPOCH)
                 .expect("time cannot be before the UNIX_EPOCH")
-                .as_secs(),
+                .as_millis()
+                .try_into()
+                .expect("Timestamp should fit into u64"), // Number of milliseconds between year 1970 and 3000 should fit into 46 bits
         )
     }
 
     #[cfg(target_arch = "wasm32")]
     pub fn now() -> Self {
-        let now = js_sys::Date::now() / 1000.0;
+        let now = js_sys::Date::now();
         Timestamp(now as u64)
     }
 
-    // Returns number of seconds elapsed between timestamp value and now
+    // Returns number of milliseconds elapsed between timestamp value and now
     pub fn elapsed(&self) -> u64 {
         let now = Timestamp::now();
         now.0 - self.0
     }
 
-    pub fn from_u64(seconds: u64) -> Self {
-        Self(seconds)
+    pub fn from_u64(milliseconds: u64) -> Self {
+        Self(milliseconds)
     }
 
     pub fn as_u64(&self) -> u64 {
@@ -55,7 +57,7 @@ impl Sub<Duration> for Timestamp {
     fn sub(self, other: Duration) -> Self::Output {
         // To avoid panic we can fallback to Timestamp::default() in case of overflow
         // but not sure if hiding this error is worth it
-        Self(self.as_u64() - other.minutes() * 60)
+        Self(self.as_u64() - other.minutes() * 60 * 60)
     }
 }
 
@@ -91,14 +93,14 @@ mod tests {
     #[test]
     fn timestamp_sub() {
         let duration = Duration::new(1, 1);
-        let seconds = duration.minutes() * 60;
-        let got = Timestamp::from_u64(seconds) - duration;
+        let milliseconds = duration.minutes() * 60 * 60;
+        let got = Timestamp::from_u64(milliseconds) - duration;
         assert_eq!(got.as_u64(), 0);
 
-        let timestamp = Timestamp::from_u64(4000);
+        let timestamp = Timestamp::from_u64(40_000_000);
         let duration = Duration::new(1, 1);
-        assert_eq!(duration.minutes() * 60, 3660);
-        assert_eq!((timestamp - duration).as_u64(), 340);
+        assert_eq!(duration.minutes() * 60 * 60, 219_600);
+        assert_eq!((timestamp - duration).as_u64(), 39_780_400);
     }
 
     #[test]

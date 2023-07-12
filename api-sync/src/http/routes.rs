@@ -343,7 +343,7 @@ mod tests {
             (3, b"00000000001662750869|R85af9xML6WR7fNUXNgi5V"),
             (2, b"00000000001662750871|93i31rxkhgVVzHahAA2LBF"),
         ] {
-            time.sleep(ts).await;
+            time.sleep(std::time::Duration::from_millis(ts)).await;
             let encrypted = PayloadBytes::encrypt(
                 &public_key,
                 &private_key,
@@ -402,7 +402,7 @@ mod tests {
         let (public_key, private_key) = keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
         let time_start = time.now().await;
         for ts in [1, 2, 3] {
-            time.sleep(ts).await;
+            time.sleep(std::time::Duration::from_millis(ts)).await;
             let encrypted = PayloadBytes::encrypt(
                 &public_key,
                 &private_key,
