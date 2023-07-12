@@ -31,7 +31,7 @@ export class ThreadWorker extends EventTarget {
               error: new Error(`Worker id is not set, no Init message were received`),
             },
           },
-        })
+        }),
       )
       return
     }

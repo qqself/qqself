@@ -143,10 +143,10 @@ export class DataEvents {
     const end = performance.now()
     trace(
       `DataEvents ${decrypted.length} entries loaded in ${Math.floor(
-        end - start
+        end - start,
       )}ms. API=${Math.floor(requestFinished - start)}ms Decryption=${Math.floor(
-        end - requestFinished
-      )}ms`
+        end - requestFinished,
+      )}ms`,
     )
     return decrypted.length
   }

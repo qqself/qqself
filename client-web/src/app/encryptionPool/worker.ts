@@ -54,7 +54,7 @@ const sign = (keys: Keys | null, data: SignInput): string => {
 export const processMessage = (
   input: InputType,
   keys: Keys | null,
-  callback: (result: OutputType, taskId: string) => void
+  callback: (result: OutputType, taskId: string) => void,
 ) => {
   switch (input.kind) {
     case "GenerateKeys":
@@ -90,7 +90,7 @@ export const processMessage = (
           kind: "Error",
           error: new Error(`Bad input: ${JSON.stringify(input)}`),
         },
-        input.taskId
+        input.taskId,
       )
       break
   }
