@@ -21,7 +21,7 @@
     "prettier": "3.0.0",
     "typescript": "5.1.6",
     "vite-plugin-rsw": "2.0.11",
-    "vite": "4.4.2",
+    "vite": "4.4.3",
     "vitest": "0.33.0",
     "wasm-pack": "0.12.1"
   }
