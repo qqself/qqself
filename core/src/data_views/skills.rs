@@ -26,6 +26,7 @@ pub enum SkillsNotification {
     HourProgress(String),
 }
 
+// TODO Skills view become quite complex, we should refactor it and split into multiple structs
 impl SkillsView {
     pub fn update(
         &mut self,
@@ -47,14 +48,9 @@ impl SkillsView {
             }
             self.data.insert(skill.title().to_string(), skill.clone());
             self.process_update(&skill, on_view_update);
-            self.process_notification(
-                &skill,
-                interactive,
-                on_notification,
-                now,
-                all.clone(),
-                SkillProgress::default(),
-            )
+            if let (Some(on_notification), Some(now), true) = (on_notification, now, interactive) {
+                self.process_notification(&skill, on_notification, now, all.clone(), None, true)
+            }
         } else {
             // If it's a record - add it to the corresponding Skill if exists
             for (_, skill) in self.data.iter_mut() {
@@ -63,20 +59,24 @@ impl SkillsView {
                 }
             }
             // Second iteration to notify about skills progress
+            let mut send_total_notification = true;
             for (_, skill) in self.data.iter() {
                 if skill.selector().matches(entry.entry()) {
                     self.process_update(skill, on_view_update);
-                    self.process_notification(
-                        skill,
-                        interactive,
-                        on_notification,
-                        now,
-                        all.clone(),
-                        SkillProgress::new(
-                            skill.progress().duration_minutes
-                                - entry.entry().date_range().duration().minutes(),
-                        ),
-                    )
+                    if let (Some(on_notification), Some(now), true) =
+                        (on_notification, now, interactive)
+                    {
+                        self.process_notification(
+                            skill,
+                            on_notification,
+                            now,
+                            all.clone(),
+                            Some(entry.entry().date_range()),
+                            send_total_notification,
+                        );
+                        // Entry may have multiple tags/skills attached, but we want notification about total processed only once
+                        send_total_notification = false;
+                    }
                 }
             }
         }
@@ -99,19 +99,17 @@ impl SkillsView {
     fn process_notification(
         &self,
         skill: &Skill,
-        interactive: bool,
-        on_notification: &Option<Box<dyn Fn(Notification)>>,
-        now: Option<DateDay>,
+        on_notification: &dyn Fn(Notification),
+        now: DateDay,
         all: Iter<DateTimeRange, Record>,
-        progress_before: SkillProgress,
+        entry_duration: Option<&DateTimeRange>,
+        send_total_notifications: bool,
     ) {
-        let (on_notification, now) = match (interactive, on_notification, now) {
-            (true, Some(on_notification), Some(now)) => (on_notification, now),
-            _ => return,
-        };
-
         // Skill level got increased
         let progress_now = skill.progress();
+        let progress_before = entry_duration.map_or(SkillProgress::default(), |v| {
+            SkillProgress::new(skill.progress().duration_minutes - v.duration().minutes())
+        });
         if progress_before.level < progress_now.level {
             on_notification(Notification::Skills(SkillsNotification::LevelUp(format!(
                 "{} level increased to {}",
@@ -133,12 +131,16 @@ impl SkillsView {
         // | Per skill           | Month    | Every 10h                      |
         // | Per skill           | Week     | 1h, 3h, 5h, then every 5 hours |
         // ------------------------------------------------------------------|
-        let mut checkpoints_total = vec![
-            Checkpoint::by_total_time(now, Period::Lifetime, &[], 500),
-            Checkpoint::by_total_time(now, Period::Year, &[], 100),
-            Checkpoint::by_total_time(now, Period::Month, &[], 50),
-            Checkpoint::by_total_time(now, Period::Week, &[], 20),
-        ];
+        let mut checkpoints_total = if send_total_notifications {
+            vec![
+                Checkpoint::by_total_time(now, Period::Lifetime, &[], 500),
+                Checkpoint::by_total_time(now, Period::Year, &[], 100),
+                Checkpoint::by_total_time(now, Period::Month, &[], 50),
+                Checkpoint::by_total_time(now, Period::Week, &[], 20),
+            ]
+        } else {
+            vec![] // When total notification is disabled we skip any calculation of it
+        };
         let mut checkpoints_skills = vec![
             Checkpoint::by_skill(now, Period::Lifetime, &[], 100, skill.title().to_string()),
             Checkpoint::by_skill(now, Period::Year, &[], 50, skill.title().to_string()),
@@ -148,11 +150,13 @@ impl SkillsView {
         for (_, rec) in all {
             let Record::Value(RecordValue::Entry(entry)) = rec else { continue; };
             for checkpoint in checkpoints_total.iter_mut() {
-                // If entry belongs to any skill
-                for (_, skill) in self.data.iter() {
-                    if skill.selector().matches(entry.entry()) {
-                        checkpoint.add(entry.entry().date_range)
-                    }
+                // If entry belongs to any skill then it's added to total notification calculations
+                if self
+                    .data
+                    .iter()
+                    .any(|(_, s)| s.selector().matches(entry.entry()))
+                {
+                    checkpoint.add(entry.entry().date_range);
                 }
             }
             if skill.selector().matches(entry.entry()) {
@@ -162,12 +166,12 @@ impl SkillsView {
             }
         }
         for checkpoint in checkpoints_total.iter().chain(checkpoints_skills.iter()) {
-            checkpoint.notify_if_needed(progress_before.duration_minutes as usize, on_notification)
+            checkpoint.notify_if_needed(entry_duration, on_notification)
         }
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum Period {
     Lifetime,
     Year,
@@ -251,7 +255,11 @@ impl Checkpoint {
         }
     }
 
-    fn notify_if_needed(&self, duration_before: usize, on_notification: &dyn Fn(Notification)) {
+    fn notify_if_needed(
+        &self,
+        entry_duration: Option<&DateTimeRange>,
+        on_notification: &dyn Fn(Notification),
+    ) {
         let notify = |hours| {
             let msg = match &self.skill {
                 Some(skill) => format!(
@@ -268,7 +276,10 @@ impl Checkpoint {
 
         // We've processed all events and already added an entry_duration, starting point is without it
         let hours_now = self.duration / 60;
-        let hours_before = duration_before / 60;
+        // TODO If we've added a new Skill then total hours notifications will be missed because this new skill
+        //      already has all the hours in self.duration, so we cannot calculate how much new hours this skill added
+        let hours_before =
+            (self.duration - entry_duration.map_or(0, |v| v.duration().minutes() as usize)) / 60;
 
         if hours_before != hours_now {
             for checkpoint in self.checkpoints_start {
@@ -278,8 +289,9 @@ impl Checkpoint {
                 }
             }
         }
-        let periods_before = duration_before / 60 / self.checkpoints_every;
-        let periods_now = self.duration / 60 / self.checkpoints_every;
+
+        let periods_now = hours_now / self.checkpoints_every;
+        let periods_before = hours_before / self.checkpoints_every;
         if periods_before != periods_now {
             notify(periods_now * self.checkpoints_every);
         }
@@ -301,6 +313,22 @@ mod tests {
     }
 
     impl TestSkillView {
+        fn add(&mut self, entry: &str) {
+            let record = Record::Value(RecordValue::Entry(RecordEntry::new(
+                1,
+                Entry::parse(entry).unwrap(),
+            )));
+            self.entries.insert(record.daterange(), record.clone());
+            self.skill_view.update(
+                self.entries.iter(),
+                &ChangeEvent::Added(record),
+                false,
+                None,
+                &None,
+                &None,
+            );
+        }
+
         fn check_notification(
             &mut self,
             entry: &str,
@@ -404,6 +432,68 @@ mod tests {
                 SkillsNotification::HourProgress(
                     "Great job - you've practiced 5 hours of Bar2 this week".to_string()
                 ),
+            ]
+        );
+    }
+
+    #[test]
+    fn progress_hours_total_periods() {
+        let mut view = TestSkillView::default();
+        view.add("2023-07-13 00:00 00:00 run. skill kind=sport. Running");
+        view.add("2023-07-13 00:00 10:00 run"); // Thursday week before
+        view.add("2023-07-17 00:00 10:00 run"); // Monday
+
+        // Adding entry on Tuesday should emit notification about 20 hours of running in a week
+        assert_eq!(
+            view.check_notification(
+                "2023-07-18 00:00 10:00 run",
+                Some(DateDay::new(2023, 7, 18))
+            ),
+            vec![
+                SkillsNotification::LevelUp("Running level increased to 17".to_string()),
+                SkillsNotification::HourProgress(
+                    "Great job - across all skills you've practiced 20 hours this week".to_string()
+                ),
+                SkillsNotification::HourProgress(
+                    "Great job - you've practiced 30 hours of Running this month".to_string()
+                ),
+                SkillsNotification::HourProgress(
+                    "Great job - you've practiced 20 hours of Running this week".to_string()
+                )
+            ]
+        );
+    }
+
+    #[test]
+    fn progress_hours_total_multiple_tags() {
+        let mut view = TestSkillView::default();
+        view.add("2023-07-13 00:00 00:00 run. skill kind=sport. Running");
+        view.add("2023-07-13 00:00 00:00 swim. skill kind=sport. Swimming");
+
+        // Adding entry with multiple tags should be calculated once for total notifications
+        assert_eq!(
+            view.check_notification(
+                "2023-07-13 00:00 20:00 swim. run. Practices swimrun first time",
+                Some(DateDay::new(2023, 7, 13))
+            ),
+            vec![
+                SkillsNotification::LevelUp("Running level increased to 13".to_string()),
+                SkillsNotification::HourProgress(
+                    "Great job - across all skills you've practiced 20 hours this week".to_string()
+                ),
+                SkillsNotification::HourProgress(
+                    "Great job - you've practiced 20 hours of Running this month".to_string()
+                ),
+                SkillsNotification::HourProgress(
+                    "Great job - you've practiced 20 hours of Running this week".to_string()
+                ),
+                SkillsNotification::LevelUp("Swimming level increased to 13".to_string()),
+                SkillsNotification::HourProgress(
+                    "Great job - you've practiced 20 hours of Swimming this month".to_string()
+                ),
+                SkillsNotification::HourProgress(
+                    "Great job - you've practiced 20 hours of Swimming this week".to_string()
+                )
             ]
         );
     }
