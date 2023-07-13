@@ -1,14 +1,14 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use crate::{
-    date_time::datetime::{DateDay},
+    date_time::datetime::DateDay,
     db::{ChangeEvent, Record, RecordValue, ViewUpdate},
     record::Entry,
 };
 
 #[derive(Clone, Debug)]
 pub struct JournalDay {
-    pub entries: Vec<Entry>,
+    pub entries: BTreeSet<Entry>,
     pub day: DateDay,
 }
 
@@ -16,7 +16,7 @@ impl JournalDay {
     pub fn new(day: DateDay) -> Self {
         Self {
             day,
-            entries: vec![],
+            entries: BTreeSet::default(),
         }
     }
 }
@@ -41,9 +41,9 @@ impl JournalView {
         let entry_day = entry.entry().date_range().start().date();
         let journal_day = self.data.entry(entry_day).or_insert(JournalDay {
             day: entry_day,
-            entries: vec![],
+            entries: BTreeSet::default(),
         });
-        journal_day.entries.push(entry.entry().clone());
+        journal_day.entries.insert(entry.entry().clone());
         if let Some(update) = on_view_update {
             update(ViewUpdate::Journal(JournalUpdate { day: entry_day }));
         }

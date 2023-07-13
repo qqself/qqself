@@ -15,8 +15,8 @@ use tracing::{error, info};
 use crate::{http::Http, key_file::KeyFile};
 
 #[derive(StructOpt, Debug)]
-#[structopt(about = "Exports all the records from journal file to the cloud")]
-pub struct ExportOpts {
+#[structopt(about = "Uploads all the records from journal file to the server")]
+pub struct UploadOpts {
     /// Path to journal file with all the entries
     #[structopt(short, long, default_value = "journal.txt")]
     journal_path: String,
@@ -29,24 +29,24 @@ pub struct ExportOpts {
 // TODO I'm still not sure about error handling, but unwrap everywhere is bad. Try anyhow crate?
 
 #[tracing::instrument(level = "trace", skip_all)]
-pub fn export(opts: ExportOpts) {
-    info!("Exporting. Reading key file at {:?}", opts.keys_path);
+pub fn upload(opts: UploadOpts) {
+    info!("Uploading. Reading key file at {:?}", opts.keys_path);
     let keys = KeyFile::load(Path::new(&opts.keys_path));
     let journal_path = Path::new(&opts.journal_path);
     if !journal_path.exists() {
         error!("Journal file does not exists at {:?}", journal_path);
         exit(1);
     }
-    info!("Exporting. Reading journal file at {:?}", journal_path);
-    export_journal(journal_path, keys);
-    info!("Exporting finished")
+    info!("Uploading. Reading journal file at {:?}", journal_path);
+    upload_journal(journal_path, keys);
+    info!("Uploading finished")
 }
 
 // For each read line we first need to encrypt it, then send to the API.  Encryption is CPU bound, so we parallel
 // it with Rayon, but HTTP is async and runs on Tokio. We create N mpsc send channels to send HTTP requests in
 // parallel to the backend. tokio::sync::broadcast looked like a better fit, but concept of Lagging caused issues
 #[tracing::instrument(level = "trace", skip_all)]
-fn export_journal(journal_path: &Path, keys: KeyFile) {
+fn upload_journal(journal_path: &Path, keys: KeyFile) {
     let file = File::open(journal_path).expect("Cannot open journal file");
     let reader = BufReader::new(file);
     let (sending_runtime, send_channels) = start_sender();
@@ -65,7 +65,9 @@ fn export_journal(journal_path: &Path, keys: KeyFile) {
                 return; // Skip empty lines
             }
             // Parse the record to see if it's a valid one
-            Entry::parse(&line).unwrap();
+            if let Err(err) = Entry::parse(&line) {
+                panic!("Error {} parsing line: {}", err, &line);
+            }
             let req = ApiRequest::new_set_request(keys.keys(), line).unwrap();
             let tx = &send_channels[idx % send_channels.len()];
             tx.blocking_send(req).unwrap();
