@@ -1,7 +1,8 @@
 use operations::{
-    upload::{upload, UploadOpts},
+    download::{download, DownloadOpts},
     init::{init, InitOpts},
     report::{report, ReportOpts},
+    upload::{upload, UploadOpts},
 };
 use structopt::StructOpt;
 use tracing::metadata::LevelFilter;
@@ -14,6 +15,7 @@ mod operations;
 enum Opts {
     Init(InitOpts),
     Upload(UploadOpts),
+    Download(DownloadOpts),
     Report(ReportOpts),
 }
 
@@ -32,5 +34,8 @@ fn main() {
         Opts::Init(opts) => init(opts),
         Opts::Upload(opts) => upload(opts),
         Opts::Report(opts) => report(opts),
+        Opts::Download(opts) => {
+            download(opts);
+        }
     }
 }

@@ -5,6 +5,8 @@ use std::{
     str::FromStr,
 };
 
+use crate::date_time::timestamp::Timestamp;
+
 /// Date time range with start and end, format YYYY-MM-DD HH:MM - YYYY-MM-DD HH:MM
 /// If day is the same then short notation format is supported: YYYY-MM-DD HH:MM HH:MM
 #[derive(PartialEq, Clone, Copy, Eq)]
@@ -157,38 +159,54 @@ impl DateDay {
         self.to_string()
     }
 
+    pub fn today() -> Self {
+        let ts = Timestamp::now();
+        let offset = time::OffsetDateTime::from_unix_timestamp(ts.as_u64() as i64 / 1000)
+            .expect("Failed create offset date time from timestamp");
+        Self(offset.date())
+    }
+
     #[allow(unused)]
     pub(crate) fn new(year: i32, month: u8, day: u8) -> Self {
         let month = time::Month::try_from(month).expect("invalid month number");
         let date = time::Date::from_calendar_date(year, month, day).expect("invalid date");
         DateDay(date)
     }
+
     pub fn remove_days(&self, days: usize) -> DateDay {
         let res = self.0.saturating_add(time::Duration::days(-(days as i64)));
         Self(res)
     }
+
     pub fn add_days(&self, days: usize) -> DateDay {
         let res = self.0.saturating_add(time::Duration::days(days as i64));
         Self(res)
     }
+
     pub fn year(&self) -> usize {
         self.0.year() as usize
     }
+
     pub fn month(&self) -> usize {
         self.0.month() as usize
     }
+
     pub fn day(&self) -> usize {
         self.0.day() as usize
     }
+
     pub fn days_from_monday(&self) -> u8 {
         self.0.weekday().number_days_from_monday()
     }
+
     pub fn as_start_of_week(&self) -> Self {
         self.remove_days(self.days_from_monday().into())
     }
+
     pub fn as_start_of_month(&self) -> Self {
         self.remove_days(self.day() - 1)
     }
+
     pub fn as_start_of_year(&self) -> Self {
         DateDay::new(
             self.year()
@@ -408,6 +426,13 @@ mod tests {
         assert_eq!(day.as_start_of_week(), DateDay::new(2023, 7, 3));
         assert_eq!(day.as_start_of_month(), DateDay::new(2023, 7, 1));
         assert_eq!(day.as_start_of_year(), DateDay::new(2023, 1, 1));
+    }
+
+    #[test]
+    #[wasm_bindgen_test::wasm_bindgen_test]
+    fn dateday_today() {
+        let now = DateDay::today();
+        assert!(now.year() > 2022); // Just to check that it doesn't fail
     }
 
     #[test]
