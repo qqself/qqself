@@ -22,7 +22,6 @@ pub enum HttpErrorType {
     NotFound,
     #[error("IOError. {0}")]
     IOError(String),
-    
 }
 
 #[derive(Debug, Serialize, Deserialize)]

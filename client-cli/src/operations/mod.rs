@@ -1,4 +1,4 @@
-pub mod upload;
+pub mod download;
 pub mod init;
 pub mod report;
-pub mod download;
+pub mod upload;

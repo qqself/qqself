@@ -35,7 +35,7 @@ impl ApiRequest {
             &keys.public_key,
             &keys.private_key,
             Timestamp::now(),
-            min_payload_id
+            min_payload_id,
         )?;
         Ok(ApiRequest::new_find_request_encrypted(payload))
     }

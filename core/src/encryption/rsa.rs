@@ -1,7 +1,7 @@
 use aes_gcm::aead::OsRng;
 use rsa::{
     pkcs8::{DecodePrivateKey, DecodePublicKey, EncodePrivateKey, EncodePublicKey, LineEnding},
-    RsaPrivateKey, RsaPublicKey, Pkcs1v15Encrypt, Pkcs1v15Sign,
+    Pkcs1v15Encrypt, Pkcs1v15Sign, RsaPrivateKey, RsaPublicKey,
 };
 
 use crate::binary_text::BinaryToText;
@@ -38,9 +38,7 @@ impl Rsa {
     pub(crate) fn decrypt(private_key: &PrivateKey, payload: &[u8]) -> Option<Vec<u8>> {
         let private_key = private_key.decoded()?;
         let private_key = RsaPrivateKey::from_pkcs8_pem(&private_key).ok()?;
-        private_key
-            .decrypt(Pkcs1v15Encrypt, payload)
-            .ok()
+        private_key.decrypt(Pkcs1v15Encrypt, payload).ok()
     }
 
     pub(crate) fn encrypt(public_key: &PublicKey, payload: &[u8]) -> Option<Vec<u8>> {
@@ -49,23 +47,14 @@ impl Rsa {
         }
         let public_key = public_key.decoded()?;
         let public_key = RsaPublicKey::from_public_key_pem(&public_key).ok()?;
-        rsa::RsaPublicKey::encrypt(
-            &public_key,
-            &mut OsRng,
-            Pkcs1v15Encrypt,
-            payload,
-        )
-        .ok()
+        rsa::RsaPublicKey::encrypt(&public_key, &mut OsRng, Pkcs1v15Encrypt, payload).ok()
     }
 
     pub(crate) fn sign(private_key: &PrivateKey, digest: &StableHash) -> Option<Vec<u8>> {
         let private_key = private_key.decoded()?;
         let private_key = RsaPrivateKey::from_pkcs8_pem(&private_key).ok()?;
         let signature = private_key
-            .sign(
-                Pkcs1v15Sign::new_unprefixed(),
-                &digest.as_bytes(),
-            )
+            .sign(Pkcs1v15Sign::new_unprefixed(), &digest.as_bytes())
             .ok()?;
         if signature.len() != Rsa::SIGNATURE_SIZE {
             // TODO: Should never happen and I guess there should be away to enforce it during compillation

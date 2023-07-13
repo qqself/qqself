@@ -50,7 +50,8 @@ test() {
 # Run linters and other static checkers
 lint() {
   log "Linting all the Rust projects"
-  cargo clippy --release --all-targets --all-features -- -D warnings
+  cargo fmt --all --check
+  cargo clippy --workspace --all-targets --all-features -- -D warnings
   log "Linting all TypeScript projects"
   (cd client-web && yarn lint:check)
 }
