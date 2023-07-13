@@ -3,7 +3,6 @@ use std::{
     io::{BufRead, BufReader},
     path::Path,
     process::exit,
-    str::FromStr,
 };
 
 use qqself_core::{
@@ -76,8 +75,7 @@ pub fn report(opts: ReportOpts) {
 }
 
 fn journal_range(period: TimePeriod) -> (DateDay, DateDay) {
-    let now = chrono::Local::now();
-    let end = DateDay::from_str(&now.date_naive().to_string()).unwrap();
+    let end = DateDay::today();
     let start = end.remove_days(match period {
         TimePeriod::Day => 0,
         TimePeriod::Week => 7,
