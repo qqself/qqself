@@ -1,5 +1,5 @@
 use operations::{
-    export::{export, ExportOpts},
+    upload::{upload, UploadOpts},
     init::{init, InitOpts},
     report::{report, ReportOpts},
 };
@@ -13,7 +13,7 @@ mod operations;
 #[derive(StructOpt, Debug)]
 enum Opts {
     Init(InitOpts),
-    Export(ExportOpts),
+    Upload(UploadOpts),
     Report(ReportOpts),
 }
 
@@ -30,7 +30,7 @@ fn main() {
         .init();
     match Opts::from_args() {
         Opts::Init(opts) => init(opts),
-        Opts::Export(opts) => export(opts),
+        Opts::Upload(opts) => upload(opts),
         Opts::Report(opts) => report(opts),
     }
 }
