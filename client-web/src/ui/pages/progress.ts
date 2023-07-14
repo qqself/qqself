@@ -41,6 +41,20 @@ export class ProgressPage extends LitElement {
   status: { status: "pending" | "completed"; op: string | null } = { status: "completed", op: null }
 
   static styles = css`
+    .root {
+      display: flex;
+      margin: 10px;
+    }
+    .journal {
+      display: flex;
+      flex-direction: column;
+      flex-basis: 100%;
+    }
+    .skills {
+      display: flex;
+      flex-direction: column;
+      flex-basis: 30%;
+    }
     .status {
       position: fixed;
       bottom: 10px;
@@ -118,22 +132,22 @@ export class ProgressPage extends LitElement {
 
   render() {
     return html`
-      <q-logo-block>
-        <h1>Progress</h1>
+      <div class="root">
         <q-journal
+          class="journal"
           .data=${this.journalData}
           @next=${() => this.onSwitchDay(1)}
           @prev=${() => this.onSwitchDay(-1)}
           @save=${this.onEntryAdded.bind(this)}
         ></q-journal>
-        <q-skills .data=${this.skillsData}></q-skills>
-        ${this.error && html`<p>Error ${this.error}</p>`} ${this.renderNotifications()}
-        <q-status-bar
-          class="status"
-          .status=${this.status.status}
-          .currentOp=${this.status.op}
-        ></q-status-bar>
-      </q-logo-block>
+        <q-skills class="skills" .data=${this.skillsData}></q-skills>
+      </div>
+      ${this.error && html`<p>Error ${this.error}</p>`} ${this.renderNotifications()}
+      <q-status-bar
+        class="status"
+        .status=${this.status.status}
+        .currentOp=${this.status.op}
+      ></q-status-bar>
     `
   }
 }
