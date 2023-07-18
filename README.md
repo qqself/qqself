@@ -1,20 +1,5 @@
-# qqself
+# Achieving mastery takes decades - how to keep going?
 
-Personal tracking system to support long term skill development:
+Very few succeed in reaching mastery, and most give up along this lifelong journey. Why does motivation disappear after just a few lessons with your new musical instrument or gym visits? Why do we go strong for multiple years and one day just abandon something that constantly was giving us joy? You can become a master at anything, and the only way to fail is to give up.
 
-- Universal language to support tracking of almost any kind of data
-- Local first - all data stored on the client
-- End-to-end encryption synchronization - data is encrypted on a client before sending
-- Shared core Rust library with all the logic e.g. parsing/encryption with Web-Assembly support
-- Multiple experimental frontends - CLI/PWA and the one with gamification elements
-
-## Research about long-term skill development
-
-Do you know a good book/paper/article/research about long-term skill development:
-
-- How to achieve mastery?
-- What causes us to give up, what helps us keep pushing and continue?
-- How to start learning new skill, overcome fear?
-- How to live through plateau, when no progress is visible?
-
-Have a look what we have in [library.md](research/library.md) and create PR with your suggestions. Thank you!
+There are a lot of amazing books about how to achieve mastery, interviews with top masters, and papers about long-term motivation. Based on them, we've created a learning system and an app to give you the tools to support your lifetime journey.

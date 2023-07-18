@@ -5,9 +5,11 @@
     <title>{{ section.title }}</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <link rel="stylesheet" href="/reset.css" />
-    <link rel="stylesheet" href="/index.css" />
+    <link rel="stylesheet" href="/base.css" />
+    {% block css %} {% endblock %}
   </head>
   <body>
+    <div class="development">Under development</div>
     <div class="menu">
       <menu>
         <li>
@@ -19,12 +21,14 @@
         <li>
           <a
             href="https://github.com/qqself/qqself/blob/main/research/library.md"
-            >Knowledge Base</a
+            >Learning System</a
           >
         </li>
         <li><a href="https://github.com/qqself/qqself">GitHub</a></li>
       </menu>
     </div>
-    <div class="root">{% block content %} {% endblock %}</div>
+    <div class="content">{% block content %} {% endblock %}</div>
+    <br />
+    <br />
   </body>
 </html>
