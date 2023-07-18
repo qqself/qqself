@@ -1,10 +1,10 @@
-{% extends "base.html" %} {% block content %}
-
-<div class="content">
-  <a href="https://app.qqself.com">
-    <img class="logo" alt="logo" src="/logo_512.png" />
-  </a>
+{% extends "base.html" %} {% block css %}
+<link rel="stylesheet" href="/index.css" />
+{% endblock css %} {% block content %}
+<div class="index">
   <h1 class="title">{{ section.title }}</h1>
-  <div class="description">{{ section.content | safe }}</div>
+  <div class="description">
+    <div class="text">{{ section.content | safe }}</div>
+  </div>
 </div>
 {% endblock content %}

@@ -56,8 +56,9 @@ export class DevcardsPage extends LitElement {
 
   async connectedCallback() {
     super.connectedCallback()
-    this.store.subscribe("init.succeeded", this.configure.bind(this))
     await this.store.dispatch("init.started", null)
+    await this.store.dispatch("auth.registration.started", { mode: "automatic" })
+    await this.configure()
   }
 
   async configure() {
@@ -71,13 +72,14 @@ export class DevcardsPage extends LitElement {
 2022-11-09 15:50 16:50 qqself. Deploying DynamoDB changes, found a race condition. Nope, it was not
 2022-11-09 17:15 17:40 qqself. Finished DynamoDB storage, created a PR
 2022-11-09 21:40 23:15 read    
-2022-11-10 09:00 09:50 qqself. Starting working on exposing DB to client-web
-2022-11-10 10:00 10:20 drums
-2022-11-10 10:30 11:05 qqself. JournalView with JournalDays, probably we don't need to JSON the whole journal, but a few days only
-2022-11-10 12:30 13:10 qqself. API to return JournalDay, Rust Analyser issues with multiple targets in workspace
-2022-11-10 16:30 17:00 qqself. Found an issue with date duration because of handcrafted dates, checked for alternatives
-2022-11-10 18:00 20:00 qqself. Refactoring all custom date and times structs to \`time\` create
-2022-11-10 21:30 23:30 qqself. Fixed all the tests, migrated fully to new date and time structures, created a PR`
+2022-11-10 09:00 09:50 drums. practice of melodics. Working on double pedal speed
+2022-11-10 13:00 14:30 run distance=15 elevation=340 
+2022-11-10 15:00 15:30 stretch
+2022-11-10 19:00 21:00 sculpture of "David". Good progress overall, need to revisit posture
+2022-11-11 12:30 13:10 qqself. API to return JournalDay, Rust Analyser issues with multiple targets in workspace
+2022-11-11 16:30 17:00 qqself. Found an issue with date duration because of handcrafted dates, checked for alternatives
+2022-11-11 18:00 20:00 qqself. Refactoring all custom date and times structs to \`time\` create
+2022-11-11 21:30 23:30 qqself. Fixed all the tests, migrated fully to new date and time structures, created a PR`
     for (const entry of input.split("\n")) {
       await this.store.dispatch("data.entry.added", { entry, callSyncAfter: false })
     }
