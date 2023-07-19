@@ -37,6 +37,17 @@ use crate::util::error;
 
 mod util;
 
+#[wasm_bindgen(typescript_custom_section)]
+const TS_APPEND_CONTENT: &'static str = r#"
+
+export type Skill = { 
+    title: string, 
+    kind: string, 
+    level: number
+}
+
+"#;
+
 /// Initialize the library, for now only sets panic hooks and returns build info
 #[wasm_bindgen]
 pub fn initialize() {
@@ -195,11 +206,6 @@ pub struct Views {
     db: RefCell<DB>,
 }
 
-#[wasm_bindgen(getter_with_clone)]
-pub struct SkillsView {
-    pub skills: String,
-}
-
 #[wasm_bindgen]
 impl Views {
     pub fn new(keys: &Keys, onUpdate: js_sys::Function, onNotification: js_sys::Function) -> Self {
@@ -274,15 +280,21 @@ impl Views {
         self.db.borrow().count()
     }
 
-    pub fn view_skills(&self) -> SkillsView {
+    /// Returns Array of Skill
+    pub fn view_skills(&self) -> js_sys::Array {
         let db = self.db.borrow();
         let mut skills = db.skills().iter().map(|(_, v)| v).collect::<Vec<_>>();
         skills.sort();
-        let skills = skills
-            .iter()
-            .map(|v| format!("{} {} {}", v.kind(), v.title(), v.progress().level))
-            .fold(String::new(), |a, b| a + &b + "\n");
-        SkillsView { skills }
+
+        let output = js_sys::Array::new();
+        for skill in skills {
+            let data = js_sys::Map::new();
+            data.set(&"title".into(), &skill.title().to_string().into());
+            data.set(&"kind".into(), &skill.kind().to_string().into());
+            data.set(&"level".into(), &skill.progress().level.into());
+            output.push(&data);
+        }
+        output
     }
 }
 

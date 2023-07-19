@@ -373,7 +373,10 @@ mod tests {
 
         // Adding skill afterwards recalculates all previously added entities
         assert_eq!(
-            view.check_notification("2022-06-06 13:00 13:00 run. skill kind=sport. Running", now),
+            view.check_notification(
+                "2022-06-06 13:00 13:00 run. skill kind=physical. Running",
+                now
+            ),
             vec![SkillsNotification::LevelUp(
                 "Running level increased to 2".to_string()
             )]
@@ -406,8 +409,14 @@ mod tests {
         );
 
         // Total time in a week
-        view.check_notification("2022-06-08 00:00 00:00 bar1. skill kind=sport. Bar1", now);
-        view.check_notification("2022-06-08 00:00 00:00 bar2. skill kind=sport. Bar2", now);
+        view.check_notification(
+            "2022-06-08 00:00 00:00 bar1. skill kind=physical. Bar1",
+            now,
+        );
+        view.check_notification(
+            "2022-06-08 00:00 00:00 bar2. skill kind=physical. Bar2",
+            now,
+        );
         assert_eq!(
             view.check_notification("2022-06-08 00:00 19:00 bar1", now),
             vec![
@@ -439,7 +448,7 @@ mod tests {
     #[test]
     fn progress_hours_total_periods() {
         let mut view = TestSkillView::default();
-        view.add("2023-07-13 00:00 00:00 run. skill kind=sport. Running");
+        view.add("2023-07-13 00:00 00:00 run. skill kind=physical. Running");
         view.add("2023-07-13 00:00 10:00 run"); // Thursday week before
         view.add("2023-07-17 00:00 10:00 run"); // Monday
 
@@ -467,8 +476,8 @@ mod tests {
     #[test]
     fn progress_hours_total_multiple_tags() {
         let mut view = TestSkillView::default();
-        view.add("2023-07-13 00:00 00:00 run. skill kind=sport. Running");
-        view.add("2023-07-13 00:00 00:00 swim. skill kind=sport. Swimming");
+        view.add("2023-07-13 00:00 00:00 run. skill kind=physical. Running");
+        view.add("2023-07-13 00:00 00:00 swim. skill kind=physical. Swimming");
 
         // Adding entry with multiple tags should be calculated once for total notifications
         assert_eq!(

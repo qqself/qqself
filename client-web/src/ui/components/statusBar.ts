@@ -1,6 +1,7 @@
 import { css, html, LitElement } from "lit"
 import { customElement, property } from "lit/decorators.js"
 import "../controls/logo"
+import { colors } from "../styles"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -18,7 +19,8 @@ export class StatusBar extends LitElement {
 
   static styles = css`
     .root {
-      border: 1px solid gray;
+      background-color: ${colors.background.dark};
+      border: 1px solid ${colors.highlight.dark};
       padding: 0 5px;
     }
   `

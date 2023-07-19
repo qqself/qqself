@@ -1,6 +1,6 @@
 import { css, html, LitElement } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
-import { AppJournalDay, DateDay } from "../../../bridge/pkg"
+import { AppJournalDay, DateDay, Skill } from "../../../bridge/pkg"
 import "../components/logoBlock"
 import "../controls/button"
 import "../controls/notification"
@@ -29,7 +29,7 @@ export class ProgressPage extends LitElement {
   journalData!: AppJournalDay
 
   @state()
-  skillsData = ""
+  skillsData: Skill[] = []
 
   @state()
   error = ""
@@ -49,6 +49,7 @@ export class ProgressPage extends LitElement {
       display: flex;
       flex-direction: column;
       flex-basis: 100%;
+      margin-right: 15px;
     }
     .skills {
       display: flex;
@@ -84,7 +85,8 @@ export class ProgressPage extends LitElement {
   }
 
   updateSkills() {
-    this.skillsData = this.store.userState.views.view_skills().skills
+    const data = this.store.userState.views.view_skills() as Map<string, string | number>[]
+    this.skillsData = data.map((v) => Object.fromEntries(v) as unknown as Skill)
   }
 
   connectedCallback() {
@@ -107,6 +109,7 @@ export class ProgressPage extends LitElement {
       (e) => (this.status = { ...this.status, op: e.operation }),
     )
     this.updateJournal()
+    this.updateSkills()
     return this.store.dispatch("data.sync.init", null)
   }
 
@@ -140,7 +143,7 @@ export class ProgressPage extends LitElement {
           @prev=${() => this.onSwitchDay(-1)}
           @save=${this.onEntryAdded.bind(this)}
         ></q-journal>
-        <q-skills class="skills" .data=${this.skillsData}></q-skills>
+        <q-skills class="skills" .skills=${this.skillsData}></q-skills>
       </div>
       ${this.error && html`<p>Error ${this.error}</p>`} ${this.renderNotifications()}
       <q-status-bar

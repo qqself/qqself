@@ -1,4 +1,4 @@
-import { html, LitElement } from "lit"
+import { css, html, LitElement } from "lit"
 import { customElement, state } from "lit/decorators.js"
 import "./ui/pages/loading"
 import "./ui/pages/register"
@@ -7,6 +7,7 @@ import "./ui/pages/progress"
 import { Store } from "./app/store"
 import { DateDay } from "../bridge/pkg/qqself_client_web_bridge"
 import { ServerApi } from "./app/api"
+import { colors } from "./ui/styles"
 
 type Page = "loading" | "login" | "register" | "progress" | "devcards"
 
@@ -16,6 +17,14 @@ export class Main extends LitElement {
   page: Page = "loading"
 
   store = new Store(new ServerApi())
+
+  static styles = css`
+    .root {
+      background-color: ${colors.background.light};
+      height: 100%;
+      padding-top: 20px;
+    }
+  `
 
   async firstUpdated() {
     if (import.meta.env.DEV) {
@@ -33,7 +42,7 @@ export class Main extends LitElement {
     this.store.subscribe("auth.registration.started", () => (this.page = "register"))
   }
 
-  render() {
+  renderPage() {
     switch (this.page) {
       case "loading":
         return html`<q-loading-page .store=${this.store} />`
@@ -53,5 +62,9 @@ export class Main extends LitElement {
       case "register":
         return html`<q-register-page .store=${this.store} />`
     }
+  }
+
+  render() {
+    return html`<div class="root">${this.renderPage()}</div>`
   }
 }

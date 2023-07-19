@@ -9,6 +9,7 @@
     "lint:check": "prettier --check 'src/**/*.ts' && eslint src/**/*.ts && lit-analyzer --strict src"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free": "6.4.0",
     "lit": "2.7.6",
     "localforage": "1.10.0"
   },
@@ -20,8 +21,8 @@
     "lit-analyzer": "2.0.0-pre.3",
     "prettier": "3.0.0",
     "typescript": "5.1.6",
-    "vite-plugin-rsw": "2.0.11",
     "vite": "4.4.4",
+    "vite-plugin-rsw": "2.0.11",
     "vitest": "0.33.0",
     "wasm-pack": "0.12.1"
   }

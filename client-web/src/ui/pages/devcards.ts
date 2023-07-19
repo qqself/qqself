@@ -7,6 +7,7 @@ import "../components/journal"
 import "../components/statusBar"
 import "../controls/panel"
 import "../controls/notification"
+import "../controls/icon"
 import "../pages/progress"
 import { trace } from "../../logger"
 import { EntrySaveEvent } from "../components/entryInput"
@@ -65,6 +66,7 @@ export class DevcardsPage extends LitElement {
     const input = `2022-07-15 00:00 00:02 qqself. skill kind=🧠. Entrepreneur 
 2022-07-15 00:00 00:03 read. skill kind=🧠. Reader
 2022-07-15 00:00 00:11 drums. skill kind=🫀. Drummer
+2023-07-15 00:00 00:12 sculpture. skill kind=🫀. Sculptor
 2022-11-09 09:20 11:00 qqself. Query for DynamoDB storage, figured out we should always include items equal to after_timestamp
 2022-11-09 11:05 11:25 drums
 2022-11-09 11:25 12:30 qqself. Completed DynamoDB storage, created a PR
@@ -98,6 +100,10 @@ export class DevcardsPage extends LitElement {
         <q-notification text="Running skill level increased to 53"> </q-notification>
       </q-card>
 
+      <q-card name="Icon">
+        <q-icon name="brain"></q-icon>
+      </q-card>
+
       <!-- Components -->
       <q-card name="Journal">
         <q-journal
@@ -106,7 +112,7 @@ export class DevcardsPage extends LitElement {
       </q-card>
 
       <q-card name="Skills">
-        <q-skills .data=${this.store.userState.views.view_skills().skills}></q-skills>
+        <q-skills .skills=${this.store.userState.views.view_skills()}></q-skills>
       </q-card>
 
       <q-card name="AddEntry - Valid">

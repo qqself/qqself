@@ -1,10 +1,10 @@
 import { css, html, LitElement } from "lit"
 import { customElement, property } from "lit/decorators.js"
-import { AppJournalDay, Keys } from "../../../bridge/pkg/qqself_client_web_bridge"
+import { AppJournalDay } from "../../../bridge/pkg/qqself_client_web_bridge"
 import "../controls/logo"
 import "./entryInput"
 import { EntrySaveEvent } from "./entryInput"
-import * as api from "../../app/api"
+import { colors } from "../styles"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -23,6 +23,9 @@ export class Journal extends LitElement {
     }
     .journal {
       text-align: left;
+      background-color: ${colors.background.dark};
+      border: 1px solid ${colors.highlight.dark};
+      padding: 15px;
     }
   `
 
