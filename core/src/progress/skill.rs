@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, str::FromStr};
 
 use crate::{date_time::datetime::Duration, db::Selector, record::Entry};
 
@@ -19,9 +19,19 @@ Skill examples: Running, Drums, Programming, Sculpture, etc.
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Skill {
     selector: Selector,
-    kind: String,
+    kind: SkillKind,
     title: String,
     duration_minutes: u64,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum SkillKind {
+    /// Activities that mainly target your body: running, strength training, pilates, dancing
+    Physical,
+    /// Activities that challenges your brain: academic writing, solving problems, learning languages
+    Intelligent,
+    /// Activities where you express yourselves: art, music, novel writing, dancing
+    Creative,
 }
 
 #[derive(Default, Debug)]
@@ -38,6 +48,30 @@ impl SkillProgress {
             level,
             minutes_till_next,
             duration_minutes,
+        }
+    }
+}
+
+impl FromStr for SkillKind {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // TODO Remove emoji support. Left from PoC phase and should not be used anymore by now
+        match s {
+            "physical" | "💪" => Ok(Self::Physical),
+            "intelligent" | "🧠" => Ok(Self::Intelligent),
+            "creative" | "🫀" => Ok(Self::Creative),
+            _ => Err("Unknown skill kind".to_string()),
+        }
+    }
+}
+
+impl ToString for SkillKind {
+    fn to_string(&self) -> String {
+        match self {
+            SkillKind::Physical => "physical".to_string(),
+            SkillKind::Intelligent => "intelligent".to_string(),
+            SkillKind::Creative => "creative".to_string(),
         }
     }
 }
@@ -61,7 +95,7 @@ impl Skill {
         let symbol = skill_tag.props.iter().find(|v| v.name == "kind")?;
         Some(Skill {
             title: record.comment.as_ref().cloned()?,
-            kind: symbol.val.to_string(),
+            kind: symbol.val.to_string().parse().ok()?,
             selector: Selector {
                 tags: query.into_iter().cloned().collect(),
             },
@@ -82,7 +116,7 @@ impl Skill {
         &self.title
     }
 
-    pub fn kind(&self) -> &str {
+    pub fn kind(&self) -> &SkillKind {
         &self.kind
     }
 
@@ -101,7 +135,8 @@ impl Ord for Skill {
         //      by kind, but sort depending on best skill within the group. So that main
         //      group (with biggest skill) will be always on top
         self.kind
-            .cmp(&other.kind)
+            .to_string()
+            .cmp(&other.kind.to_string())
             .then_with(|| self.duration_minutes.cmp(&other.duration_minutes).reverse())
             .then_with(|| self.title.cmp(&other.title))
     }
@@ -118,7 +153,9 @@ impl Display for Skill {
         let (level, _) = skill_level(self.duration_minutes);
         f.write_fmt(format_args!(
             "{} {:015} {: >4}",
-            self.kind, self.title, level
+            self.kind.to_string(),
+            self.title,
+            level
         ))
     }
 }

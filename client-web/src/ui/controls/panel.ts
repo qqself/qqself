@@ -1,7 +1,7 @@
 import { css, html, LitElement } from "lit"
 import { customElement, property } from "lit/decorators.js"
-import { defaultFont } from "../../constants"
 import "./logo"
+import { colors, font } from "../styles"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -12,15 +12,19 @@ declare global {
 @customElement("q-panel")
 export class Panel extends LitElement {
   static styles = [
-    defaultFont, // Safari is failing to get the font from the reset.css, repeat it here
+    font,
     css`
       .root {
-        border: 1px solid black;
+        background-color: ${colors.background.dark};
+        border: 1px solid ${colors.highlight.dark};
       }
       .root .title {
         text-align: center;
+        text-transform: uppercase;
+        font-weight: bold;
         line-height: 2;
-        border-bottom: 1px solid black;
+        border-bottom: 1px solid ${colors.highlight.dark};
+        color: ${colors.highlight.dark};
       }
       .root .content {
         margin: 10px;

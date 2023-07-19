@@ -1,8 +1,8 @@
 import { css, html, LitElement } from "lit"
 import { customElement, property } from "lit/decorators.js"
-import { defaultFont } from "../../constants"
 import "./logo"
 import "../controls/button"
+import { colors, font } from "../styles"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -13,7 +13,7 @@ declare global {
 @customElement("q-notification")
 export class Notification extends LitElement {
   static styles = [
-    defaultFont, // Safari is failing to get the font from the reset.css, repeat it here
+    font,
     css`
       .root {
         display: flex;
@@ -22,7 +22,8 @@ export class Notification extends LitElement {
         background-color: white;
         width: 100%;
         height: 100%;
-        border: 2px solid black;
+        background-color: ${colors.background.dark};
+        border: 1px solid ${colors.highlight.dark};
         padding: 10px;
       }
       .root .text {

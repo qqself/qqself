@@ -1,8 +1,8 @@
 import { css, html, LitElement } from "lit"
 import { customElement, property } from "lit/decorators.js"
 import { classMap } from "lit/directives/class-map.js"
-import { defaultFont } from "../../constants"
 import "./logo"
+import { font } from "../styles"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -13,7 +13,7 @@ declare global {
 @customElement("q-button")
 export class Button extends LitElement {
   static styles = [
-    defaultFont, // Safari is failing to get the font from the reset.css, repeat it here
+    font,
     css`
       .root button {
         color: white;
