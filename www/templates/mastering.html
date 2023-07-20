@@ -1,0 +1,9 @@
+{% extends "base.html" %} {% block css %}
+<link rel="stylesheet" href="/mastering.css" />
+{% endblock css %} {% block content %}
+<div class="mastering">
+  <div class="description">
+    <div class="text">{{ section.content | safe }}</div>
+  </div>
+</div>
+{% endblock content %}
