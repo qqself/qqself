@@ -7,7 +7,7 @@ Very few succeed in reaching mastery, and most give up along this lifelong journ
 
 <br>
 
-There are a lot of amazing books about how to achieve mastery, interviews with top masters, and papers about long-term motivation. Based on them, we've created a learning system and an app to give you the tools to support your lifetime journey.
+There are a lot of amazing books about how to achieve mastery, interviews with top masters, and papers about long-term motivation. Based on them, we've created a mastering system and an app to give you the tools to support your lifetime journey.
 
 <br>
 <hr>
