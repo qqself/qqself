@@ -1,6 +1,9 @@
-{% extends "base.html" %} {% block css %}
-<link rel="stylesheet" href="/index.css" />
-{% endblock css %} {% block content %}
+{% extends "base.html" %} 
+
+{% block title %} {{ section.title }} {% endblock title %} 
+{% block css %}<link rel="stylesheet" href="/index.css" />{% endblock css %} 
+
+{% block content %}
 <div class="index">
   <h1 class="title">{{ section.title }}</h1>
   <div class="description">

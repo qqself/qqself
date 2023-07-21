@@ -1,0 +1,8 @@
+{% extends "base.html" %} {% block title %}{{ page.title }}{% endblock title %}
+{% block css %}<link rel="stylesheet" href="/chapter.css" />{% endblock css %}
+{% block content %}
+
+<div class="chapter">
+  <div class="text">{{ page.content | safe }}</div>
+</div>
+{% endblock content %}
