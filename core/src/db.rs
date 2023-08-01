@@ -6,7 +6,7 @@ use crate::data_views::skills::{SkillsNotification, SkillsUpdate, SkillsView};
 use crate::date_time::datetime::{DateDay, DateTimeRange};
 use crate::parsing::parser::{ParseError, Parser};
 use crate::progress::skill::Skill;
-use crate::record::{Entry, Tag};
+use crate::record::{Entry, PropOperator, PropVal, Tag};
 
 #[derive(Clone, PartialEq, Debug, Ord, PartialOrd, Eq)]
 pub struct RecordEntry {
@@ -280,8 +280,16 @@ impl DB {
         }
     }
 
-    pub fn query(&self, _: Query) -> Result<Vec<Entry>, QueryError> {
-        todo!()
+    pub fn query(&self, query: Query) -> Vec<Entry> {
+        let mut results = vec![];
+        self.entries.iter().for_each(|(_, record)| {
+            if let Record::Value(RecordValue::Entry(entry)) = record {
+                if query.matches(&entry.entry) {
+                    results.push(entry.entry.clone());
+                }
+            }
+        });
+        results
     }
 
     pub fn on_view_update(&mut self, cb: Box<dyn Fn(ViewUpdate)>) {
@@ -336,48 +344,70 @@ impl Selector {
 #[derive(PartialEq, Eq, Debug, Clone, Default)]
 pub struct Query {
     pub selector: Selector,
-    pub date_filter: Option<DateTimeRange>,
+    pub date_filter: Option<DateDay>,
+    pub date_filter_op: Option<PropOperator>,
 }
 
 impl Query {
-    pub fn new(query: &str, date_filter: Option<DateTimeRange>) -> Result<Query, ParseError> {
+    pub fn new(query: &str) -> Result<Query, ParseError> {
         let mut parser = Parser::new(query);
         let (tags, _) = parser.parse_record()?;
-        let selector = Selector { tags };
+        let mut date_filter = None;
+        let mut date_filter_op = None;
+        for tag in &tags {
+            if tag.name == "filter" {
+                for prop in &tag.props {
+                    if let (PropVal::String(val), "date") = (&prop.val, prop.name.as_str()) {
+                        date_filter = Some(val.parse::<DateDay>().map_err(|_| {
+                            ParseError::Unexpected(
+                                format!("'date' in YYYY-MM-DD format is expected, got |{val}|"),
+                                prop.start_pos,
+                            )
+                        })?);
+                        date_filter_op = Some(prop.operator.clone())
+                    } else {
+                        return Err(ParseError::Unexpected(
+                            "'date' property is expected".to_string(),
+                            tag.start_pos,
+                        ));
+                    };
+                }
+            }
+        }
+        let selector = Selector {
+            tags: tags.into_iter().filter(|v| v.name != "filter").collect(), // filter is a special tag and should not be considered as a selector
+        };
         Ok(Query {
             selector,
             date_filter,
+            date_filter_op,
         })
     }
 
-    pub fn matched_tags(&self, entry: &Entry) -> Vec<Tag> {
+    pub fn matches(&self, entry: &Entry) -> bool {
         // Check first for date limits
-        if let Some(filter) = &self.date_filter {
-            if entry.date_range.start() < filter.start() || entry.date_range.end() > filter.end() {
-                return vec![];
+        if let (Some(date), Some(op)) = (&self.date_filter, &self.date_filter_op) {
+            let is_date_match = match op {
+                PropOperator::Eq => entry.date_range.start().date() == *date,
+                PropOperator::Less => entry.date_range.start().date() < *date,
+                PropOperator::More => entry.date_range.start().date() > *date,
+            };
+            if !is_date_match {
+                return false;
             }
         }
-        self.selector.matched_tags(entry)
+        if self.selector.tags.is_empty() {
+            return true; // It's just a date filter
+        }
+        self.selector.matches(entry)
     }
-}
-
-// Query execution error
-#[derive(Debug)]
-pub enum QueryError {
-    BadQuery(String),
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::date_time::datetime::DateDay;
-
     use super::*;
 
-    use lazy_static::lazy_static;
-
-    lazy_static! {
-        static ref BASE_DATE: DateDay = DateDay::new(2000, 1, 1);
-    }
+    const ENTRY_PREFIX: &str = "2000-01-01 00:00";
 
     fn new_conflict(revision: usize, records: Vec<&Record>) -> RecordConflict {
         let entries: BTreeSet<_> = records
@@ -403,8 +433,7 @@ mod tests {
     }
 
     fn parse_entry(text: &str, revision: usize) -> Record {
-        let entry =
-            Entry::parse(&format!("{} 00:00 - {} {}", *BASE_DATE, *BASE_DATE, text)).unwrap();
+        let entry = Entry::parse(&format!("{ENTRY_PREFIX} {}", text)).unwrap();
         Record::Value(RecordValue::Entry(RecordEntry { revision, entry }))
     }
 
@@ -418,6 +447,10 @@ mod tests {
             if let Some(event) = self.db.add(record, false, None) {
                 self.events.push(event);
             }
+        }
+
+        fn add_entry(&mut self, entry: &'static str) {
+            self.add(parse_entry(entry, 1));
         }
 
         fn assert_events(&self, want: Vec<ChangeEvent>) {
@@ -434,6 +467,20 @@ mod tests {
             let want: Vec<(DateTimeRange, &Record)> =
                 want.into_iter().map(|v| (v.daterange(), v)).collect();
             assert_eq!(got, want);
+        }
+
+        fn assert_query_results(&self, query: &'static str, want: Vec<&'static str>) {
+            let query = Query::new(query).unwrap();
+            let result: Vec<_> = self
+                .db
+                .query(query)
+                .into_iter()
+                .map(|v| {
+                    let s = &v.to_string()[ENTRY_PREFIX.len() + 1..].to_string();
+                    s.clone()
+                })
+                .collect();
+            assert_eq!(result, want);
         }
     }
 
@@ -567,5 +614,50 @@ mod tests {
             },
         ]);
         db.assert_record(vec![&Record::Conflict(conflict)]);
+    }
+
+    #[test]
+    fn query_by_tag() {
+        let mut db = TestDB::default();
+        db.add_entry("00:01 foo");
+        db.add_entry("00:02 bar");
+        db.add_entry("00:03 foo");
+
+        // Found entries
+        db.assert_query_results("foo", vec!["00:01 foo", "00:03 foo"]);
+
+        // No entries
+        db.assert_query_results("foobar", vec![]);
+
+        // Entries with multiple tags
+        db.add_entry("00:04 run. skill kind=physical. Runner");
+        db.add_entry("00:05 art. skill kind=creative. Artist");
+        db.assert_query_results(
+            "skill",
+            vec![
+                "00:04 run. skill kind=physical. Runner",
+                "00:05 art. skill kind=creative. Artist",
+            ],
+        );
+    }
+
+    #[test]
+    fn query_by_date() {
+        let mut db = TestDB::default();
+        db.add_entry("00:01 foo");
+        db.add_entry("00:02 bar");
+        db.add_entry("00:03 foo");
+
+        // Filter by date
+        db.assert_query_results(
+            "filter date = 2000-01-01",
+            vec!["00:01 foo", "00:02 bar", "00:03 foo"],
+        );
+
+        // Filter by date and tag
+        db.assert_query_results("bar. filter date = 2000-01-01", vec!["00:02 bar"]);
+
+        // Nothing found
+        db.assert_query_results("filter date < 2000-01-01", vec![]);
     }
 }

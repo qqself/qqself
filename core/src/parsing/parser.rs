@@ -25,6 +25,8 @@ pub enum ParseError {
     BadDateTime(String, usize),
     #[error("Bad operator: {0} at position {1}")]
     BadOperator(String, usize),
+    #[error("Unexpected: {0} at position {1}")]
+    Unexpected(String, usize),
 }
 
 pub struct Parser<'a> {
@@ -54,7 +56,14 @@ impl<'a> Parser<'a> {
     }
 
     pub(crate) fn parse_record(&mut self) -> Result<(Vec<Tag>, Option<String>), ParseError> {
-        todo!()
+        let tokens = Tokenizer::new(self.input, false);
+        if let Some(err) = tokens.error {
+            todo!("How should we handle errors and what kind of errors may happen actually in query parsing? Err: {}", err.to_string());
+        }
+        let mut iter = self.input.chars().zip(&tokens.tokens).peekable();
+        let tags = self.parse_tags(&mut iter)?;
+        let comment = self.parse_comment(&mut iter);
+        Ok((tags, comment))
     }
 
     fn entry_from_tokens(&mut self, tokens: &[Token]) -> Result<Entry, ParseError> {
@@ -129,14 +138,21 @@ impl<'a> Parser<'a> {
                 ));
             }
             names.push(name.clone());
-            self.read_while(iter, &[Token::Space, Token::PropertyOperator]);
+            let operator = match self
+                .read_while(iter, &[Token::Space, Token::PropertyOperator])
+                .trim()
+            {
+                ">" => PropOperator::More,
+                "<" => PropOperator::Less,
+                _ => PropOperator::Eq,
+            };
             let val = self.read_while(iter, &[Token::PropertyValue]);
             // Property value may be surrounded with the quotes, remove those as unnecessary noise
             let val = val.trim_matches('"').to_string();
             props.push(Prop {
                 name,
                 val: PropVal::parse(val),
-                operator: PropOperator::Eq,
+                operator,
                 start_pos: 0, // TODO Remove
             })
         }
