@@ -22,11 +22,31 @@ use qqself_core::{
         tokens::{DeleteToken, SearchToken},
     },
 };
+use serde::{Deserialize, Serialize};
 
 const MAX_PAYLOAD_AGE: Duration = Duration::new(1, 0);
 
+#[derive(Serialize, Deserialize)]
+struct InfoResp {
+    pub build: &'static str,
+    pub commit: &'static str,
+    pub hash: &'static str,
+    pub host: &'static str,
+    pub profile: &'static str,
+    pub rust: &'static str,
+    pub target: &'static str,
+}
+
 async fn health() -> impl Responder {
-    "OK"
+    web::Json(InfoResp {
+        build: env!("VERGEN_BUILD_TIMESTAMP"),
+        commit: env!("VERGEN_GIT_COMMIT_MESSAGE"),
+        hash: env!("VERGEN_GIT_SHA"),
+        host: env!("VERGEN_RUSTC_HOST_TRIPLE"),
+        profile: env!("VERGEN_CARGO_OPT_LEVEL"),
+        rust: env!("VERGEN_RUSTC_SEMVER"),
+        target: env!("VERGEN_CARGO_TARGET_TRIPLE"),
+    })
 }
 
 async fn set(
@@ -269,8 +289,8 @@ mod tests {
         let init_service = test::init_service(App::new().configure(configure)).await;
         let app = init_service;
         let req = test::TestRequest::get().uri("/health").to_request();
-        let resp = test::call_and_read_body(&app, req).await;
-        assert_eq!(resp, Bytes::from_static(b"OK"))
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), 200)
     }
 
     #[actix_web::test]

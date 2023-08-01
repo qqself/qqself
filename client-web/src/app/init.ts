@@ -2,6 +2,7 @@ import init, { initialize, Keys } from "../../bridge/pkg/qqself_client_web_bridg
 import { Store } from "./store"
 import { isBrowser } from "../utils"
 import { getCredentials } from "./auth"
+import { info } from "../logger"
 
 export const started = async (store: Store): Promise<void> => {
   const apiCheckError = checkMissingAPI()
@@ -12,7 +13,7 @@ export const started = async (store: Store): Promise<void> => {
   if (isBrowser) {
     await init()
   }
-  initialize()
+  info(initialize())
   const keys = await getCredentials()
   return store.dispatch("init.succeeded", { cachedKeys: keys })
 }

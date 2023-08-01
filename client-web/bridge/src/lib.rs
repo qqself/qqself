@@ -50,8 +50,19 @@ export type Skill = {
 
 /// Initialize the library, for now only sets panic hooks and returns build info
 #[wasm_bindgen]
-pub fn initialize() {
+pub fn initialize() -> String {
     panic::set_hook(Box::new(console_error_panic_hook::hook));
+    [
+        ("Build", env!("VERGEN_BUILD_TIMESTAMP")),
+        ("Commit", env!("VERGEN_GIT_COMMIT_MESSAGE")),
+        ("Hash", env!("VERGEN_GIT_SHA")),
+        ("Host", env!("VERGEN_RUSTC_HOST_TRIPLE")),
+        ("Profile", env!("VERGEN_CARGO_OPT_LEVEL")),
+        ("Rust", env!("VERGEN_RUSTC_SEMVER")),
+        ("Target", env!("VERGEN_CARGO_TARGET_TRIPLE")),
+    ]
+    .map(|(k, v)| format!("{k}: {v}"))
+    .join("\n")
 }
 
 #[wasm_bindgen]
