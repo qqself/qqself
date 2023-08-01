@@ -10,7 +10,7 @@ use thiserror::Error;
       TIME -> \d\d':'\d\d
       TAGS -> TAG ('.' TAGS)*
       TAG -> TAGNAME (PROP)*
-      PROP_OP -> '='
+      PROP_OP -> '='|'<'|'>'
       PROP -> PROPNAME (PROP_OP? PROPVALUE)?
       COMMENT -> \W \w*
       TAGNAME -> \w+
@@ -41,7 +41,7 @@ pub enum Token {
     DateSeparator,     // -
     DateTimeSeparator, // -
     PropertyName,      // Small letters
-    PropertyOperator,  // =
+    PropertyOperator,  // =, <, >
     PropertyValue,     // Small letters
     Space,             // Space, tabs, etc.
     TagName,           // Small letters or digits
@@ -65,7 +65,7 @@ pub enum Char {
     Dash,
     Digit,
     Dot,
-    Eq,
+    EqLessMore,
     LowercaseOrDigit,
     Quote,
     Space,
@@ -81,7 +81,7 @@ impl Display for Char {
             Char::Dash => "dash",
             Char::Digit => "digit",
             Char::Dot => "dot",
-            Char::Eq => "equal",
+            Char::EqLessMore => "equal or less or more",
             Char::LowercaseOrDigit => "lowercase letter or digit",
             Char::Quote => "quote",
             Char::Space => "space",
@@ -99,7 +99,7 @@ impl Char {
             Char::Dash => *c == '-',
             Char::Digit => c.is_ascii_digit(),
             Char::Dot => *c == '.',
-            Char::Eq => *c == '=',
+            Char::EqLessMore => *c == '=' || *c == '<' || *c == '>',
             Char::LowercaseOrDigit => c.is_lowercase() || c.is_ascii_digit(),
             Char::Quote => *c == '"',
             Char::Space => c.is_ascii_whitespace(),
@@ -131,14 +131,14 @@ pub struct Tokenizer<'a> {
 }
 
 impl<'a> Tokenizer<'a> {
-    pub fn new(input: &'a str, _: bool) -> Self {
+    pub fn new(input: &'a str, parse_date: bool) -> Self {
         let mut tokenizer = Self {
             tokens: Vec::with_capacity(128), // Educated guess of usual entry length
             expected_next: vec![],
             error: None,
             input: input.chars().peekable(),
         };
-        match tokenizer.tokenize_input() {
+        match tokenizer.tokenize_input(parse_date) {
             Ok(()) => {}
             Err(TokenizingResult::EndOfLine(next)) => {
                 if let Some((token, _, _)) = next {
@@ -163,8 +163,10 @@ impl<'a> Tokenizer<'a> {
         tokenizer
     }
 
-    fn tokenize_input(&mut self) -> Result<(), TokenizingResult> {
-        self.tokenize_datetimes()?;
+    fn tokenize_input(&mut self, parse_date: bool) -> Result<(), TokenizingResult> {
+        if parse_date {
+            self.tokenize_datetimes()?;
+        }
         self.tokenize_tags()?;
         self.tokenize_comments()
     }
@@ -292,9 +294,9 @@ impl<'a> Tokenizer<'a> {
             }
             Err(err) => return Err(err), // Forward anything else
         };
-        //                   We are here now ↓ Read optional property operator, followed by property value
+        //                       We are here now ↓ Read optional property operator, followed by property value
         // 2022-01-11 15:00 18:00 activity foo bar=foo. activity2. Comment about it
-        let prop_op = self.read(Token::PropertyOperator, Char::Eq, 0..1, true)?;
+        let prop_op = self.read(Token::PropertyOperator, Char::EqLessMore, 0..1, true)?;
         let prop_value = self.tokenize_property_value()?;
         if prop_op > 0 && prop_value.is_none() {
             // Property value is expected when operator was used
