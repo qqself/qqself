@@ -1,6 +1,4 @@
-use std::collections::btree_map::Iter;
 use std::collections::{BTreeMap, BTreeSet};
-use std::rc::Weak;
 use std::vec;
 
 use crate::data_views::journal::{JournalDay, JournalUpdate, JournalView};
@@ -120,15 +118,9 @@ pub enum Notification {
     Skills(SkillsNotification),
 }
 
-pub trait DBSubscriber {
-    fn notify(&self, all: Iter<DateTimeRange, Record>, event: &ChangeEvent);
-}
-
 // Parsed collection of all active entries and goals
 pub struct DB {
     entries: BTreeMap<DateTimeRange, Record>,
-    // TODO: DBSubscriber is an old functionality from PoC and should be removed
-    on_new_record: Vec<Weak<dyn DBSubscriber>>,
     on_notification: Option<Box<dyn Fn(Notification)>>,
     on_view_update: Option<Box<dyn Fn(ViewUpdate)>>,
     view_journal: JournalView,
@@ -139,7 +131,6 @@ impl DB {
     pub fn new() -> Self {
         DB {
             entries: BTreeMap::new(),
-            on_new_record: vec![],
             view_skills: SkillsView::default(),
             view_journal: JournalView::default(),
             on_view_update: None,
@@ -158,45 +149,42 @@ impl DB {
     /// Adds new record to the DB. Interactively means user is adding a record right now. If records are restored from
     /// cache, fetched from API then it's considered not interactive and simple `DB::add` should be called instead.
     /// In interactive mode user may benefit from `Notifications`, so those are emitted in case of noticeable progress
-    pub fn add_interactively(&mut self, record: Record, now: DateDay) {
-        let Some(event) = self.merge(record) else { return };
-        self.view_journal.update(&event, &self.on_view_update);
-        self.view_skills.update(
-            self.entries.iter(),
-            &event,
-            true,
-            Some(now),
-            &self.on_view_update,
-            &self.on_notification,
-        );
+    pub fn add_interactively(&mut self, record: Record, now: DateDay) -> Option<ChangeEvent> {
+        let event = self.merge(record);
+        if let Some(event) = &event {
+            self.view_journal.update(event, &self.on_view_update);
+            self.view_skills.update(
+                self.entries.iter(),
+                event,
+                true,
+                Some(now),
+                &self.on_view_update,
+                &self.on_notification,
+            );
+        }
+        event
     }
 
     /// Adds new record to the DB. Notifications are not emitted as adding considered not interactive
-    pub fn add(&mut self, record: Record, interactive: bool, now: Option<DateDay>) {
-        let Some(event) = self.merge(record) else { return };
-
-        self.view_journal.update(&event, &self.on_view_update);
-        self.view_skills.update(
-            self.entries.iter(),
-            &event,
-            interactive,
-            now,
-            &self.on_view_update,
-            &self.on_notification,
-        );
-
-        // TODO: Remove when `on_new_record` will be removed
-        let mut cleanup = false;
-        for s in self.on_new_record.iter() {
-            if let Some(subscriber) = s.upgrade() {
-                subscriber.notify(self.entries.iter(), &event)
-            } else {
-                cleanup = true;
-            }
+    pub fn add(
+        &mut self,
+        record: Record,
+        interactive: bool,
+        now: Option<DateDay>,
+    ) -> Option<ChangeEvent> {
+        let event = self.merge(record);
+        if let Some(event) = &event {
+            self.view_journal.update(event, &self.on_view_update);
+            self.view_skills.update(
+                self.entries.iter(),
+                event,
+                interactive,
+                now,
+                &self.on_view_update,
+                &self.on_notification,
+            );
         }
-        if cleanup {
-            self.on_new_record.retain(|s| s.upgrade().is_some());
-        }
+        event
     }
 
     pub fn count(&self) -> usize {
@@ -296,10 +284,6 @@ impl DB {
         todo!()
     }
 
-    pub fn subscribe_entry_updates(&mut self, subscriber: Weak<dyn DBSubscriber>) {
-        self.on_new_record.push(subscriber);
-    }
-
     pub fn on_view_update(&mut self, cb: Box<dyn Fn(ViewUpdate)>) {
         self.on_view_update.replace(cb);
     }
@@ -387,9 +371,7 @@ pub enum QueryError {
 mod tests {
     use crate::date_time::datetime::DateDay;
 
-    use super::DBSubscriber;
     use super::*;
-    use std::{rc::Rc, sync::Mutex};
 
     use lazy_static::lazy_static;
 
@@ -420,43 +402,28 @@ mod tests {
         unreachable!()
     }
 
-    struct TestSubscriber {
-        events: Mutex<Vec<ChangeEvent>>,
-    }
-
-    impl DBSubscriber for TestSubscriber {
-        fn notify(&self, _: Iter<DateTimeRange, Record>, event: &ChangeEvent) {
-            let mut events = self.events.lock().unwrap();
-            events.push(event.clone())
-        }
-    }
-
     fn parse_entry(text: &str, revision: usize) -> Record {
         let entry =
             Entry::parse(&format!("{} 00:00 - {} {}", *BASE_DATE, *BASE_DATE, text)).unwrap();
         Record::Value(RecordValue::Entry(RecordEntry { revision, entry }))
     }
 
+    #[derive(Default)]
     struct TestDB {
         db: DB,
-        sub: Rc<TestSubscriber>,
+        events: Vec<ChangeEvent>,
     }
     impl TestDB {
-        fn new() -> Self {
-            let mut db = DB::new();
-            let sub = Rc::new(TestSubscriber {
-                events: Mutex::new(Vec::new()),
-            });
-            db.subscribe_entry_updates(Rc::downgrade(&(sub.clone() as Rc<dyn DBSubscriber>)));
-            Self { db, sub }
-        }
         fn add(&mut self, record: Record) {
-            self.db.add(record, false, None)
+            if let Some(event) = self.db.add(record, false, None) {
+                self.events.push(event);
+            }
         }
+
         fn assert_events(&self, want: Vec<ChangeEvent>) {
-            let got = self.sub.events.lock().unwrap();
-            assert_eq!(*got, want);
+            assert_eq!(self.events, want);
         }
+
         fn assert_record(&self, want: Vec<&Record>) {
             let got: Vec<(DateTimeRange, &Record)> = self
                 .db
@@ -471,30 +438,11 @@ mod tests {
     }
 
     #[test]
-    fn db_subscribers() {
-        let mut db = DB::new();
-        {
-            // New scope to see that subscribers got removed later on
-            let sub = Rc::new(TestSubscriber {
-                events: Mutex::new(Vec::new()),
-            });
-            db.add(parse_entry("00:01 a", 0), false, None);
-            assert_eq!(sub.events.lock().unwrap().len(), 0);
-            db.subscribe_entry_updates(Rc::downgrade(&(sub.clone() as Rc<dyn DBSubscriber>)));
-            db.add(parse_entry("00:02 b", 0), false, None);
-            assert_eq!(sub.events.lock().unwrap().len(), 1);
-            assert_eq!(db.on_new_record.len(), 1);
-        }
-        db.add(parse_entry("00:03 c", 0), false, None);
-        assert_eq!(db.on_new_record.len(), 0)
-    }
-
-    #[test]
     fn merge_logic_append() {
         // Adding entries with different dateranges just appends
         let rec1 = parse_entry("00:01 a", 0);
         let rec2 = parse_entry("00:02 a", 0);
-        let mut db = TestDB::new();
+        let mut db = TestDB::default();
         db.add(rec1.clone());
         db.add(rec2.clone());
         db.assert_events(vec![
@@ -509,7 +457,7 @@ mod tests {
         // Adding the same entry is ignored
         let rec1 = parse_entry("00:01 a", 1);
         let rec2 = parse_entry("00:01 a", 1);
-        let mut db = TestDB::new();
+        let mut db = TestDB::default();
         db.add(rec1.clone());
         db.add(rec2);
         db.assert_events(vec![ChangeEvent::Added(rec1.clone())]);
@@ -526,7 +474,7 @@ mod tests {
         // Adding entry with higher revision replaces
         let rec1 = parse_entry("00:01 a", 1);
         let rec2 = parse_entry("00:01 b", 2);
-        let mut db = TestDB::new();
+        let mut db = TestDB::default();
         db.add(rec1.clone());
         db.add(rec2.clone());
         db.assert_events(vec![
@@ -544,7 +492,7 @@ mod tests {
         // Two records with the same daterange and revision creates a conflict
         let rec1 = parse_entry("00:01 a", 1);
         let rec2 = parse_entry("00:01 b", 1);
-        let mut db = TestDB::new();
+        let mut db = TestDB::default();
         db.add(rec1.clone());
         db.add(rec2.clone());
         let conflict1 = new_conflict(1, vec![&rec1, &rec2]);
@@ -578,7 +526,7 @@ mod tests {
     fn merge_logic_two_conflicts() {
         let rec1 = parse_entry("00:01 a", 1);
         let rec2 = parse_entry("00:01 b", 1);
-        let mut db = TestDB::new();
+        let mut db = TestDB::default();
         db.add(rec1.clone());
         db.add(rec2.clone());
         let rec3 = parse_entry("00:01 c", 1);
@@ -604,7 +552,7 @@ mod tests {
     #[test]
     fn merge_logic_external_conflict() {
         let rec1 = parse_entry("00:01 a", 1);
-        let mut db = TestDB::new();
+        let mut db = TestDB::default();
         db.add(rec1.clone());
         let rec2 = parse_entry("00:01 b", 1);
         let rec3 = parse_entry("00:01 c", 1);
