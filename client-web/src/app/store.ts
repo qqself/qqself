@@ -7,15 +7,14 @@ import { DataEvents } from "./data"
 import { debug, info } from "../logger"
 import { APIProvider } from "./api"
 
-export interface JournalViewUpdate {
-  view: "Journal"
-  day: string
+export interface QueryResultsUpdate {
+  view: "QueryResults"
 }
 export interface SkillsViewUpdate {
   view: "Skills"
   message: string
 }
-export type ViewUpdate = JournalViewUpdate | SkillsViewUpdate
+export type ViewUpdate = QueryResultsUpdate | SkillsViewUpdate
 export interface SkillsViewNotification {
   view: "Skills"
   message: string
@@ -49,8 +48,9 @@ export interface Events {
   "status.sync": { status: "pending" | "completed" } // Sets current sync status
   "status.currentOperation": { operation: string | null } // Sets current long-time operation
   // Views
-  "views.update.journal": { update: JournalViewUpdate } // Journal view updated
+  "views.update.queryResults": { update: QueryResultsUpdate } // QueryResults view updated
   "views.update.skills": { update: SkillsViewUpdate } // Skills view updated
+  "views.queryResults.queryUpdated": { query: string } // QueryResults query updated
   "views.notification.skills": { update: SkillsViewNotification } // Notification from Skills view
 }
 
@@ -70,7 +70,9 @@ export class Store {
   }
 
   async dispatch<T extends keyof Events>(event: T, eventArgs: Events[T]): Promise<void> {
-    info(`Event ${event}`)
+    if (!event.startsWith("views.update.")) {
+      info(`Event ${event}`) // Filter our noisy views.update
+    }
     // TODO TypeScript failed to recognize exact type of eventArgs and keeps it generic
     //      Probably it may be possible to create type helper to avoid event name repetition
     if (event == "init.started") {
@@ -103,6 +105,9 @@ export class Store {
     } else if (event == "data.entry.added") {
       const args = eventArgs as Events["data.entry.added"]
       await this.dataEvents.onEntryAdded(args.entry, args.callSyncAfter)
+    } else if (event == "views.queryResults.queryUpdated") {
+      const args = eventArgs as Events["views.queryResults.queryUpdated"]
+      this.userState.views.update_query(args.query)
     }
     this.eventTarget.dispatchEvent(new CustomEvent(event, { detail: eventArgs }))
     return Promise.resolve()

@@ -7,6 +7,7 @@ Few hard learned rules to follow when writing bridge functions:
 - panics/unreachable/todo should not be used as it breaks WebAssembly context and bridge stops. Return Result<T, String> instead
 - Never pass structs by value as then WebAssembly will nullify this object on JS side
 - Use crate::util::log for debugging
+- For returning arrays use js_sys::Array, JsValue::from and `extern "C" for specifying specific type for TypeScript
 - Careful with recursion - if Rust calls passed JS function (e.g. callback) which in turn calls Rust again it may create a
   situation where struct is borrowed as `&mut self` and `&self` which causes a crash with cryptic error message and bad stacktrace.
   To break recursion use `setTimeout(logic, 0)` on JS side
@@ -19,9 +20,9 @@ use std::{cell::RefCell, panic};
 use qqself_core::{
     api::{ApiRequest, RequestCreateErr},
     binary_text::BinaryToText,
-    data_views::{journal::JournalDay, skills::SkillsNotification},
+    data_views::skills::SkillsNotification,
     date_time::{datetime::DateDay, timestamp::Timestamp},
-    db::{Notification, Record, ViewUpdate, DB},
+    db::{Notification, Query, Record, ViewUpdate, DB},
     encryption::{
         self,
         hash::StableHash,
@@ -31,22 +32,11 @@ use qqself_core::{
     },
     record::Entry,
 };
-use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
+use wasm_bindgen::{prelude::wasm_bindgen, JsCast, JsValue};
 
 use crate::util::error;
 
 mod util;
-
-#[wasm_bindgen(typescript_custom_section)]
-const TS_APPEND_CONTENT: &'static str = r#"
-
-export type Skill = { 
-    title: string, 
-    kind: string, 
-    level: number
-}
-
-"#;
 
 /// Initialize the library, for now only sets panic hooks and returns build info
 #[wasm_bindgen]
@@ -203,18 +193,33 @@ impl API {
     }
 }
 
-#[wasm_bindgen(getter_with_clone)]
-pub struct AppJournalDay {
-    pub day: DateDay,
-    // TODO For now simply join all Entry.to_string() with '\n'
-    pub entries: String,
-}
-
 #[wasm_bindgen]
 pub struct Views {
     #[allow(unused)]
     keys: Keys,
     db: RefCell<DB>,
+}
+
+#[wasm_bindgen(getter_with_clone)]
+pub struct QueryResultEntry {
+    pub day: String,
+    pub text: String,
+}
+
+#[wasm_bindgen(getter_with_clone)]
+pub struct SkillData {
+    pub title: String,
+    pub kind: String,
+    pub level: usize,
+}
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(typescript_type = "Array<QueryResultEntry>")]
+    pub type QueryResultsEntryArray;
+
+    #[wasm_bindgen(typescript_type = "Array<SkillData>")]
+    pub type SkillDataArray;
 }
 
 #[wasm_bindgen]
@@ -224,9 +229,8 @@ impl Views {
         db.on_view_update(Box::new(move |update| {
             let data = js_sys::Map::new();
             match update {
-                ViewUpdate::Journal(update) => {
-                    data.set(&"view".into(), &"Journal".into());
-                    data.set(&"day".into(), &update.day.to_string().into());
+                ViewUpdate::QueryResults => {
+                    data.set(&"view".into(), &"QueryResults".into());
                 }
                 ViewUpdate::Skills(update) => {
                     data.set(&"view".into(), &"Skills".into());
@@ -272,46 +276,55 @@ impl Views {
         Ok(())
     }
 
-    pub fn journal_day(&self, day: &DateDay) -> AppJournalDay {
-        let journal_day = self
-            .db
-            .borrow()
-            .journal()
-            .get(day)
-            .cloned()
-            .unwrap_or_else(|| JournalDay::new(*day));
-        let mut entries = String::new();
-        for entry in &journal_day.entries {
-            entries.push_str(&format!("{}\n", entry.to_string_short()));
+    pub fn update_query(&self, query: String) -> Result<(), String> {
+        let query = Query::new(&query).map_err(|v| v.to_string())?;
+        let mut db = self.db.borrow_mut();
+        db.update_query(query);
+        Ok(())
+    }
+
+    pub fn query_results(&self) -> QueryResultsEntryArray {
+        let entries = js_sys::Array::default();
+        for entry in self.db.borrow().query_results().iter() {
+            let entry = QueryResultEntry {
+                day: entry.date_range().start().date().to_string(),
+                text: entry.to_string_short(),
+            };
+            entries.push(&JsValue::from(entry));
         }
-        AppJournalDay { day: *day, entries }
+        entries.unchecked_into::<QueryResultsEntryArray>()
     }
 
     pub fn entry_count(&self) -> usize {
         self.db.borrow().count()
     }
 
-    /// Returns Array of Skill
-    pub fn view_skills(&self) -> js_sys::Array {
+    pub fn view_skills(&self) -> SkillDataArray {
         let db = self.db.borrow();
         let mut skills = db.skills().iter().map(|(_, v)| v).collect::<Vec<_>>();
         skills.sort();
 
         let output = js_sys::Array::new();
         for skill in skills {
-            let data = js_sys::Map::new();
-            data.set(&"title".into(), &skill.title().to_string().into());
-            data.set(&"kind".into(), &skill.kind().to_string().into());
-            data.set(&"level".into(), &skill.progress().level.into());
-            output.push(&data);
+            let skill_data = SkillData {
+                title: skill.title().to_string(),
+                kind: skill.kind().to_string(),
+                level: skill.progress().level,
+            };
+            output.push(&JsValue::from(skill_data));
         }
-        output
+        output.unchecked_into::<SkillDataArray>()
     }
 }
 
 #[wasm_bindgen]
 pub fn validateEntry(input: String) -> Option<String> {
     Entry::parse(&input).map_err(|e| e.to_string()).err()
+}
+
+#[wasm_bindgen]
+pub fn validateQuery(query: String) -> Option<String> {
+    Query::new(&query).map_err(|v| v.to_string()).err()
 }
 
 #[wasm_bindgen]

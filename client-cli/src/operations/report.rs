@@ -7,7 +7,7 @@ use std::{
 
 use qqself_core::{
     date_time::datetime::DateDay,
-    db::{Record, DB},
+    db::{Query, Record, DB},
     record::Entry,
 };
 use structopt::{clap::arg_enum, StructOpt};
@@ -66,11 +66,17 @@ pub fn report(opts: ReportOpts) {
     let (start, end) = journal_range(opts.period);
     println!("Journal for range: {} - {}", start, end);
 
-    for (day, journal_day) in db.journal().range(start..end) {
-        println!("Day {}", day);
-        for entry in &journal_day.entries {
-            println!("\t{}", entry.to_string_short());
+    let query = Query::new(&format!("filter after={} before={}", start, end))
+        .expect("query should be valid");
+    db.update_query(query);
+
+    let mut prev_day = None;
+    for entry in db.query_results().iter() {
+        if !prev_day.is_some_and(|v| v == entry.date_range().start().date()) {
+            prev_day.replace(entry.date_range().start().date());
+            println!("Day {}", entry.date_range().start().date());
         }
+        println!("\t{}", entry.to_string_short());
     }
 }
 

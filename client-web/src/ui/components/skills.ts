@@ -2,7 +2,7 @@ import { css, html, LitElement } from "lit"
 import { customElement, property } from "lit/decorators.js"
 import "../controls/panel"
 import "../controls/icon"
-import { Skill } from "../../../bridge/pkg/qqself_client_web_bridge"
+import { SkillData } from "../../../bridge/pkg"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -13,7 +13,7 @@ declare global {
 @customElement("q-skills")
 export class Skills extends LitElement {
   @property({ type: Array })
-  skills: Skill[] = []
+  skills: SkillData[] = []
 
   static styles = css`
     q-icon {

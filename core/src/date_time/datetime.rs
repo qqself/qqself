@@ -234,7 +234,7 @@ impl FromStr for DateDay {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         check_format(s, vec!['d', 'd', 'd', 'd', '-', 'd', 'd', '-', 'd', 'd'])?;
-        let year: i32 = parse_number(&s[0..4], 2000, 3000)?;
+        let year: i32 = parse_number(&s[0..4], 1900, 3000)?;
         let month: u8 = parse_number(&s[5..7], 1, 12)?;
         let month = time::Month::try_from(month).expect("invalid month number");
         let day: u8 = parse_number(&s[8..10], 1, 31)?;
