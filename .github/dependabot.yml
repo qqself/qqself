@@ -8,3 +8,15 @@ updates:
     directory: "/client-web"
     schedule:
       interval: "weekly"
+  - package-ecosystem: "docker"
+    directory: "/client-web"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "docker"
+    directory: "/api-sync"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "docker"
+    directory: "/www"
+    schedule:
+      interval: "weekly"
