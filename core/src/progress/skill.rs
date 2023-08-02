@@ -36,13 +36,13 @@ pub enum SkillKind {
 
 #[derive(Default, Debug)]
 pub struct SkillProgress {
-    pub level: u64,
-    pub minutes_till_next: u64,
-    pub duration_minutes: u64,
+    pub level: usize,
+    pub minutes_till_next: usize,
+    pub duration_minutes: usize,
 }
 
 impl SkillProgress {
-    pub fn new(duration_minutes: u64) -> Self {
+    pub fn new(duration_minutes: usize) -> Self {
         let (level, minutes_till_next) = skill_level(duration_minutes);
         SkillProgress {
             level,
@@ -105,7 +105,7 @@ impl Skill {
 
     /// Returns skill progress - current level and minutes till the next level
     pub fn progress(&self) -> SkillProgress {
-        SkillProgress::new(self.duration_minutes)
+        SkillProgress::new(self.duration_minutes as usize)
     }
 
     pub fn selector(&self) -> &Selector {
@@ -150,7 +150,7 @@ impl PartialOrd for Skill {
 
 impl Display for Skill {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let (level, _) = skill_level(self.duration_minutes);
+        let (level, _) = skill_level(self.duration_minutes as usize);
         f.write_fmt(format_args!(
             "{} {:015} {: >4}",
             self.kind.to_string(),
@@ -163,17 +163,17 @@ impl Display for Skill {
 // Calculates skill level and time left before the next level
 // Created in way to produce level 100 around 10_000 hours
 // Levelling is fast at start, but higher levels require more time
-fn skill_level(minutes: u64) -> (u64, u64) {
+fn skill_level(minutes: usize) -> (usize, usize) {
     let factor = 1.0673005;
     let mut level = 0;
     let mut total_minutes = 0.0;
     let mut hours_per_level = 1.0;
-    while minutes >= total_minutes as u64 {
+    while minutes >= total_minutes as usize {
         level += 1;
         hours_per_level *= factor;
         total_minutes += hours_per_level * 60.0;
     }
-    (level, total_minutes as u64 - minutes)
+    (level, total_minutes as usize - minutes)
 }
 
 #[cfg(test)]

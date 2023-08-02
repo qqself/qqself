@@ -7,8 +7,8 @@ export const loginSucceeded = async (store: Store, keys: Keys): Promise<void> =>
   await saveCredentials(keys)
   const onViewUpdate = (data: Map<string, string>) => {
     const update = Object.fromEntries(data) as unknown as ViewUpdate
-    if (update.view == "Journal") {
-      void store.dispatch("views.update.journal", { update })
+    if (update.view == "QueryResults") {
+      void store.dispatch("views.update.queryResults", { update })
     } else {
       void store.dispatch("views.update.skills", { update })
     }

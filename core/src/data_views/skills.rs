@@ -108,7 +108,7 @@ impl SkillsView {
         // Skill level got increased
         let progress_now = skill.progress();
         let progress_before = entry_duration.map_or(SkillProgress::default(), |v| {
-            SkillProgress::new(skill.progress().duration_minutes - v.duration().minutes())
+            SkillProgress::new(skill.progress().duration_minutes - v.duration().minutes() as usize)
         });
         if progress_before.level < progress_now.level {
             on_notification(Notification::Skills(SkillsNotification::LevelUp(format!(

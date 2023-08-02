@@ -1,15 +1,16 @@
 import { css, html, LitElement } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
-import { AppJournalDay, DateDay, Skill } from "../../../bridge/pkg"
 import "../components/logoBlock"
 import "../controls/button"
 import "../controls/notification"
-import "../components/journal"
+import "../components/queryResults"
 import "../components/skills"
 import "../components/statusBar"
 
 import { Store } from "../../app/store"
 import { EntrySaveEvent } from "../components/entryInput"
+import { DateDay, QueryResultEntry, SkillData } from "../../../bridge/pkg"
+import { QueryUpdatedEvent } from "../components/queryResults"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -26,10 +27,10 @@ export class ProgressPage extends LitElement {
   currentDay!: DateDay
 
   @state()
-  journalData!: AppJournalDay
+  queryResultsData: Record<string, string[]> = {}
 
   @state()
-  skillsData: Skill[] = []
+  skillsData: SkillData[] = []
 
   @state()
   error = ""
@@ -45,7 +46,7 @@ export class ProgressPage extends LitElement {
       display: flex;
       margin: 10px;
     }
-    .journal {
+    .query-results {
       display: flex;
       flex-direction: column;
       flex-basis: 100%;
@@ -70,32 +71,37 @@ export class ProgressPage extends LitElement {
     }
   `
 
-  onSwitchDay(diff: number) {
-    this.currentDay =
-      diff > 0 ? this.journalData.day.add_days(1) : this.journalData.day.remove_days(1)
-    this.updateJournal()
+  async onQueryUpdated(e: QueryUpdatedEvent) {
+    await this.store.dispatch("views.queryResults.queryUpdated", { query: e.detail.query })
+    this.updateQueryResults()
   }
 
   onEntryAdded(e: EntrySaveEvent) {
     return this.store.dispatch("data.entry.added", { entry: e.detail.entry, callSyncAfter: true })
   }
 
-  updateJournal() {
-    this.journalData = this.store.userState.views.journal_day(this.currentDay)
+  updateQueryResults() {
+    this.queryResultsData = this.store.userState.views
+      .query_results()
+      .reduce<Record<string, string[]>>((acc, cur) => {
+        const day = cur.day
+        if (day in acc) {
+          acc[day].push(cur.text)
+        } else {
+          acc[day] = [cur.text]
+        }
+        return acc
+      }, {})
   }
 
   updateSkills() {
-    const data = this.store.userState.views.view_skills() as Map<string, string | number>[]
-    this.skillsData = data.map((v) => Object.fromEntries(v) as unknown as Skill)
+    this.skillsData = this.store.userState.views.view_skills()
   }
 
   connectedCallback() {
     super.connectedCallback()
-    this.store.subscribe("views.update.journal", (event) => {
-      if (event.update.day == this.currentDay.toString()) {
-        // Update and rerender only if update day is the current one
-        this.updateJournal()
-      }
+    this.store.subscribe("views.update.queryResults", () => {
+      this.updateQueryResults()
     })
     this.store.subscribe("views.update.skills", () => {
       this.updateSkills()
@@ -108,7 +114,7 @@ export class ProgressPage extends LitElement {
       "status.currentOperation",
       (e) => (this.status = { ...this.status, op: e.operation }),
     )
-    this.updateJournal()
+    this.updateQueryResults()
     this.updateSkills()
     return this.store.dispatch("data.sync.init", null)
   }
@@ -136,13 +142,13 @@ export class ProgressPage extends LitElement {
   render() {
     return html`
       <div class="root">
-        <q-journal
-          class="journal"
-          .data=${this.journalData}
-          @next=${() => this.onSwitchDay(1)}
-          @prev=${() => this.onSwitchDay(-1)}
+        <q-query-results
+          class="query-results"
+          .data=${this.queryResultsData}
+          .query=${`filter before=${DateDay.fromDate(new Date()).remove_days(30).toString()}. `}
+          @queryUpdated=${this.onQueryUpdated.bind(this)}
           @save=${this.onEntryAdded.bind(this)}
-        ></q-journal>
+        ></q-query-results>
         <q-skills class="skills" .skills=${this.skillsData}></q-skills>
       </div>
       ${this.error && html`<p>Error ${this.error}</p>`} ${this.renderNotifications()}

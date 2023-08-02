@@ -1,12 +1,11 @@
 use std::collections::{BTreeMap, BTreeSet};
-use std::vec;
 
-use crate::data_views::journal::{JournalDay, JournalUpdate, JournalView};
+use crate::data_views::query_results::QueryResultsView;
 use crate::data_views::skills::{SkillsNotification, SkillsUpdate, SkillsView};
 use crate::date_time::datetime::{DateDay, DateTimeRange};
 use crate::parsing::parser::{ParseError, Parser};
 use crate::progress::skill::Skill;
-use crate::record::{Entry, PropOperator, PropVal, Tag};
+use crate::record::{Entry, PropVal, Tag};
 
 #[derive(Clone, PartialEq, Debug, Ord, PartialOrd, Eq)]
 pub struct RecordEntry {
@@ -108,7 +107,7 @@ pub enum ChangeEvent {
 /// Emitted when view data got updated and clients need to re-render the view
 #[derive(PartialEq, Debug)]
 pub enum ViewUpdate {
-    Journal(JournalUpdate),
+    QueryResults,
     Skills(SkillsUpdate),
 }
 
@@ -123,7 +122,7 @@ pub struct DB {
     entries: BTreeMap<DateTimeRange, Record>,
     on_notification: Option<Box<dyn Fn(Notification)>>,
     on_view_update: Option<Box<dyn Fn(ViewUpdate)>>,
-    view_journal: JournalView,
+    view_query_results: QueryResultsView,
     view_skills: SkillsView,
 }
 
@@ -132,7 +131,7 @@ impl DB {
         DB {
             entries: BTreeMap::new(),
             view_skills: SkillsView::default(),
-            view_journal: JournalView::default(),
+            view_query_results: QueryResultsView::default(),
             on_view_update: None,
             on_notification: None,
         }
@@ -142,8 +141,8 @@ impl DB {
         self.view_skills.data()
     }
 
-    pub fn journal(&self) -> &BTreeMap<DateDay, JournalDay> {
-        self.view_journal.data()
+    pub fn query_results(&self) -> &BTreeSet<Entry> {
+        self.view_query_results.data()
     }
 
     /// Adds new record to the DB. Interactively means user is adding a record right now. If records are restored from
@@ -152,7 +151,7 @@ impl DB {
     pub fn add_interactively(&mut self, record: Record, now: DateDay) -> Option<ChangeEvent> {
         let event = self.merge(record);
         if let Some(event) = &event {
-            self.view_journal.update(event, &self.on_view_update);
+            self.view_query_results.update(event, &self.on_view_update);
             self.view_skills.update(
                 self.entries.iter(),
                 event,
@@ -174,7 +173,7 @@ impl DB {
     ) -> Option<ChangeEvent> {
         let event = self.merge(record);
         if let Some(event) = &event {
-            self.view_journal.update(event, &self.on_view_update);
+            self.view_query_results.update(event, &self.on_view_update);
             self.view_skills.update(
                 self.entries.iter(),
                 event,
@@ -280,16 +279,9 @@ impl DB {
         }
     }
 
-    pub fn query(&self, query: Query) -> Vec<Entry> {
-        let mut results = vec![];
-        self.entries.iter().for_each(|(_, record)| {
-            if let Record::Value(RecordValue::Entry(entry)) = record {
-                if query.matches(&entry.entry) {
-                    results.push(entry.entry.clone());
-                }
-            }
-        });
-        results
+    pub fn update_query(&mut self, query: Query) {
+        self.view_query_results
+            .update_query(query, self.entries.iter(), &self.on_view_update);
     }
 
     pub fn on_view_update(&mut self, cb: Box<dyn Fn(ViewUpdate)>) {
@@ -344,30 +336,40 @@ impl Selector {
 #[derive(PartialEq, Eq, Debug, Clone, Default)]
 pub struct Query {
     pub selector: Selector,
-    pub date_filter: Option<DateDay>,
-    pub date_filter_op: Option<PropOperator>,
+    pub date_start: Option<DateDay>,
+    pub date_end: Option<DateDay>,
 }
 
 impl Query {
     pub fn new(query: &str) -> Result<Query, ParseError> {
+        if query.is_empty() {
+            return Ok(Query::default());
+        }
         let mut parser = Parser::new(query);
         let (tags, _) = parser.parse_record()?;
-        let mut date_filter = None;
-        let mut date_filter_op = None;
+        let mut date_start = None;
+        let mut date_end = None;
         for tag in &tags {
             if tag.name == "filter" {
                 for prop in &tag.props {
-                    if let (PropVal::String(val), "date") = (&prop.val, prop.name.as_str()) {
-                        date_filter = Some(val.parse::<DateDay>().map_err(|_| {
+                    if let (PropVal::String(val), "after") = (&prop.val, prop.name.as_str()) {
+                        date_start = Some(val.parse::<DateDay>().map_err(|_| {
                             ParseError::Unexpected(
                                 format!("'date' in YYYY-MM-DD format is expected, got |{val}|"),
                                 prop.start_pos,
                             )
                         })?);
-                        date_filter_op = Some(prop.operator.clone())
+                    } else if let (PropVal::String(val), "before") = (&prop.val, prop.name.as_str())
+                    {
+                        date_end = Some(val.parse::<DateDay>().map_err(|_| {
+                            ParseError::Unexpected(
+                                format!("'date' in YYYY-MM-DD format is expected, got |{val}|"),
+                                prop.start_pos,
+                            )
+                        })?);
                     } else {
                         return Err(ParseError::Unexpected(
-                            "'date' property is expected".to_string(),
+                            "'after' or 'before' property is expected".to_string(),
                             tag.start_pos,
                         ));
                     };
@@ -379,20 +381,20 @@ impl Query {
         };
         Ok(Query {
             selector,
-            date_filter,
-            date_filter_op,
+            date_start,
+            date_end,
         })
     }
 
     pub fn matches(&self, entry: &Entry) -> bool {
         // Check first for date limits
-        if let (Some(date), Some(op)) = (&self.date_filter, &self.date_filter_op) {
-            let is_date_match = match op {
-                PropOperator::Eq => entry.date_range.start().date() == *date,
-                PropOperator::Less => entry.date_range.start().date() < *date,
-                PropOperator::More => entry.date_range.start().date() > *date,
-            };
-            if !is_date_match {
+        if let Some(min_date) = self.date_start {
+            if entry.date_range.start().date() < min_date {
+                return false;
+            }
+        }
+        if let Some(max_date) = self.date_end {
+            if entry.date_range.end().date() > max_date {
                 return false;
             }
         }
@@ -469,12 +471,13 @@ mod tests {
             assert_eq!(got, want);
         }
 
-        fn assert_query_results(&self, query: &'static str, want: Vec<&'static str>) {
+        fn assert_query_results(&mut self, query: &'static str, want: Vec<&'static str>) {
             let query = Query::new(query).unwrap();
+            self.db.update_query(query);
             let result: Vec<_> = self
                 .db
-                .query(query)
-                .into_iter()
+                .query_results()
+                .iter()
                 .map(|v| {
                     let s = &v.to_string()[ENTRY_PREFIX.len() + 1..].to_string();
                     s.clone()
@@ -650,14 +653,20 @@ mod tests {
 
         // Filter by date
         db.assert_query_results(
-            "filter date = 2000-01-01",
+            "filter after=2000-01-01",
             vec!["00:01 foo", "00:02 bar", "00:03 foo"],
         );
 
         // Filter by date and tag
-        db.assert_query_results("bar. filter date = 2000-01-01", vec!["00:02 bar"]);
+        db.assert_query_results("bar. filter after=2000-01-01", vec!["00:02 bar"]);
 
         // Nothing found
-        db.assert_query_results("filter date < 2000-01-01", vec![]);
+        db.assert_query_results("filter before=1999-01-01", vec![]);
+
+        // Multiple filter by date
+        db.assert_query_results(
+            "bar. filter after=2000-01-01 before=2000-01-02",
+            vec!["00:02 bar"],
+        );
     }
 }

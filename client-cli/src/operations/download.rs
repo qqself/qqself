@@ -70,11 +70,13 @@ fn download_journal(journal_path: &Path, keys: KeyFile) -> PathBuf {
         db.add(Record::from_entry(entry, 1), false, None);
     }
     let mut output = String::new();
-    db.journal().iter().for_each(|(_, day)| {
-        for entry in &day.entries {
-            output.push_str(&format!("{}\n", entry));
+    let mut prev_day = None;
+    db.query_results().iter().for_each(|entry| {
+        if !prev_day.is_some_and(|v| v == entry.date_range().start().date()) {
+            prev_day.replace(entry.date_range().start().date());
+            output.push('\n');
         }
-        output.push('\n');
+        output.push_str(&format!("{}\n", entry));
     });
     info!("Writing entries to journal {:?} ...", journal_path);
     fs::write(journal_path, output).expect("Failed to write journal file");
@@ -163,13 +165,13 @@ mod tests {
         let content = fs::read_to_string(wrote).unwrap();
         assert_eq!(
             content,
-            "2022-10-03 00:00 01:00 foo1
+            "
+2022-10-03 00:00 01:00 foo1
 2022-10-03 00:00 02:00 foo2
 2022-10-03 00:00 03:00 foo3
 
 2022-10-04 00:00 04:00 foo4
 2022-10-04 00:00 05:00 foo5
-
 "
         );
     }

@@ -3,7 +3,7 @@ import { customElement, property, state } from "lit/decorators.js"
 import { DateDay } from "../../../bridge/pkg/qqself_client_web_bridge"
 import "../components/skills"
 import "../components/entryInput"
-import "../components/journal"
+import "../components/queryResults"
 import "../components/statusBar"
 import "../controls/panel"
 import "../controls/notification"
@@ -68,7 +68,7 @@ export class DevcardsPage extends LitElement {
 2022-07-15 00:00 00:11 drums. skill kind=🫀. Drummer
 2023-07-15 00:00 00:12 sculpture. skill kind=🫀. Sculptor
 2022-11-09 09:20 11:00 qqself. Query for DynamoDB storage, figured out we should always include items equal to after_timestamp
-2022-11-09 11:05 11:25 drums
+2022-11-09 03:05 23:25 drums
 2022-11-09 11:25 12:30 qqself. Completed DynamoDB storage, created a PR
 2022-11-09 13:40 15:20 qqself. AWS config changes for Dynamo, switch to Dynamo storage in code
 2022-11-09 15:50 16:50 qqself. Deploying DynamoDB changes, found a race condition. Nope, it was not
@@ -85,6 +85,18 @@ export class DevcardsPage extends LitElement {
     for (const entry of input.split("\n")) {
       await this.store.dispatch("data.entry.added", { entry, callSyncAfter: false })
     }
+
+    const groupedEntries = this.store.userState.views
+      .query_results()
+      .reduce<Record<string, string[]>>((acc, cur) => {
+        const day = cur.day
+        if (day in acc) {
+          acc[day].push(cur.text)
+        } else {
+          acc[day] = [cur.text]
+        }
+        return acc
+      }, {})
 
     // Render all the devcards. If page hash ends with `/devcards:[CARD_NAME]` then only the card with such name will be rendered
     this.cards = html`<div class="devcards">
@@ -105,10 +117,8 @@ export class DevcardsPage extends LitElement {
       </q-card>
 
       <!-- Components -->
-      <q-card name="Journal">
-        <q-journal
-          .data=${this.store.userState.views.journal_day(DateDay.fromDate(new Date(2022, 10, 10)))}
-        ></q-journal>
+      <q-card name="QueryResults">
+        <q-query-results .data=${groupedEntries}></q-query-results>
       </q-card>
 
       <q-card name="Skills">
