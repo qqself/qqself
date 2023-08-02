@@ -25,8 +25,8 @@ const getCpuCount = () => {
 interface PoolTask {
   input: InputType
   status: "pending" | "progress"
-  onCompleted: (value: any) => void
-  onError: (value: any) => void
+  onCompleted: (value: never) => void
+  onError: (value: never) => void
 }
 
 interface PoolWorker {
@@ -43,8 +43,8 @@ interface KeylessEncryptionPool {
 // To avoid it we run multiple Worker processes that handles those operation in
 // background, kinda like a dedicated ThreadPool
 export class EncryptionPool {
-  private workers: Record<string, PoolWorker> = {}
-  private tasks: Record<string, PoolTask> = {}
+  private workers = new Map<number, PoolWorker>()
+  private tasks = new Map<number, PoolTask>()
   private lastTaskId = 0 // Counter to assign each task a unique identifier
 
   private constructor(keys: Keys | null) {
@@ -56,11 +56,11 @@ export class EncryptionPool {
         ? new Worker(new URL("./web-worker.ts", import.meta.url), { type: "module" })
         : new ThreadWorker()
       worker.addEventListener("message", this.onWorkerDone.bind(this))
-      this.workers[i] = { worker, status: "free" }
+      this.workers.set(i, { worker, status: "free" })
       worker.postMessage({
         kind: "Init",
-        workerId: String(i),
-        taskId: String(this.lastTaskId++),
+        workerId: i,
+        taskId: this.lastTaskId++,
         keys: serializedKeys,
       })
     }
@@ -84,38 +84,40 @@ export class EncryptionPool {
     if (data.output.kind == "Initialized") {
       // Worker initialized
     } else {
-      const task = this.tasks[data.taskId]
+      const task = this.tasks.get(data.taskId)
+      const worker = this.workers.get(data.workerId)
+      if (!task || !worker) throw new Error(`Task or Worker cannot be found in a pool`)
       if (data.output.kind == "Error") {
-        task.onError(data.output.error)
+        task.onError(data.output.error as never)
       } else {
-        task.onCompleted(data.output)
+        task.onCompleted(data.output as never)
       }
-      delete this.tasks[data.taskId]
-      this.workers[data.workerId].status = "free"
+      this.tasks.delete(data.taskId)
+      worker.status = "free"
       this.allocateWork()
     }
   }
 
   allocateWork() {
     for (;;) {
-      const nextTask = Object.entries(this.tasks).find((v) => v[1].status == "pending")
+      const nextTask = Array.from(this.tasks).find((v) => v[1].status == "pending")
       if (!nextTask) {
         return // No tasks available
       }
-      const nextWorker = Object.entries(this.workers).find((v) => v[1].status == "free")
+      const nextWorker = Array.from(this.workers).find((v) => v[1].status == "free")
       if (!nextWorker) {
         return // No worker available
       }
       // Worker and Task found, update it's status and start a task
-      this.tasks[nextTask[0]].status = "progress"
-      this.workers[nextWorker[0]].status = "busy"
+      nextTask[1].status = "progress"
+      nextWorker[1].status = "busy"
       nextWorker[1].worker.postMessage(nextTask[1].input)
     }
   }
 
   async generateNewKeys(): Promise<Keys> {
     const task = new Promise((resolve, reject) => {
-      const taskId = String(this.lastTaskId++)
+      const taskId = this.lastTaskId++
       const task: PoolTask = {
         input: { kind: "GenerateKeys", taskId },
         status: "pending",
@@ -124,7 +126,7 @@ export class EncryptionPool {
         },
         onError: reject,
       }
-      this.tasks[taskId] = task
+      this.tasks.set(taskId, task)
       this.allocateWork()
     })
     return task as Promise<Keys>
@@ -132,7 +134,7 @@ export class EncryptionPool {
 
   async encrypt(text: string): Promise<EncryptedPayload> {
     const task = new Promise((resolve, reject) => {
-      const taskId = String(this.lastTaskId++)
+      const taskId = this.lastTaskId++
       const task: PoolTask = {
         input: { kind: "Encrypt", taskId, text },
         status: "pending",
@@ -141,7 +143,7 @@ export class EncryptionPool {
         },
         onError: reject,
       }
-      this.tasks[taskId] = task
+      this.tasks.set(taskId, task)
       this.allocateWork()
     })
     return task as Promise<EncryptedPayload>
@@ -149,7 +151,7 @@ export class EncryptionPool {
 
   async sign(data: SignInput): Promise<string> {
     const task = new Promise((resolve, reject) => {
-      const taskId = String(this.lastTaskId++)
+      const taskId = this.lastTaskId++
       const task: PoolTask = {
         input: { kind: "Sign", taskId, data },
         status: "pending",
@@ -158,7 +160,7 @@ export class EncryptionPool {
         },
         onError: reject,
       }
-      this.tasks[taskId] = task
+      this.tasks.set(taskId, task)
       this.allocateWork()
     })
     return task as Promise<string>
@@ -166,7 +168,7 @@ export class EncryptionPool {
 
   async decrypt(payload: EncryptedEntry): Promise<DecryptedEntry> {
     const task = new Promise((resolve, reject) => {
-      const taskId = String(this.lastTaskId++)
+      const taskId = this.lastTaskId++
       const task: PoolTask = {
         input: { kind: "Decrypt", taskId, payload },
         status: "pending",
@@ -175,7 +177,7 @@ export class EncryptionPool {
         },
         onError: reject,
       }
-      this.tasks[taskId] = task
+      this.tasks.set(taskId, task)
       this.allocateWork()
     })
     return task as Promise<DecryptedEntry>

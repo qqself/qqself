@@ -38,6 +38,8 @@ impl QueryResultsView {
     ) {
         self.query = query;
         // Query got updated, we need to reiterate all the entries
+        // TODO There are better ways than recreating results from the scratch. In some cases query results are
+        //      similar to the previous one and updating it should be much faster
         let mut results = BTreeSet::default();
         for (_, record) in all.clone() {
             let Record::Value(RecordValue::Entry(entry)) = record else { continue; };

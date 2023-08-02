@@ -71,7 +71,7 @@ export class Store {
 
   async dispatch<T extends keyof Events>(event: T, eventArgs: Events[T]): Promise<void> {
     if (!event.startsWith("views.update.")) {
-      info(`Event ${event}`) // Filter our noisy views.update
+      info(`Event ${event}`) // Filter out noisy views.update
     }
     // TODO TypeScript failed to recognize exact type of eventArgs and keeps it generic
     //      Probably it may be possible to create type helper to avoid event name repetition

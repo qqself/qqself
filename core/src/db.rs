@@ -620,11 +620,12 @@ mod tests {
     }
 
     #[test]
-    fn query_by_tag() {
+    fn query() {
         let mut db = TestDB::default();
         db.add_entry("00:01 foo");
         db.add_entry("00:02 bar");
         db.add_entry("00:03 foo");
+        db.add_entry("00:04 run. skill kind=physical. Runner");
 
         // Found entries
         db.assert_query_results("foo", vec!["00:01 foo", "00:03 foo"]);
@@ -633,28 +634,17 @@ mod tests {
         db.assert_query_results("foobar", vec![]);
 
         // Entries with multiple tags
-        db.add_entry("00:04 run. skill kind=physical. Runner");
-        db.add_entry("00:05 art. skill kind=creative. Artist");
-        db.assert_query_results(
-            "skill",
-            vec![
-                "00:04 run. skill kind=physical. Runner",
-                "00:05 art. skill kind=creative. Artist",
-            ],
-        );
-    }
-
-    #[test]
-    fn query_by_date() {
-        let mut db = TestDB::default();
-        db.add_entry("00:01 foo");
-        db.add_entry("00:02 bar");
-        db.add_entry("00:03 foo");
+        db.assert_query_results("skill", vec!["00:04 run. skill kind=physical. Runner"]);
 
         // Filter by date
         db.assert_query_results(
             "filter after=2000-01-01",
-            vec!["00:01 foo", "00:02 bar", "00:03 foo"],
+            vec![
+                "00:01 foo",
+                "00:02 bar",
+                "00:03 foo",
+                "00:04 run. skill kind=physical. Runner",
+            ],
         );
 
         // Filter by date and tag
@@ -668,5 +658,16 @@ mod tests {
             "bar. filter after=2000-01-01 before=2000-01-02",
             vec!["00:02 bar"],
         );
+
+        // Empty query matches all
+        db.assert_query_results(
+            "",
+            vec![
+                "00:01 foo",
+                "00:02 bar",
+                "00:03 foo",
+                "00:04 run. skill kind=physical. Runner",
+            ],
+        )
     }
 }
