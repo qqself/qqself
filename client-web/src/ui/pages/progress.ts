@@ -9,7 +9,7 @@ import "../components/statusBar"
 
 import { Store } from "../../app/store"
 import { EntrySaveEvent } from "../components/entryInput"
-import { DateDay, QueryResultEntry, SkillData } from "../../../bridge/pkg"
+import { DateDay, SkillData } from "../../../bridge/pkg"
 import { QueryUpdatedEvent } from "../components/queryResults"
 
 declare global {
@@ -72,8 +72,7 @@ export class ProgressPage extends LitElement {
   `
 
   async onQueryUpdated(e: QueryUpdatedEvent) {
-    await this.store.dispatch("views.queryResults.queryUpdated", { query: e.detail.query })
-    this.updateQueryResults()
+    return this.store.dispatch("views.queryResults.queryUpdated", { query: e.detail.query })
   }
 
   onEntryAdded(e: EntrySaveEvent) {

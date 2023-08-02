@@ -6,7 +6,7 @@ import { InputType, OutputType, WorkerResult, processMessage } from "./worker"
 // For now create a dummy worker with similar API to Web Workers
 export class ThreadWorker extends EventTarget {
   cachedKeys: Keys | null = null
-  id: string | null = null
+  id: number | null = null
 
   postMessage(input: InputType) {
     if (input.kind == "Init") {
@@ -21,8 +21,8 @@ export class ThreadWorker extends EventTarget {
     return processMessage(input, this.cachedKeys, this.send.bind(this))
   }
 
-  send(output: OutputType, taskId: string) {
-    if (!this.id) {
+  send(output: OutputType, taskId: number) {
+    if (this.id == null) {
       this.dispatchEvent(
         new MessageEvent("message", {
           data: {

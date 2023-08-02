@@ -4,11 +4,11 @@ import { DecryptedEntry } from "./pool"
 
 export type SignInput = { kind: "find"; lastSyncId: string | null } | { kind: "delete" }
 export type InputType =
-  | { kind: "Init"; taskId: string; workerId: string; keys: string | null }
-  | { kind: "Encrypt"; taskId: string; text: string }
-  | { kind: "Decrypt"; taskId: string; payload: EncryptedEntry }
-  | { kind: "GenerateKeys"; taskId: string }
-  | { kind: "Sign"; taskId: string; data: SignInput }
+  | { kind: "Init"; taskId: number; workerId: number; keys: string | null }
+  | { kind: "Encrypt"; taskId: number; text: string }
+  | { kind: "Decrypt"; taskId: number; payload: EncryptedEntry }
+  | { kind: "GenerateKeys"; taskId: number }
+  | { kind: "Sign"; taskId: number; data: SignInput }
 
 export type OutputType =
   | { kind: "Initialized" }
@@ -21,8 +21,8 @@ export type OutputType =
 export type EncryptedPayload = Pick<EncryptedEntry, "payload">
 
 export interface WorkerResult {
-  workerId: string
-  taskId: string
+  workerId: number
+  taskId: number
   output: OutputType
 }
 
@@ -54,7 +54,7 @@ const sign = (keys: Keys | null, data: SignInput): string => {
 export const processMessage = (
   input: InputType,
   keys: Keys | null,
-  callback: (result: OutputType, taskId: string) => void,
+  callback: (result: OutputType, taskId: number) => void,
 ) => {
   switch (input.kind) {
     case "GenerateKeys":

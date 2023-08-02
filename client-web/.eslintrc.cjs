@@ -10,7 +10,7 @@ module.exports = {
     project: true,
     tsconfigRootDir: __dirname,
   },
-  plugins: ["@typescript-eslint"],
+  plugins: ["@typescript-eslint", "unused-imports"],
   root: true,
   globals: {
     fetch: "readonly",
@@ -18,5 +18,6 @@ module.exports = {
   },
   rules: {
     "no-redeclare": ["error", { builtinGlobals: false }],
+    "unused-imports/no-unused-imports": "error",
   },
 }

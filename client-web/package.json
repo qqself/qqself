@@ -3,10 +3,11 @@
   "scripts": {
     "start": "vite",
     "watch": "rsw watch",
-    "build": "wasm-pack build bridge --out-dir pkg --target web --release && tsc --noEmit && vite build",
+    "build:bridge": "wasm-pack build bridge --out-dir pkg --target web --release",
+    "build": "yarn build:bridge && tsc --noEmit && vite build",
     "test": "wasm-pack build bridge --out-dir pkg --target nodejs --release && VITE_API_HOST=https://api.qqself.com vitest --run --test-timeout 10000",
-    "lint": "prettier --write 'src/**/*.ts' && eslint src/**/*.ts --fix && lit-analyzer --strict src",
-    "lint:check": "prettier --check 'src/**/*.ts' && eslint src/**/*.ts && lit-analyzer --strict src"
+    "lint:fix": "yarn build:bridge && prettier --write 'src/**/*.ts' && eslint 'src/**/*.ts' --fix && lit-analyzer --strict src",
+    "lint:check": "yarn build:bridge && prettier --check 'src/**/*.ts' && eslint 'src/**/*.ts' && lit-analyzer --strict src"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "6.4.0",
@@ -17,6 +18,7 @@
     "@typescript-eslint/eslint-plugin": "5.62.0",
     "@typescript-eslint/parser": "5.62.0",
     "eslint": "8.46.0",
+    "eslint-plugin-unused-imports": "3.0.0",
     "jsdom": "22.1.0",
     "lit-analyzer": "2.0.0-pre.3",
     "prettier": "3.0.0",

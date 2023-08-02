@@ -7,7 +7,7 @@ Few hard learned rules to follow when writing bridge functions:
 - panics/unreachable/todo should not be used as it breaks WebAssembly context and bridge stops. Return Result<T, String> instead
 - Never pass structs by value as then WebAssembly will nullify this object on JS side
 - Use crate::util::log for debugging
-- For returning arrays use js_sys::Array, JsValue::from and `extern "C" for specifying specific type for TypeScript
+- For returning arrays use mix of js_sys::Array, JsValue::from, `extern "C"` and JsCast::unchecked_into
 - Careful with recursion - if Rust calls passed JS function (e.g. callback) which in turn calls Rust again it may create a
   situation where struct is borrowed as `&mut self` and `&self` which causes a crash with cryptic error message and bad stacktrace.
   To break recursion use `setTimeout(logic, 0)` on JS side

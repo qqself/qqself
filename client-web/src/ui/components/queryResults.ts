@@ -4,7 +4,7 @@ import "../controls/logo"
 import "./entryInput"
 import { EntrySaveEvent } from "./entryInput"
 import { colors } from "../styles"
-import { QueryResultEntry, validateQuery } from "../../../bridge/pkg"
+import { validateQuery } from "../../../bridge/pkg"
 
 declare global {
   interface HTMLElementTagNameMap {

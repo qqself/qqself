@@ -46,13 +46,14 @@ export class RegisterPage extends LitElement {
   }
 
   createDownloadLink() {
-    const keys = this.generatedKeys! // By that time keys always exists
-    const blob = new Blob([keys.serialize()], { type: "text/plain" })
+    if (!this.generatedKeys) throw new Error("Keys should be existed by now")
+    const blob = new Blob([this.generatedKeys.serialize()], { type: "text/plain" })
     return window.URL.createObjectURL(blob)
   }
 
   onLogin() {
-    return this.store.dispatch("auth.registration.succeeded", { keys: this.generatedKeys! })
+    if (!this.generatedKeys) throw new Error("Keys should be existed by now")
+    return this.store.dispatch("auth.registration.succeeded", { keys: this.generatedKeys })
   }
 
   renderRegister() {
