@@ -223,9 +223,16 @@ impl Display for PropVal {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             PropVal::None => std::fmt::Result::Ok(()),
-            PropVal::Number(n) => f.write_fmt(format_args!("{:.1}", n)),
+            PropVal::Number(n) => f.write_fmt(format_args!("{}", n)),
             PropVal::Time(time) => f.write_str(&time.to_string()),
-            PropVal::String(s) => f.write_str(s),
+            PropVal::String(s) => {
+                // If prop value contains any separator, then quotes are needed
+                if s.chars().any(|c| c.is_whitespace() || c == '.') {
+                    f.write_fmt(format_args!("\"{}\"", s))
+                } else {
+                    f.write_str(s)
+                }
+            }
         }
     }
 }
