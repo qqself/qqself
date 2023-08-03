@@ -382,6 +382,11 @@ mod tests {
             "tag1 prop1=val1 prop2=val2. tag2",
             "tag1. Comment",
             "tag1. tag2. Comment And More Text",
+            "tag1 prop=20",
+            "tag1 prop=20.33",
+            "tag1 prop=\"Hello World!\"",
+            "tag1 prop=Hello. World!",
+            "tag1 prop=\"Hello.World!\"",
         ];
         for input in cases {
             let input = format!("2000-01-01 02:02 - 2000-01-02 02:02 {input}");
