@@ -34,6 +34,7 @@ export class Skills extends LitElement {
     .level {
       display: flex;
       flex-basis: 5%;
+      justify-content: right;
     }
   `
 

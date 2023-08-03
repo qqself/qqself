@@ -1,4 +1,4 @@
-import { css, html, LitElement } from "lit"
+import { css, html, LitElement, PropertyValues } from "lit"
 import { customElement, property, state, query } from "lit/decorators.js"
 import "../controls/logo"
 import "./entryInput"
@@ -31,6 +31,9 @@ export class QueryResults extends LitElement {
   @query(".query")
   queryElement!: HTMLInputElement
 
+  @query(".results")
+  resultsElement!: HTMLElement
+
   static styles = css`
     .queryResults .query {
       box-sizing: border-box;
@@ -53,6 +56,11 @@ export class QueryResults extends LitElement {
       background-color: ${colors.background.light};
       font-family: "Monaco", "Courier", "Courier New";
       padding: 10px;
+    }
+    .queryResults .results {
+      margin-top: 10px;
+      overflow: auto;
+      max-height: 600px;
     }
   `
 
@@ -102,5 +110,12 @@ export class QueryResults extends LitElement {
       </div>
       <q-entry-input @save=${this.onSave.bind(this)}></q-entry-input>
     </div>`
+  }
+
+  updated(changedProperties: PropertyValues) {
+    // If data got updated, then automatically scroll results to the bottom, to the most recent entry
+    if (changedProperties.has("data")) {
+      this.resultsElement.scrollTop = this.resultsElement.scrollHeight
+    }
   }
 }
