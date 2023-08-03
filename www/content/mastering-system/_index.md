@@ -3,7 +3,7 @@ title = "How to become a master?"
 template = "section_mastering.html"
 +++
 
-# <i>Live Draft</i>
+# <i>Unedited First Draft</i>
 
 ## Mastering system
 
@@ -13,7 +13,7 @@ You can use this book on its own and simply apply the advice and strategies in y
 
 # Preface
 
-I met her at the 86th kilometer of my first 100 km ultra-running race. I could barely walk, and every step was nothing but pain. As she passed me, she asked, `How's it going?` — something I had heard many times in the last 18 hours. I was amazed at how happy she looked: her smile, her eyes full of joy. Maybe it was the evening sun and the moving clouds, but I think I saw her glowing. There were two races at the same time, and she was completing her first 100 miler (160 km), already longer than 30 hours on her feet. She waved goodbye, gave me her last charming smile, started going downhill, and quickly disappeared.
+I met her at the 86th kilometer of my first 100 km ultra-running race. I could barely walk, and every step was nothing but pain. As she passed me, she asked, `How's it going?` — something I had heard many times in the last 18 hours. I was amazed at how happy she looked: her smile, her eyes full of joy. Maybe it was the evening sun and the moving clouds, but I think I saw her glowing. There were two races at the same time, and she was completing 100 miler (160 km), already longer than 30 hours on her feet. She waved goodbye, gave me her last charming smile, started going downhill, and quickly disappeared.
 
 Physically, she was better than me, but ultra-running is very much about mental toughness, and I was not even near her level. She had mastered that. How can I become like her? How can we become the person we would like to be? Essentially, there is only one answer — we keep practicing, and after a few thousand hours, we are done. No one has come up with any better idea. But what does it take to dedicate your life to something that takes decades to achieve? Why do only a few succeed in their journey while the majority give up along the way? Why do we lose motivation, and why does it even appear in the first place?
 
@@ -21,22 +21,24 @@ Essentially, the only way to fail in ultra-running is to give up. It's a long jo
 
 ## Identities
 
-I've spent the first 30 years of my life in front of the computer. I didn't think life had anything to offer besides what I saw on my screen, and I myself didn't have anything for this world outside of the digital realm. Among all the sports, I hated running the most; in school, I was terrible at it, always finishing last in class. I was convinced that I had no talent for music and art; after all, only a few of us have that, right?
+If you Google "How to write a book?" you'll find a lot of great articles from established authors with many helpful advices. Before starting to write, you have to think about the main topic of your book, imagine your audience, create an outline, and then, even before you write an opening, the common advice is to start calling yourself a writer. It sounds silly and premature, but it actually helps. 
 
-Mastering anything takes years, even decades of practice, but unfortunately, our brains have a tendency to overestimate what could be achieved in the short term and underestimate what could be done in the long term. Can you imagine yourself playing or singing in front of a crowd at a concert? Watching the movie that you've directed? Meeting the second sunrise in the mountains of Mont Blanc after running 100km? It's almost impossible if you've never done anything like that before. 
+Our daily life is full of choices, and having an identity helps us to choose. Being a sculptor is not only about spending time handling clay in your hands—it's also about learning how to see things, noticing beauty (or horrors and creepiness for some of us) in existing art. If you are a writer, then planning to spend a Friday evening in the library sounds great because that's what writers do. Being a drummer means listening to music becomes an active experience where you carefully listen to how drums are used in the song. Identities guide us in the right directions and keep us aligned with long-term goals.
 
-When we set our goals, we attach them to the current state of things; we estimate what we will be able to do in 10 years based on what we can do right now. When we think about our future, we look at what we have right now who we are currently.
+It's almost impossible to fail at an identity. If you are a runner but didn't run for half of the year because of an injury, you are still a runner. If you just wrote your first 10 pages, you are a writer -not a good one yet, but a writer on the way to becoming better.
 
-If you Google "How to write a book?" you'll find a lot of great articles from established authors with many helpful advices. Before starting to write, you have to think about the main topic of your book, imagine your audience, create an outline, and then, even before you write an opening, the common advice is to start calling yourself a writer. It sounds silly and premature, but it actually helps. It's your new role, which will guide you in your daily life; it's your new identity.
+Identities work much better in the long run. Compare it to the common New Year resolution: Some may decide to write one page every day, but then life happens, and one day is lost. The plan has failed; it's not every day anymore, and giving up on the whole idea becomes a possibility.
 
+Reaching mastery is always full of terrible mistakes and wrong turns. You may be playing the piano for a long time and one day realize that you have the wrong hand posture. Or doing sculpture and realising that progress is impossible unless you spend a lot of time learning human anatomy. These may become the lowest points where you are demotivated, lost, and hopeless. Having an identity helps in such cases—it's like a compass that shows you a direction. You would still need time to bypass a sudden obstacle, but it will ensure you get back on track.
 
+Decide who you want to become, write it down, and put it somewhere where you will see it many times a day. Sometimes it's best to put it somewhere where no one else can see it. It's hard to write "Iron Man Triathlete" if you've been a couch potato all your life and afraid that people may laugh at it. Hide it for now; it's temporary, and one day you'll wear those Iron Man cap, bag, and other swag on a daily basis, showing others who you've become.
 
+{% qqself() %}
 
+<div style="overflow: auto; display: flow-root">
 
+<img style="max-height: 300px; float: right; margin-left: 15px" src="/mastering-system/identities.png" />
+In qqself identities are one of the most important things and always visible for you and only for you. All the data is encrypted and even we don't have an access to that.
+</div>
 
-
-
-
-
-
-
+{% end %}

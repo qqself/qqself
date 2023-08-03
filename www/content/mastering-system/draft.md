@@ -48,3 +48,9 @@ Things we can do - we don't want to do.
 Things we want to do - we can't do.
 
 Learning skills could be defined by what we can do with them - The better we become, the more capabilities we have. We open new possibilities, something that wasn't possible before suddenly becomes open for us. It is a reward that keeps us motivated to continue practicing and investing in the skill. If we structure our training wrong, if we are not becoming better, we will be stuck and may eventually give up.
+
+# Dreams
+
+Mastering anything takes years, even decades of practice, but unfortunately, our brains have a tendency to overestimate what could be achieved in the short term and underestimate what could be done in the long term. Can you imagine yourself playing or singing in front of a crowd at a concert? Watching the movie that you've directed? It's almost impossible if you've never done anything like that before. 
+
+When we set our goals, we attach them to the current state of things; we estimate what we will be able to do in 10 years based on what we can do right now. When we think about our future, we look at what we have right now and who we are currently.
