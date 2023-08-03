@@ -48,7 +48,7 @@ impl QueryResultsView {
             }
             results.insert(entry.entry().clone());
         }
-        let updated = self.data == results;
+        let updated = self.data != results;
         self.data = results;
         // Call an update only if query results got changed
         if let (Some(update), true) = (on_view_update, updated) {

@@ -72,7 +72,7 @@ export class ProgressPage extends LitElement {
   `
 
   async onQueryUpdated(e: QueryUpdatedEvent) {
-    return this.store.dispatch("views.queryResults.queryUpdated", { query: e.detail.query })
+    await this.store.dispatch("views.queryResults.queryUpdated", { query: e.detail.query })
   }
 
   onEntryAdded(e: EntrySaveEvent) {
@@ -144,7 +144,7 @@ export class ProgressPage extends LitElement {
         <q-query-results
           class="query-results"
           .data=${this.queryResultsData}
-          .query=${`filter before=${DateDay.fromDate(new Date()).remove_days(30).toString()}. `}
+          .query=${`filter after=${DateDay.fromDate(new Date()).remove_days(30).toString()}. `}
           @queryUpdated=${this.onQueryUpdated.bind(this)}
           @save=${this.onEntryAdded.bind(this)}
         ></q-query-results>
