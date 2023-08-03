@@ -53,7 +53,7 @@ export class Skills extends LitElement {
   }
 
   render() {
-    return html`<q-panel title="Skills">
+    return html`<q-panel title="Identities">
       <div class="skills">
         ${this.skills.map(
           (skill) =>
