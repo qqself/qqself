@@ -107,5 +107,6 @@ case "$ACTION" in
   "deploy") deploy "$PARAM" ;;
   "deps") deps ;;
   "lint") lint ;;
+  "ci") build && lint && test ;;
   *) usage ;;
 esac    
