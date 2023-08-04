@@ -1,12 +1,14 @@
-import { css, html, LitElement } from "lit"
-import { customElement, state } from "lit/decorators.js"
 import "./ui/pages/loading"
 import "./ui/pages/register"
 import "./ui/pages/login"
 import "./ui/pages/progress"
-import { Store } from "./app/store"
+
+import { css, html, LitElement } from "lit"
+import { customElement, state } from "lit/decorators.js"
+
 import { DateDay } from "../bridge/pkg/qqself_client_web_bridge"
 import { ServerApi } from "./app/api"
+import { Store } from "./app/store"
 import { colors } from "./ui/styles"
 
 type Page = "loading" | "login" | "register" | "progress" | "devcards"

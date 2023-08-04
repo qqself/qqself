@@ -1,6 +1,7 @@
 import { expect, test } from "vitest"
-import { KeyPrefixes } from "./data"
+
 import { OfflineApi, TestStore } from "../utilsTests"
+import { KeyPrefixes } from "./data"
 
 test("Initialization should set user to not authenticated", async () => {
   const store = new TestStore(expect)

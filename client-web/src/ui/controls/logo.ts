@@ -1,5 +1,6 @@
 import { css, html, LitElement } from "lit"
 import { customElement } from "lit/decorators.js"
+
 import logo from "./logo_512.png"
 
 declare global {

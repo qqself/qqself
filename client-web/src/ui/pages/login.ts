@@ -1,8 +1,10 @@
-import { css, html, LitElement } from "lit"
-import { customElement, property, query, state } from "lit/decorators.js"
-import { Keys } from "../../../bridge/pkg/qqself_client_web_bridge"
 import "../components/logoBlock"
 import "../controls/button"
+
+import { css, html, LitElement } from "lit"
+import { customElement, property, query, state } from "lit/decorators.js"
+
+import { Keys } from "../../../bridge/pkg/qqself_client_web_bridge"
 import { Store } from "../../app/store"
 
 declare global {

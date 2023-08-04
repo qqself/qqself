@@ -1,9 +1,9 @@
 import { Keys } from "../../../bridge/pkg/qqself_client_web_bridge"
-import { EncryptedEntry } from "../api"
-import { InputType, SignInput, WorkerResult } from "./worker"
 import { info } from "../../logger"
-import { ThreadWorker } from "./thread-worker"
 import { isBrowser } from "../../utils"
+import { EncryptedEntry } from "../api"
+import { ThreadWorker } from "./thread-worker"
+import { InputType, SignInput, WorkerResult } from "./worker"
 
 export interface DecryptedEntry {
   id: string

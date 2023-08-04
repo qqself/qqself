@@ -1,9 +1,12 @@
-import { css, html, LitElement } from "lit"
-import { customElement, property, state } from "lit/decorators.js"
-import { validateEntry } from "../../../bridge/pkg"
 import "../controls/logo"
 
+import { css, html, LitElement } from "lit"
+import { customElement, property } from "lit/decorators.js"
+
+import { validateEntry } from "../../../bridge/pkg"
+
 export type EntrySaveEvent = CustomEvent<{ entry: string }>
+export type EntryUpdateEvent = CustomEvent<{ entry: string }>
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -16,58 +19,51 @@ export class EntryInput extends LitElement {
   @property()
   entry = ""
 
-  @state()
-  currentEntry = ""
-
-  @state()
-  isEntryValid = false
-
-  @state()
-  validationError: string | undefined = ""
-
   static styles = css`
-    .root input {
-      width: 300px;
+    .root .input {
+      display: flex;
+      justify-content: space-evenly;
+    }
+    .root .input .text {
+      width: 100%;
+      margin-right: 10px;
     }
     .root .error {
       color: red;
     }
   `
 
-  firstUpdated() {
-    this.currentEntry = this.entry
-    this.validateEntry()
-  }
-
   onSave() {
     const event: EntrySaveEvent = new CustomEvent("save", {
       detail: {
-        entry: this.currentEntry,
+        entry: this.entry,
       },
     })
     this.dispatchEvent(event)
-
-    this.currentEntry = ""
-    this.validateEntry()
+    this.entry = ""
   }
 
   entryUpdated(event: InputEvent) {
-    this.currentEntry = (event.target as HTMLInputElement).value
-    this.validateEntry()
-  }
-
-  validateEntry() {
-    this.validationError = validateEntry(this.currentEntry)
-    this.isEntryValid = this.validationError == undefined
+    this.entry = (event.target as HTMLInputElement).value
+    const updateEvent: EntryUpdateEvent = new CustomEvent("update", {
+      detail: {
+        entry: this.entry,
+      },
+    })
+    this.dispatchEvent(updateEvent)
   }
 
   render() {
+    const validationError = validateEntry(this.entry)
+    const isEntryValid = validationError == undefined
     return html`<div class="root">
-      <input type="text" .value="${this.currentEntry}" @input=${this.entryUpdated.bind(
-        this,
-      )}></input>
-      <button ?disabled=${!this.isEntryValid} @click="${this.onSave.bind(this)}">Save</button>  
-      <div class="error">${this.validationError}</div>
+      <div class="input">
+        <input placeholder="New entry to add" class="text" type="text" .value="${
+          this.entry
+        }" @input=${this.entryUpdated.bind(this)}></input>
+        <button ?disabled=${!isEntryValid} @click="${this.onSave.bind(this)}">Save</button>  
+      </div>
+      <div class="error">${validationError}</div>
     </div>`
   }
 }

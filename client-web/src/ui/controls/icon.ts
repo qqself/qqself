@@ -1,9 +1,13 @@
+import "./logo"
+
+import brain from "@fortawesome/fontawesome-free/svgs/solid/brain.svg"
+import palette from "@fortawesome/fontawesome-free/svgs/solid/palette.svg"
+import personRunning from "@fortawesome/fontawesome-free/svgs/solid/person-running.svg"
+import squarePen from "@fortawesome/fontawesome-free/svgs/solid/square-pen.svg"
+import squarePlus from "@fortawesome/fontawesome-free/svgs/solid/square-plus.svg"
+import squareXmark from "@fortawesome/fontawesome-free/svgs/solid/square-xmark.svg"
 import { css, html, LitElement } from "lit"
 import { customElement, property } from "lit/decorators.js"
-import "./logo"
-import brain from "@fortawesome/fontawesome-free/svgs/solid/brain.svg"
-import personRunning from "@fortawesome/fontawesome-free/svgs/solid/person-running.svg"
-import palette from "@fortawesome/fontawesome-free/svgs/solid/palette.svg"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -11,32 +15,35 @@ declare global {
   }
 }
 
+export type IconName =
+  | "activityIntelligent"
+  | "activityPhysical"
+  | "activityCreative"
+  | "delete"
+  | "add"
+  | "edit"
 @customElement("q-icon")
 export class Icon extends LitElement {
   @property({ type: String })
-  name!: "brain" | "person-running" | "palette"
+  name!: IconName
 
   static styles = css`
     .icon {
       width: var(--icon-size, 64px);
       height: var(--icon-size, 64px);
     }
-    .icon img {
-      color: pink;
-    }
   `
 
   render() {
-    let icon = null
-
-    if (this.name == "brain") {
-      icon = brain as unknown
-    } else if (this.name == "person-running") {
-      icon = personRunning as unknown
-    } else {
-      icon = palette as unknown
+    const icons: Record<IconName, unknown> = {
+      activityCreative: palette,
+      activityIntelligent: brain,
+      activityPhysical: personRunning,
+      delete: squareXmark,
+      add: squarePlus,
+      edit: squarePen,
     }
-
+    const icon = icons[this.name]
     if (icon) {
       return html`<div class="icon"><img src=${icon} /></div>`
     } else {

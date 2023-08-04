@@ -1,5 +1,5 @@
 import { Keys } from "../../../bridge/pkg/qqself_client_web_bridge"
-import { InputType, OutputType, WorkerResult, processMessage } from "./worker"
+import { InputType, OutputType, processMessage, WorkerResult } from "./worker"
 
 // Right way is to go with node:worker_threads, but unfortunately
 // building it is challenging in Vite: https://github.com/vitejs/vite/pull/3932
