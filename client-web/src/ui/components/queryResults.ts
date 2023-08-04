@@ -1,10 +1,13 @@
-import { css, html, LitElement, PropertyValues } from "lit"
-import { customElement, property, state, query } from "lit/decorators.js"
 import "../controls/logo"
+import "../controls/button"
 import "./entryInput"
-import { EntrySaveEvent } from "./entryInput"
-import { colors } from "../styles"
+
+import { css, html, LitElement, PropertyValues } from "lit"
+import { customElement, property, query, state } from "lit/decorators.js"
+
 import { validateQuery } from "../../../bridge/pkg"
+import { colors } from "../styles"
+import { EntrySaveEvent, EntryUpdateEvent } from "./entryInput"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -34,6 +37,9 @@ export class QueryResults extends LitElement {
   @query(".results")
   resultsElement!: HTMLElement
 
+  @state()
+  entry = ""
+
   static styles = css`
     .queryResults .query {
       box-sizing: border-box;
@@ -58,9 +64,19 @@ export class QueryResults extends LitElement {
       padding: 10px;
     }
     .queryResults .results {
-      margin-top: 10px;
+      margin: 10px 0;
       overflow: auto;
       max-height: 600px;
+    }
+    .entries .result {
+      display: flex;
+      justify-content: space-between;
+    }
+    .entries .result .edit {
+      display: none;
+    }
+    .entries .result:hover .edit {
+      display: block;
     }
   `
 
@@ -77,6 +93,11 @@ export class QueryResults extends LitElement {
       },
     })
     this.dispatchEvent(event)
+    this.entry = ""
+  }
+
+  onEntryUpdated(e: EntryUpdateEvent) {
+    this.entry = e.detail.entry
   }
 
   onQueryUpdated(sender: InputEvent) {
@@ -92,23 +113,43 @@ export class QueryResults extends LitElement {
     }
   }
 
+  onEditClicked(entry: string) {
+    this.entry = entry
+  }
+
   renderDay(day: string, entry: string[]) {
     return html`
       <div>
         <div class="day">${day}</div>
-        <div class="entries">${entry.map((v) => html`<div class="result">${v}</div>`)}</div>
+        <div class="entries">
+          ${entry.map(
+            (v) =>
+              html`<div class="result">
+                <div class="text">${v}</div>
+                <q-button
+                  class="edit"
+                  @clicked=${this.onEditClicked.bind(this, `${day} ${v}`)}
+                  icon="edit"
+                ></q-button>
+              </div>`,
+          )}
+        </div>
       </div>
     `
   }
 
   render() {
     return html`<div class="queryResults">
-      <input class="query" .value="${this.query}" @input=${this.onQueryUpdated.bind(this)}></input>
+      <input placeholder="Query to filter the data" class="query" .value="${
+        this.query
+      }" @input=${this.onQueryUpdated.bind(this)}></input>
       <div class="error">${this.queryValidationError}</div>
       <div class="results">
         ${Object.entries(this.data).map(([day, entry]) => this.renderDay(day, entry))}
       </div>
-      <q-entry-input @save=${this.onSave.bind(this)}></q-entry-input>
+      <q-entry-input class="newEntry" .entry=${this.entry} @save=${this.onSave.bind(
+        this,
+      )} @update=${this.onEntryUpdated.bind(this)}></q-entry-input>
     </div>`
   }
 

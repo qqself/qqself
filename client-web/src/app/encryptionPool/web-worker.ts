@@ -1,4 +1,4 @@
-import init, { Keys, initialize } from "../../../bridge/pkg/qqself_client_web_bridge"
+import init, { initialize, Keys } from "../../../bridge/pkg/qqself_client_web_bridge"
 import { InputType, OutputType, processMessage } from "./worker"
 
 let cachedKeys: Keys | null = null

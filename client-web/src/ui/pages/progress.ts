@@ -1,5 +1,3 @@
-import { css, html, LitElement } from "lit"
-import { customElement, property, state } from "lit/decorators.js"
 import "../components/logoBlock"
 import "../controls/button"
 import "../controls/notification"
@@ -7,9 +5,12 @@ import "../components/queryResults"
 import "../components/skills"
 import "../components/statusBar"
 
+import { css, html, LitElement } from "lit"
+import { customElement, property, state } from "lit/decorators.js"
+
+import { DateDay, SkillData } from "../../../bridge/pkg"
 import { Store } from "../../app/store"
 import { EntrySaveEvent } from "../components/entryInput"
-import { DateDay, SkillData } from "../../../bridge/pkg"
 import { QueryUpdatedEvent } from "../components/queryResults"
 
 declare global {

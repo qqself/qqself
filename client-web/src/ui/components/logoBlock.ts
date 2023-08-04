@@ -1,6 +1,7 @@
+import "../controls/logo"
+
 import { css, html, LitElement } from "lit"
 import { customElement } from "lit/decorators.js"
-import "../controls/logo"
 
 declare global {
   interface HTMLElementTagNameMap {

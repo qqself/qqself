@@ -1,6 +1,8 @@
+import "../components/logoBlock"
+
 import { html, LitElement } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
-import "../components/logoBlock"
+
 import { Store } from "../../app/store"
 
 declare global {

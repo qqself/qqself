@@ -1,6 +1,3 @@
-import { html, LitElement, TemplateResult } from "lit"
-import { customElement, property, state } from "lit/decorators.js"
-import { DateDay } from "../../../bridge/pkg/qqself_client_web_bridge"
 import "../components/skills"
 import "../components/entryInput"
 import "../components/queryResults"
@@ -9,9 +6,14 @@ import "../controls/panel"
 import "../controls/notification"
 import "../controls/icon"
 import "../pages/progress"
+
+import { html, LitElement, TemplateResult } from "lit"
+import { customElement, property, state } from "lit/decorators.js"
+
+import { DateDay } from "../../../bridge/pkg/qqself_client_web_bridge"
 import { trace } from "../../logger"
-import { EntrySaveEvent } from "../components/entryInput"
 import { OfflineApi, TestStore } from "../../utilsTests"
+import { EntrySaveEvent } from "../components/entryInput"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -101,6 +103,14 @@ export class DevcardsPage extends LitElement {
     // Render all the devcards. If page hash ends with `/devcards:[CARD_NAME]` then only the card with such name will be rendered
     this.cards = html`<div class="devcards">
       <!-- Controls -->
+      <q-card name="Button - Normal">
+        <q-button>Normal</q-button>
+        <q-button icon="edit"></q-button>
+      </q-card>
+      <q-card name="Button - Disabled">
+        <q-button disabled>Normal</q-button>
+        <q-button icon="add" disabled></q-button>
+      </q-card>
       <q-card name="Panel">
         <q-panel title="Dev panel">
           <div>Content #1</div>
@@ -113,7 +123,7 @@ export class DevcardsPage extends LitElement {
       </q-card>
 
       <q-card name="Icon">
-        <q-icon name="brain"></q-icon>
+        <q-icon name="activityIntelligent"></q-icon>
       </q-card>
 
       <!-- Components -->

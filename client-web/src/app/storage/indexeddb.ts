@@ -1,4 +1,5 @@
 import localforage from "localforage"
+
 import { Storage } from "./storage"
 
 export class IndexedDbStorage implements Storage {

@@ -1,6 +1,7 @@
+import { type ExpectStatic } from "vitest"
+
 import { APIProvider, ServerApi } from "./app/api"
 import { Events, Store } from "./app/store"
-import { type ExpectStatic } from "vitest"
 
 export class TestStore extends Store {
   gotEvents = new Map()

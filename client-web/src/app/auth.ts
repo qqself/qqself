@@ -1,7 +1,7 @@
-import { Views, Keys } from "../../bridge/pkg/qqself_client_web_bridge"
+import { Keys, Views } from "../../bridge/pkg/qqself_client_web_bridge"
 import { EncryptionPool } from "./encryptionPool/pool"
-import { Store, ViewNotification, ViewUpdate } from "./store"
 import * as Storage from "./storage/storage"
+import { Store, ViewNotification, ViewUpdate } from "./store"
 
 export const loginSucceeded = async (store: Store, keys: Keys): Promise<void> => {
   await saveCredentials(keys)

@@ -1,11 +1,11 @@
 import { Keys, Views } from "../../bridge/pkg/qqself_client_web_bridge"
-import { EncryptionPool } from "./encryptionPool/pool"
-import { Storage } from "./storage/storage"
-import * as Auth from "./auth"
-import * as Init from "./init"
-import { DataEvents } from "./data"
 import { debug, info } from "../logger"
 import { APIProvider } from "./api"
+import * as Auth from "./auth"
+import { DataEvents } from "./data"
+import { EncryptionPool } from "./encryptionPool/pool"
+import * as Init from "./init"
+import { Storage } from "./storage/storage"
 
 export interface QueryResultsUpdate {
   view: "QueryResults"

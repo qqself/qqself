@@ -1,8 +1,10 @@
-import { html, render } from "lit"
-import { OfflineApi, TestStore } from "../../utilsTests"
-import { describe, test, expect } from "vitest"
-import { DateDay } from "../../../bridge/pkg"
 import "./progress"
+
+import { html, render } from "lit"
+import { describe, expect, test } from "vitest"
+
+import { DateDay } from "../../../bridge/pkg"
+import { OfflineApi, TestStore } from "../../utilsTests"
 
 describe("progress", () => {
   test("render", async () => {

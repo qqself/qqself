@@ -1,10 +1,12 @@
-import { css, html, LitElement } from "lit"
-import { customElement, property, state } from "lit/decorators.js"
-import { Keys } from "../../../bridge/pkg/qqself_client_web_bridge"
 import "../components/logoBlock"
 import "../controls/button"
-import { Store } from "../../app/store"
+
+import { css, html, LitElement } from "lit"
+import { customElement, property, state } from "lit/decorators.js"
+
+import { Keys } from "../../../bridge/pkg/qqself_client_web_bridge"
 import * as Auth from "../../app/auth"
+import { Store } from "../../app/store"
 
 declare global {
   interface HTMLElementTagNameMap {

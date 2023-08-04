@@ -1,8 +1,11 @@
-import { css, html, LitElement } from "lit"
-import { customElement, property } from "lit/decorators.js"
 import "../controls/panel"
 import "../controls/icon"
+
+import { css, html, LitElement } from "lit"
+import { customElement, property } from "lit/decorators.js"
+
 import { SkillData } from "../../../bridge/pkg"
+import { IconName } from "../controls/icon"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -39,13 +42,13 @@ export class Skills extends LitElement {
   `
 
   skillIcon(kind: string) {
-    let icon = null
+    let icon: IconName | null = null
     if (kind == "physical") {
-      icon = "person-running" as const
+      icon = "activityPhysical"
     } else if (kind == "intelligent") {
-      icon = "brain" as const
+      icon = "activityIntelligent"
     } else if (kind == "creative") {
-      icon = "palette" as const
+      icon = "activityCreative"
     }
     if (icon) {
       return html`<q-icon class="icon" name=${icon}></q-icon>`

@@ -1,8 +1,8 @@
 import init, { initialize, Keys } from "../../bridge/pkg/qqself_client_web_bridge"
-import { Store } from "./store"
+import { info } from "../logger"
 import { isBrowser } from "../utils"
 import { getCredentials } from "./auth"
-import { info } from "../logger"
+import { Store } from "./store"
 
 export const started = async (store: Store): Promise<void> => {
   const apiCheckError = checkMissingAPI()
