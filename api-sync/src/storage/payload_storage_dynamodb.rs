@@ -3,8 +3,6 @@ use std::future::ready;
 use std::pin::Pin;
 
 use async_trait::async_trait;
-use aws_sdk_dynamodb::error::SdkError;
-use aws_sdk_dynamodb::operation::query::QueryError;
 use aws_sdk_dynamodb::types::{AttributeValue, DeleteRequest, Select, WriteRequest};
 use aws_sdk_dynamodb::Client;
 use futures::{Stream, StreamExt, TryStreamExt};
@@ -134,7 +132,35 @@ impl PayloadStorage for PayloadStorageDynamoDB {
             .into_paginator()
             .items()
             .send()
-            .map(process_stream_item)
+            .map(|item| {
+                // HACK It's much better to have this handler in it's own function, but recently updated
+                //      aws_sdk doesn't export all the types so it's not possible to specify the type. Fix it later
+                let data = match item {
+                    Err(err) => return Err(StorageErr::IOError(err.to_string())),
+                    Ok(v) => v,
+                };
+                // Get the payload
+                let payload = data
+                    .get("payload")
+                    .ok_or_else(|| StorageErr::IOError("Payload missing".to_string()))?;
+                let payload_string = payload
+                    .as_s()
+                    .map_err(|_| StorageErr::IOError("Non string payload".to_string()))?;
+                let encoded = BinaryToText::new_from_encoded(payload_string.to_owned())
+                    .ok_or_else(|| StorageErr::IOError("Payload cannot be decoded".to_string()))?;
+                let payload = PayloadBytes::new_from_encrypted(encoded).map_err(|_| {
+                    StorageErr::IOError("Payload cannot be read as payload bytes".to_string())
+                })?;
+
+                // Get payloadId which is encoded as id attribute
+                let payload_id = data
+                    .get("id")
+                    .ok_or_else(|| StorageErr::IOError("Payload missing an id".to_string()))?;
+                let payload_id_string = payload_id
+                    .as_s()
+                    .map_err(|_| StorageErr::IOError("Non string payload id".to_string()))?;
+                Ok((PayloadId::new_encoded(payload_id_string.clone()), payload))
+            })
             .filter(move |v| {
                 // Filter out entry with id equal to last known id
                 if let Ok(v) = v {
@@ -184,34 +210,4 @@ impl PayloadStorage for PayloadStorageDynamoDB {
             .try_for_each(|items| self.batch_delete(items))
             .await
     }
-}
-
-fn process_stream_item(
-    item: Result<HashMap<String, AttributeValue>, SdkError<QueryError>>,
-) -> Result<(PayloadId, PayloadBytes), StorageErr> {
-    let data = match item {
-        Err(err) => return Err(StorageErr::IOError(err.to_string())),
-        Ok(v) => v,
-    };
-
-    // Get the payload
-    let payload = data
-        .get("payload")
-        .ok_or_else(|| StorageErr::IOError("Payload missing".to_string()))?;
-    let payload_string = payload
-        .as_s()
-        .map_err(|_| StorageErr::IOError("Non string payload".to_string()))?;
-    let encoded = BinaryToText::new_from_encoded(payload_string.to_owned())
-        .ok_or_else(|| StorageErr::IOError("Payload cannot be decoded".to_string()))?;
-    let payload = PayloadBytes::new_from_encrypted(encoded)
-        .map_err(|_| StorageErr::IOError("Payload cannot be read as payload bytes".to_string()))?;
-
-    // Get payloadId which is encoded as id attribute
-    let payload_id = data
-        .get("id")
-        .ok_or_else(|| StorageErr::IOError("Payload missing an id".to_string()))?;
-    let payload_id_string = payload_id
-        .as_s()
-        .map_err(|_| StorageErr::IOError("Non string payload id".to_string()))?;
-    Ok((PayloadId::new_encoded(payload_id_string.clone()), payload))
 }
