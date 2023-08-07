@@ -53,15 +53,7 @@ impl Record {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ChangeEvent {
     Added(Record),
-    Replaced {
-        from: Record,
-        to: Record,
-    },
-    // TODO Do we actually need that? Replaced is essentially the same?
-    ConflictUpdated {
-        from: RecordConflict,
-        to: RecordConflict,
-    },
+    Replaced { from: Record, to: Record },
 }
 
 /// Emitted when view data got updated and clients need to re-render the view
@@ -78,6 +70,7 @@ pub enum Notification {
 }
 
 // Parsed collection of all active entries and goals
+#[derive(Default)]
 pub struct DB {
     entries: BTreeMap<DateTimeRange, Record>,
     on_notification: Option<Box<dyn Fn(Notification)>>,
@@ -178,9 +171,9 @@ impl DB {
                 // Existing and new are conflicts - merge it's entries
                 conflict_old.entries.append(&mut conflict_new.entries);
                 conflict_old.revision += 1;
-                Some(ChangeEvent::ConflictUpdated {
-                    from: conflict_before,
-                    to: conflict_old.clone(),
+                Some(ChangeEvent::Replaced {
+                    from: Record::Conflict(conflict_before),
+                    to: Record::Conflict(conflict_old.clone()),
                 })
             }
             (Record::Entry(value_old), Record::Entry(value_new)) => {
@@ -200,9 +193,9 @@ impl DB {
                 // Existing conflict - append new entry
                 conflict_old.entries.insert(value_new.to_owned());
                 conflict_old.revision += 1;
-                Some(ChangeEvent::ConflictUpdated {
-                    from: conflict_before,
-                    to: conflict_old.clone(),
+                Some(ChangeEvent::Replaced {
+                    from: Record::Conflict(conflict_before),
+                    to: Record::Conflict(conflict_old.clone()),
                 })
             }
             (Record::Entry(value_old), Record::Conflict(conflict_new)) => {
@@ -233,12 +226,6 @@ impl DB {
 
     pub fn on_notification(&mut self, cb: Box<dyn Fn(Notification)>) {
         self.on_notification.replace(cb);
-    }
-}
-
-impl Default for DB {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
@@ -507,9 +494,9 @@ mod tests {
                 from: rec1,
                 to: Record::Conflict(conflict1.clone()),
             },
-            ChangeEvent::ConflictUpdated {
-                from: conflict1,
-                to: conflict2.clone(),
+            ChangeEvent::Replaced {
+                from: Record::Conflict(conflict1),
+                to: Record::Conflict(conflict2.clone()),
             },
         ]);
         db.assert_record(vec![&Record::Conflict(conflict2)]);
@@ -534,9 +521,9 @@ mod tests {
                 from: rec1,
                 to: Record::Conflict(conflict1.clone()),
             },
-            ChangeEvent::ConflictUpdated {
-                from: conflict1,
-                to: conflict2.clone(),
+            ChangeEvent::Replaced {
+                from: Record::Conflict(conflict1),
+                to: Record::Conflict(conflict2.clone()),
             },
         ]);
         db.assert_record(vec![&Record::Conflict(conflict2)]);
