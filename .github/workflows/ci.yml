@@ -20,7 +20,7 @@ jobs:
     - run: ./run.sh lint
 
   deploy-api:
-    #if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
