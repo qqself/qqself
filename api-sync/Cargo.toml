@@ -17,7 +17,7 @@ tempdir = "0.3.7"
 tokio = { version = "1.29.1", features = ["rt", "macros", "time"] }
 thiserror = "1.0.44"
 # storage-dynamodb
-aws-config = { version = "0.55.3", optional = true }
+aws-config = { version = "0.56.0", optional = true }
 aws-sdk-dynamodb = { version = "0.28.0", optional = true }
 
 [features]
