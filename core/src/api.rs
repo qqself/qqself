@@ -56,7 +56,6 @@ impl ApiRequest {
             &keys.private_key,
             Timestamp::now(),
             &plaintext,
-            None,
         )?;
         Ok(ApiRequest::new_set_request_encrypted(payload.data()))
     }

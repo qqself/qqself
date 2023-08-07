@@ -88,11 +88,7 @@ impl PayloadStorage for PayloadStorageDynamoDB {
             &payload_id,
             Some(payload.data().data()),
         )
-        .await?;
-        if let Some(prev) = payload.previous_version() {
-            self.put_item(payload.public_key(), prev, None).await?;
-        };
-        Ok(())
+        .await
     }
 
     fn find(

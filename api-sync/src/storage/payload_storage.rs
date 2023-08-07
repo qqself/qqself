@@ -97,19 +97,13 @@ mod tests {
         .collect()
     }
 
-    fn payload(
-        keys: &Keys,
-        timestamp: u64,
-        plaintext: u64,
-        previous: Option<PayloadId>,
-    ) -> Payload {
+    fn payload(keys: &Keys, timestamp: u64, plaintext: u64) -> Payload {
         let plaintext = plaintext.to_string();
         let encrypted = PayloadBytes::encrypt(
             &keys.public,
             &keys.private,
             Timestamp::from_u64(timestamp),
             &plaintext,
-            previous,
         )
         .unwrap();
         encrypted.validated(None).unwrap()
@@ -133,18 +127,9 @@ mod tests {
         assert!(items(keys2, &storage, None).await.is_empty());
 
         // Search all
-        storage
-            .set(payload(keys1, 1, 1, None), id(1))
-            .await
-            .unwrap();
-        storage
-            .set(payload(keys1, 2, 2, None), id(2))
-            .await
-            .unwrap();
-        storage
-            .set(payload(keys1, 3, 3, None), id(3))
-            .await
-            .unwrap();
+        storage.set(payload(keys1, 1, 1), id(1)).await.unwrap();
+        storage.set(payload(keys1, 2, 2), id(2)).await.unwrap();
+        storage.set(payload(keys1, 3, 3), id(3)).await.unwrap();
         assert_eq!(items(keys1, &storage, None).await, vec!["1", "2", "3"]);
         assert!(items(keys2, &storage, None).await.is_empty());
 
@@ -152,27 +137,13 @@ mod tests {
         assert_eq!(items(keys1, &storage, Some(1)).await, vec!["2", "3"]);
 
         // Add entires for other keys
-        storage
-            .set(payload(keys2, 1, 1, None), id(1))
-            .await
-            .unwrap();
+        storage.set(payload(keys2, 1, 1), id(1)).await.unwrap();
         assert_eq!(items(keys1, &storage, None).await, vec!["1", "2", "3"]);
         assert_eq!(items(keys2, &storage, None).await, vec!["1"]);
 
-        // Reset value
-        let existing = items_raw(keys1, &storage, None).await;
-        storage
-            .set(payload(keys1, 4, 4, Some(existing[0].0.clone())), id(4))
-            .await
-            .unwrap();
-        assert_eq!(items(keys1, &storage, None).await, vec!["2", "3", "4"]);
-
         // Additional entry with the same timestamp, but different hash should be appended and not overwrite the existing entry
         let new_id = PayloadId::encode(Timestamp::from_u64(4), StableHash::hash_string("5"));
-        storage
-            .set(payload(keys1, 4, 5, None), new_id)
-            .await
-            .unwrap();
+        storage.set(payload(keys1, 4, 5), new_id).await.unwrap();
         assert_eq!(items(keys1, &storage, Some(4)).await, vec!["5"]);
 
         // Delete all
