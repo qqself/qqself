@@ -7,9 +7,9 @@ template = "section_mastering.html"
 
 ## Mastering system
 
-`Mastering System` is a comprehensive overview of long-term skill development. It seeks to answer the main question: `Why do we give up?` and explores what helps us to keep going. There are numerous books about skill development and interviews with top-of-the-field masters, and this book incorporates wisdom from those sources. What sets this book apart, is not only the description of the system but also an app that utilizes all the information from the book.
+`Mastering System` is a comprehensive overview of long-term skill development. It seeks to answer the main question: `Why do we give up?` and explores what helps us to keep going. There are numerous books about skill development and interviews with top-of-the-field masters, and this book incorporates wisdom from those. What sets this book apart, is not only the description of the system but also an app that utilizes all the information from the book.
 
-You can use this book on its own and simply apply the advice and strategies in your daily life, or you can give [qqself](https://www.qqself.com/) a try.
+You can use this book on its own and simply apply advices and strategies in your daily life, or you can give [qqself](https://www.qqself.com/) a try.
 
 # Preface
 
@@ -46,3 +46,11 @@ In qqself identities are one of the most important things and always visible for
 </div>
 
 {% end %}
+
+## Failures
+
+Learning new skill may feel like there are nothing but failures on this path. Like a cruel teacher it punishes you when you do things wrong. It demotivates you, makes you embarrassed and full of doubt that you can continue. Regardless how much we dislike such teacher methods, often we play this role ourselves - criticising what we've done, pointing to the places that could have been better or decide that new creation worth just slightly above the garbage.
+
+It may feel like a curse to have a teacher like that, but although archaic methods it's goal is to teach you, to make you better - point to your mistakes and ensure you would never do it again. Mistakes are nothing but a pointer to your weakest part. By definition eliminating your weakest point in the skill make whole foundation stronger and makes you closer to the mastery. Your weakest point is a maximum limit what you can achieve with this skill. It's an infinite process where you solve one issue and second one surfaces on the top.
+
+To learn the lesson there is one thing you need to do - to reflect on it. What exactly had happened and what mistakes did you do? Why did it happen and what needs to be done to avoid it in the future? What exactly is weakest point that surfaced on the top that caused a mistake?
