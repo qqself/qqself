@@ -2,7 +2,7 @@ use std::collections::{btree_map::Iter, BTreeSet};
 
 use crate::{
     date_time::datetime::DateTimeRange,
-    db::{ChangeEvent, Query, Record, RecordValue, ViewUpdate},
+    db::{ChangeEvent, Query, Record, ViewUpdate},
     record::Entry,
 };
 
@@ -19,25 +19,25 @@ impl QueryResultsView {
         on_view_update: &Option<Box<dyn Fn(ViewUpdate)>>,
     ) {
         // Extract an entry from the change event
-        let entry = if let ChangeEvent::Added(Record::Value(RecordValue::Entry(entry))) = event {
+        let entry = if let ChangeEvent::Added(Record::Entry(entry)) = event {
             Some(entry)
         } else if let ChangeEvent::Replaced {
-            from: Record::Value(RecordValue::Entry(entry_old)),
-            to: Record::Value(RecordValue::Entry(entry_new)),
+            from: Record::Entry(entry_old),
+            to: Record::Entry(entry_new),
         } = event
         {
             // We are replacing an entry, so remove old one if existed
-            self.data.remove(entry_old.entry());
+            self.data.remove(&entry_old.entry);
             Some(entry_new)
         } else {
             None
         };
 
         let Some(entry) = entry else { return };
-        if !self.query.matches(entry.entry()) {
+        if !self.query.matches(&entry.entry) {
             return; // Not a relevant entry for the query
         }
-        self.data.insert(entry.entry().clone());
+        self.data.insert(entry.entry.clone());
         if let Some(update) = on_view_update {
             update(ViewUpdate::QueryResults);
         }
@@ -55,11 +55,11 @@ impl QueryResultsView {
         //      similar to the previous one and updating it should be much faster
         let mut results = BTreeSet::default();
         for (_, record) in all.clone() {
-            let Record::Value(RecordValue::Entry(entry)) = record else { continue; };
-            if !self.query.matches(entry.entry()) {
+            let Record::Entry(entry) = record else { continue; };
+            if !self.query.matches(&entry.entry) {
                 continue;
             }
-            results.insert(entry.entry().clone());
+            results.insert(entry.entry.clone());
         }
         let updated = self.data != results;
         self.data = results;
@@ -85,10 +85,10 @@ mod tests {
     const ENTRY_PREFIX: &str = "2000-01-01 00:00";
 
     fn record(s: &str) -> Record {
-        Record::Value(RecordValue::Entry(RecordEntry::new(
-            1,
-            Entry::parse(&format!("{ENTRY_PREFIX} {s}")).unwrap(),
-        )))
+        Record::Entry(RecordEntry {
+            revision: 1,
+            entry: Entry::parse(&format!("{ENTRY_PREFIX} {s}")).unwrap(),
+        })
     }
     fn assert_data(view: &QueryResultsView, want: Vec<&'static str>) {
         let got: Vec<_> = view

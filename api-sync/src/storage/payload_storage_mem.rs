@@ -34,13 +34,6 @@ impl Default for PayloadStorageMemory {
 impl PayloadStorage for PayloadStorageMemory {
     async fn set(&self, payload: Payload, payload_id: PayloadId) -> Result<(), StorageErr> {
         let mut data = self.data.lock().unwrap();
-        if let Some(prev) = payload.previous_version() {
-            if let Some(item) = data.iter_mut().find(|(public_key, payload_id, _)| {
-                public_key == payload.public_key() && payload_id == &prev.to_string()
-            }) {
-                item.2.take();
-            }
-        }
         data.push((
             payload.public_key().clone(),
             payload_id.to_string(),

@@ -93,7 +93,6 @@ impl Keys {
             &self.0.private_key,
             Timestamp::now(),
             &plaintext,
-            None,
         )
         .map_err(|err| err.to_string())?;
         Ok(payload.data())

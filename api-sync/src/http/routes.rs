@@ -322,14 +322,9 @@ mod tests {
         let (_, _, _, configure) = test_app();
         let app = test::init_service(App::new().configure(configure)).await;
         let (public_key, private_key) = keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
-        let encrypted = PayloadBytes::encrypt(
-            &public_key,
-            &private_key,
-            Timestamp::default(),
-            "entry",
-            None,
-        )
-        .unwrap();
+        let encrypted =
+            PayloadBytes::encrypt(&public_key, &private_key, Timestamp::default(), "entry")
+                .unwrap();
         let resp: HttpError =
             test::call_and_read_body_json(&app, req_set(encrypted.data()).to_request()).await;
         assert_eq!(resp.error, "OutdatedPayload. Payload was created too long time ago - create a new one with up to date timestamp, check /info endpoint for server timestamp".to_string());
@@ -342,8 +337,7 @@ mod tests {
         let app = test::init_service(App::new().configure(configure)).await;
         let (public_key, private_key) = keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
         let encrypted =
-            PayloadBytes::encrypt(&public_key, &private_key, Timestamp::now(), "entry", None)
-                .unwrap();
+            PayloadBytes::encrypt(&public_key, &private_key, Timestamp::now(), "entry").unwrap();
         let resp: HttpError =
             test::call_and_read_body_json(&app, req_set(encrypted.data() + "h").to_request()).await;
         assert_eq!(
@@ -364,14 +358,9 @@ mod tests {
             (2, b"00000000001662750871|93i31rxkhgVVzHahAA2LBF"),
         ] {
             time.sleep(std::time::Duration::from_millis(ts)).await;
-            let encrypted = PayloadBytes::encrypt(
-                &public_key,
-                &private_key,
-                time.now().await,
-                &ts.to_string(),
-                None,
-            )
-            .unwrap();
+            let encrypted =
+                PayloadBytes::encrypt(&public_key, &private_key, time.now().await, &ts.to_string())
+                    .unwrap();
             let resp = test::call_service(&app, req_set(encrypted.data()).to_request()).await;
             assert_eq!(resp.status(), 200);
             assert_eq!(test::read_body(resp).await.to_vec(), expected);
@@ -386,19 +375,12 @@ mod tests {
         let app = test::init_service(App::new().configure(configure)).await;
         let (public_key, private_key) = keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
         let mut replace_id = None;
-        // 2 will be replaced with 4
         for ts in [1, 2, 3, 4] {
-            let previous_version = if ts == 4 {
-                replace_id.as_ref().cloned()
-            } else {
-                None
-            };
             let encrypted = PayloadBytes::encrypt(
                 &public_key,
                 &private_key,
                 Timestamp::from_u64(Timestamp::now().as_u64() + ts),
                 &ts.to_string(),
-                previous_version,
             )
             .unwrap();
             let payload = encrypted.validated(None).unwrap();
@@ -412,7 +394,7 @@ mod tests {
             }
         }
         let got = items_plaintext(&payload_storage, &public_key, &private_key).await;
-        assert_eq!(got, vec!["1", "3", "4"])
+        assert_eq!(got, vec!["1", "2", "3", "4"])
     }
 
     #[actix_web::test]
@@ -428,7 +410,6 @@ mod tests {
                 &private_key,
                 Timestamp::from_u64(time_start.as_u64() + ts),
                 &ts.to_string(),
-                None,
             )
             .unwrap();
             let resp = test::call_service(&app, req_set(encrypted.data()).to_request()).await;
@@ -490,7 +471,6 @@ mod tests {
                 private_key,
                 Timestamp::from_u64(time_start.as_u64()),
                 "foo",
-                None,
             )
             .unwrap();
             let resp = test::call_service(&app, req_set(encrypted.data()).to_request()).await;
