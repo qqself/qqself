@@ -60,7 +60,6 @@ pub struct Payload {
     plaintext_hash: StableHash,
     data: PayloadBytes,
     public_key: PublicKey,
-    previous_version: Option<PayloadId>,
 }
 
 impl Payload {
@@ -97,10 +96,6 @@ impl Payload {
     pub fn public_key(&self) -> &PublicKey {
         &self.public_key
     }
-
-    pub fn previous_version(&self) -> &Option<PayloadId> {
-        &self.previous_version
-    }
 }
 
 // Raw payload bytes
@@ -129,7 +124,6 @@ impl PayloadBytes {
         private_key: &PrivateKey,
         timestamp: Timestamp,
         plaintext: &str,
-        previous_version: Option<PayloadId>,
     ) -> Result<Self, PayloadError> {
         // Generate new ephemeral AES key and encrypt the payload with it
         let aes_payload = Aes::encrypt(plaintext.as_bytes()).ok_or(
@@ -146,7 +140,6 @@ impl PayloadBytes {
             &StableHash::hash_string(plaintext),
             &encrypted_aes_key,
             aes_payload.payload(),
-            previous_version,
         )
         .ok_or(PayloadError::EncryptionError("Failed to sign the data"))?;
         PayloadBytes::new_from_encrypted(BinaryToText::new(&bytes))
@@ -185,10 +178,9 @@ impl PayloadBytes {
             ));
         }
         Ok(Payload {
-            plaintext_hash: bytes.plaintext_hash.clone(),
+            plaintext_hash: bytes.plaintext_hash,
             data: self,
             public_key,
-            previous_version: bytes.previous,
         })
     }
 
@@ -199,9 +191,6 @@ impl PayloadBytes {
 
 /*  Internal helper struct for binary payload reading/creating. Format:
 [VERSION]                         8 bytes
-[CONTAINS_PREVIOUS]               1 byte
-  [PREVIOUS_TIMESTAMP]               8 bytes if [CONTAINS_PREVIOUS]
-  [PREVIOUS_HASH]                   16 bytes if [CONTAINS_PREVIOUS]
 [TIMESTAMP]                       8 bytes
 [PLAINTEXT_HASH]                  16 bytes
 [PUBLIC_KEY_LENGTH]               8 bytes
@@ -213,7 +202,6 @@ impl PayloadBytes {
 [SIGNATURE]                       Dynamic size, rest of bytes */
 struct PayloadBinary<'a> {
     version: u64,
-    previous: Option<PayloadId>,
     timestamp: Timestamp,
     payload_hash: StableHash,
     plaintext_hash: StableHash,
@@ -227,20 +215,6 @@ impl<'a> PayloadBinary<'a> {
     fn from_bytes(data: &'a [u8]) -> Option<Self> {
         // Read fixed size lengths first
         let (version, idx) = PayloadBinary::read_u64(data, 0)?;
-        let (contains_previous, idx) = PayloadBinary::read_byte(data, idx)?;
-        let (previous, idx) = match contains_previous {
-            0 => (None, idx),
-            _ => {
-                // contains previous flag is set, read previous PayloadId information
-                let (timestamp, idx) = PayloadBinary::read_u64(data, idx)?;
-                let (hash_bytes, idx) = PayloadBinary::read_bytes(data, idx, 16)?;
-                let hash = StableHash::new_from_bytes(hash_bytes.try_into().ok()?);
-                (
-                    Some(PayloadId::encode(Timestamp::from_u64(timestamp), hash)),
-                    idx,
-                )
-            }
-        };
         let (timestamp, idx) = PayloadBinary::read_u64(data, idx)?;
         let timestamp = Timestamp::from_u64(timestamp);
         let (plaintext_hash, idx) = PayloadBinary::read_bytes(data, idx, 16)?;
@@ -260,7 +234,6 @@ impl<'a> PayloadBinary<'a> {
         }
         Some(PayloadBinary {
             version,
-            previous,
             timestamp,
             payload_hash,
             plaintext_hash,
@@ -278,7 +251,6 @@ impl<'a> PayloadBinary<'a> {
         plaintext_hash: &StableHash,
         aes_key: &'a [u8],
         aes_payload: &'a [u8],
-        previous: Option<PayloadId>,
     ) -> Option<Vec<u8>> {
         let public_key_s = public_key.to_string();
         let public_key = public_key_s.as_bytes();
@@ -292,16 +264,6 @@ impl<'a> PayloadBinary<'a> {
         let mut data = Vec::with_capacity(capacity);
         // Fixed sizes length
         data.extend_from_slice(&PayloadBytes::VERSION.to_le_bytes());
-        // If previous version is set
-        match previous {
-            Some(id) => {
-                let (timestamp, hash) = id.decode()?;
-                data.push(0x01);
-                data.extend_from_slice(&timestamp.as_u64().to_le_bytes());
-                data.extend_from_slice(&hash.as_bytes());
-            }
-            None => data.push(0x00),
-        }
         data.extend_from_slice(&timestamp.to_le_bytes());
         data.extend_from_slice(&plaintext_hash.as_bytes());
         data.extend_from_slice(&usize_bytes(public_key.len()));
@@ -334,11 +296,6 @@ impl<'a> PayloadBinary<'a> {
             return None;
         }
         Some((&data[..len], idx + len))
-    }
-
-    fn read_byte(data: &'a [u8], idx: usize) -> Option<(u8, usize)> {
-        let (read, idx) = PayloadBinary::read_bytes(data, idx, 1)?;
-        Some((read[0], idx))
     }
 }
 
@@ -374,14 +331,8 @@ mod tests {
     #[test]
     #[wasm_bindgen_test]
     fn binary_data() {
-        // No previous
         let plaintext_hash = StableHash::hash_string("entry");
         let (public_key, private_key) = keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
-        let previous_id = PayloadId::encode(
-            Timestamp::from_u64(TIMESTAMP),
-            StableHash::hash_string("entry"),
-        );
-
         let bytes = PayloadBinary::to_bytes(
             &private_key,
             &public_key,
@@ -389,11 +340,9 @@ mod tests {
             &plaintext_hash,
             &[3; 30],
             &[4; 40],
-            Some(previous_id.clone()),
         )
         .unwrap();
         let data = PayloadBinary::from_bytes(&bytes).unwrap();
-
         assert_eq!(data.version, 1);
         assert_eq!(data.timestamp, Timestamp::from_u64(TIMESTAMP));
         assert_eq!(data.plaintext_hash, plaintext_hash);
@@ -401,7 +350,6 @@ mod tests {
         assert_eq!(data.aes_key, &vec![3; 30]);
         assert_eq!(data.aes_payload, &vec![4; 40]);
         assert_eq!(data.signature.len(), Rsa::SIGNATURE_SIZE);
-        assert_eq!(data.previous, Some(previous_id));
         assert!(PayloadBinary::from_bytes(&[1; 100]).is_none())
     }
 
@@ -415,7 +363,6 @@ mod tests {
             &private_key,
             Timestamp::from_u64(TIMESTAMP),
             data,
-            None,
         )
         .unwrap();
         let payload = encrypted.validated(None).unwrap();
@@ -449,7 +396,6 @@ mod tests {
             &private_key1,
             Timestamp::from_u64(TIMESTAMP),
             data,
-            None,
         )
         .unwrap();
         assert_eq!(
@@ -464,7 +410,6 @@ mod tests {
             &private_key1,
             Timestamp::from_u64(TIMESTAMP),
             data,
-            None,
         )
         .unwrap();
         let mut bad_payload = payload.0.encoded();

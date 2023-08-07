@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     date_time::datetime::{DateDay, DateTimeRange},
-    db::{ChangeEvent, Notification, Record, RecordValue, ViewUpdate},
+    db::{ChangeEvent, Notification, Record, ViewUpdate},
     progress::skill::{Skill, SkillProgress},
 };
 
@@ -37,13 +37,13 @@ impl SkillsView {
         on_view_update: &Option<Box<dyn Fn(ViewUpdate)>>,
         on_notification: &Option<Box<dyn Fn(Notification)>>,
     ) {
-        let ChangeEvent::Added(Record::Value(RecordValue::Entry(entry))) = event else { return };
-        if let Some(mut skill) = Skill::from_record(entry.entry()) {
+        let ChangeEvent::Added(Record::Entry(entry)) = event else { return };
+        if let Some(mut skill) = Skill::from_record(&entry.entry) {
             // If it's a Skill - go back and re-read all previous record to accumulate duration
             for (_, record) in all.clone() {
-                let Record::Value(RecordValue::Entry(entry)) = record else { continue; };
-                if skill.selector().matches(entry.entry()) {
-                    skill.add_duration(entry.entry().date_range.duration());
+                let Record::Entry(entry) = record else { continue; };
+                if skill.selector().matches(&entry.entry) {
+                    skill.add_duration(entry.entry.date_range.duration());
                 }
             }
             self.data.insert(skill.title().to_string(), skill.clone());
@@ -54,14 +54,14 @@ impl SkillsView {
         } else {
             // If it's a record - add it to the corresponding Skill if exists
             for (_, skill) in self.data.iter_mut() {
-                if skill.selector().matches(entry.entry()) {
-                    skill.add_duration(entry.entry().date_range.duration());
+                if skill.selector().matches(&entry.entry) {
+                    skill.add_duration(entry.entry.date_range.duration());
                 }
             }
             // Second iteration to notify about skills progress
             let mut send_total_notification = true;
             for (_, skill) in self.data.iter() {
-                if skill.selector().matches(entry.entry()) {
+                if skill.selector().matches(&entry.entry) {
                     self.process_update(skill, on_view_update);
                     if let (Some(on_notification), Some(now), true) =
                         (on_notification, now, interactive)
@@ -71,7 +71,7 @@ impl SkillsView {
                             on_notification,
                             now,
                             all.clone(),
-                            Some(entry.entry().date_range()),
+                            Some(entry.entry.date_range()),
                             send_total_notification,
                         );
                         // Entry may have multiple tags/skills attached, but we want notification about total processed only once
@@ -148,20 +148,20 @@ impl SkillsView {
             Checkpoint::by_skill(now, Period::Week, &[1, 3, 5], 5, skill.title().to_string()),
         ];
         for (_, rec) in all {
-            let Record::Value(RecordValue::Entry(entry)) = rec else { continue; };
+            let Record::Entry(entry) = rec else { continue; };
             for checkpoint in checkpoints_total.iter_mut() {
                 // If entry belongs to any skill then it's added to total notification calculations
                 if self
                     .data
                     .iter()
-                    .any(|(_, s)| s.selector().matches(entry.entry()))
+                    .any(|(_, s)| s.selector().matches(&entry.entry))
                 {
-                    checkpoint.add(entry.entry().date_range);
+                    checkpoint.add(entry.entry.date_range);
                 }
             }
-            if skill.selector().matches(entry.entry()) {
+            if skill.selector().matches(&entry.entry) {
                 for checkpoint in checkpoints_skills.iter_mut() {
-                    checkpoint.add(entry.entry().date_range)
+                    checkpoint.add(entry.entry.date_range)
                 }
             }
         }
@@ -314,11 +314,11 @@ mod tests {
 
     impl TestSkillView {
         fn add(&mut self, entry: &str) {
-            let record = Record::Value(RecordValue::Entry(RecordEntry::new(
-                1,
-                Entry::parse(entry).unwrap(),
-            )));
-            self.entries.insert(record.daterange(), record.clone());
+            let record = Record::Entry(RecordEntry {
+                revision: 1,
+                entry: Entry::parse(entry).unwrap(),
+            });
+            self.entries.insert(*record.daterange(), record.clone());
             self.skill_view.update(
                 self.entries.iter(),
                 &ChangeEvent::Added(record),
@@ -334,11 +334,11 @@ mod tests {
             entry: &str,
             now: Option<DateDay>,
         ) -> Vec<SkillsNotification> {
-            let record = Record::Value(RecordValue::Entry(RecordEntry::new(
-                1,
-                Entry::parse(entry).unwrap(),
-            )));
-            self.entries.insert(record.daterange(), record.clone());
+            let record = Record::Entry(RecordEntry {
+                revision: 1,
+                entry: Entry::parse(entry).unwrap(),
+            });
+            self.entries.insert(*record.daterange(), record.clone());
             let called = Rc::new(RefCell::new(Vec::new()));
             let called_clone = called.clone();
             self.skill_view.update(

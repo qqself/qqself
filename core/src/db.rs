@@ -9,99 +9,51 @@ use crate::record::{Entry, PropVal, Tag};
 
 #[derive(Clone, PartialEq, Debug, Ord, PartialOrd, Eq)]
 pub struct RecordEntry {
-    revision: usize,
-    entry: Entry,
-}
-
-impl RecordEntry {
-    pub fn new(revision: usize, entry: Entry) -> Self {
-        Self { revision, entry }
-    }
-    pub fn entry(&self) -> &Entry {
-        &self.entry
-    }
-}
-
-#[derive(Clone, PartialEq, Debug, Ord, PartialOrd, Eq)]
-pub struct RecordEmpty {
-    revision: usize,
-    date_range: DateTimeRange,
-}
-
-#[derive(Clone, PartialEq, Debug, Ord, PartialOrd, Eq)]
-pub enum RecordValue {
-    Entry(RecordEntry),
-    Empty(RecordEmpty),
-}
-
-impl RecordValue {
-    fn date_range(&self) -> DateTimeRange {
-        match self {
-            RecordValue::Entry(v) => v.entry.date_range,
-            RecordValue::Empty(v) => v.date_range,
-        }
-    }
-    fn revision(&self) -> usize {
-        match self {
-            RecordValue::Entry(v) => v.revision,
-            RecordValue::Empty(v) => v.revision,
-        }
-    }
+    pub(crate) revision: usize,
+    pub(crate) entry: Entry,
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub struct RecordConflict {
     revision: usize,
-    entries: BTreeSet<RecordValue>,
-}
-
-impl RecordConflict {
-    fn date_range(&self) -> DateTimeRange {
-        let entry = self
-            .entries
-            .iter()
-            .next()
-            .expect("Conflict should always have an entry");
-        entry.date_range()
-    }
+    entries: BTreeSet<RecordEntry>,
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Record {
-    Value(RecordValue),
+    Entry(RecordEntry),
     Conflict(RecordConflict),
 }
 
 impl Record {
     fn revision(&self) -> usize {
         match self {
-            Record::Value(v) => v.revision(),
+            Record::Entry(v) => v.revision,
             Record::Conflict(v) => v.revision,
         }
     }
-    pub fn daterange(&self) -> DateTimeRange {
+    pub fn daterange(&self) -> &DateTimeRange {
         match self {
-            Record::Value(v) => v.date_range(),
-            Record::Conflict(v) => v.date_range(),
+            Record::Entry(v) => &v.entry.date_range,
+            Record::Conflict(v) => {
+                &v.entries
+                    .first()
+                    .expect("Conflict should have entries")
+                    .entry
+                    .date_range
+            }
         }
     }
 
     pub fn from_entry(entry: Entry, revision: usize) -> Self {
-        Self::Value(RecordValue::Entry(RecordEntry { revision, entry }))
+        Self::Entry(RecordEntry { revision, entry })
     }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ChangeEvent {
     Added(Record),
-    Replaced {
-        from: Record,
-        to: Record,
-    },
-    ConflictUpdated {
-        from: RecordConflict,
-        to: RecordConflict,
-    },
+    Replaced { from: Record, to: Record },
 }
 
 /// Emitted when view data got updated and clients need to re-render the view
@@ -118,6 +70,7 @@ pub enum Notification {
 }
 
 // Parsed collection of all active entries and goals
+#[derive(Default)]
 pub struct DB {
     entries: BTreeMap<DateTimeRange, Record>,
     on_notification: Option<Box<dyn Fn(Notification)>>,
@@ -146,25 +99,8 @@ impl DB {
     }
 
     /// Adds new record to the DB. Interactively means user is adding a record right now. If records are restored from
-    /// cache, fetched from API then it's considered not interactive and simple `DB::add` should be called instead.
-    /// In interactive mode user may benefit from `Notifications`, so those are emitted in case of noticeable progress
-    pub fn add_interactively(&mut self, record: Record, now: DateDay) -> Option<ChangeEvent> {
-        let event = self.merge(record);
-        if let Some(event) = &event {
-            self.view_query_results.update(event, &self.on_view_update);
-            self.view_skills.update(
-                self.entries.iter(),
-                event,
-                true,
-                Some(now),
-                &self.on_view_update,
-                &self.on_notification,
-            );
-        }
-        event
-    }
-
-    /// Adds new record to the DB. Notifications are not emitted as adding considered not interactive
+    /// cache, fetched from API then it's considered not interactive. In interactive mode user may benefit from
+    /// `Notifications`, so those are emitted in case of noticeable progress
     pub fn add(
         &mut self,
         record: Record,
@@ -206,10 +142,10 @@ impl DB {
         //     - If new one is conflict, but existing record is value - replace existing record with new conflict with added existing record
         let mut record_new = record_new;
         let entry_new_key = record_new.daterange();
-        let mut record_old = match self.entries.get_mut(&entry_new_key) {
+        let mut record_old = match self.entries.get_mut(entry_new_key) {
             None => {
                 let event = ChangeEvent::Added(record_new.clone());
-                self.entries.insert(entry_new_key, record_new);
+                self.entries.insert(*entry_new_key, record_new);
                 return Some(event); // New record - append
             }
             Some(v) => v,
@@ -235,44 +171,44 @@ impl DB {
                 // Existing and new are conflicts - merge it's entries
                 conflict_old.entries.append(&mut conflict_new.entries);
                 conflict_old.revision += 1;
-                Some(ChangeEvent::ConflictUpdated {
-                    from: conflict_before,
-                    to: conflict_old.clone(),
+                Some(ChangeEvent::Replaced {
+                    from: Record::Conflict(conflict_before),
+                    to: Record::Conflict(conflict_old.clone()),
                 })
             }
-            (Record::Value(value_old), Record::Value(value_new)) => {
+            (Record::Entry(value_old), Record::Entry(value_new)) => {
                 // Two conflicting values - replace existing record with Conflict value and append new entry there
                 let value_before = value_old.clone();
                 *record_old = Record::Conflict(RecordConflict {
-                    revision: value_new.revision(),
+                    revision: value_new.revision,
                     entries: BTreeSet::from([value_old.clone(), value_new.to_owned()]),
                 });
                 Some(ChangeEvent::Replaced {
-                    from: Record::Value(value_before),
+                    from: Record::Entry(value_before),
                     to: record_old.clone(),
                 })
             }
-            (Record::Conflict(conflict_old), Record::Value(value_new)) => {
+            (Record::Conflict(conflict_old), Record::Entry(value_new)) => {
                 let conflict_before = conflict_old.clone();
                 // Existing conflict - append new entry
                 conflict_old.entries.insert(value_new.to_owned());
                 conflict_old.revision += 1;
-                Some(ChangeEvent::ConflictUpdated {
-                    from: conflict_before,
-                    to: conflict_old.clone(),
+                Some(ChangeEvent::Replaced {
+                    from: Record::Conflict(conflict_before),
+                    to: Record::Conflict(conflict_old.clone()),
                 })
             }
-            (Record::Value(value_old), Record::Conflict(conflict_new)) => {
+            (Record::Entry(value_old), Record::Conflict(conflict_new)) => {
                 // Existing value, but new conflict, merge to conflict
                 let value_before = value_old.clone();
                 let mut entries = conflict_new.entries.to_owned();
                 entries.insert(value_old.clone());
                 *record_old = Record::Conflict(RecordConflict {
-                    revision: value_old.revision(),
+                    revision: value_old.revision,
                     entries,
                 });
                 Some(ChangeEvent::Replaced {
-                    from: Record::Value(value_before),
+                    from: Record::Entry(value_before),
                     to: record_old.clone(),
                 })
             }
@@ -290,12 +226,6 @@ impl DB {
 
     pub fn on_notification(&mut self, cb: Box<dyn Fn(Notification)>) {
         self.on_notification.replace(cb);
-    }
-}
-
-impl Default for DB {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
@@ -415,7 +345,7 @@ mod tests {
         let entries: BTreeSet<_> = records
             .iter()
             .map(|v| {
-                if let Record::Value(v) = v {
+                if let Record::Entry(v) = v {
                     return v.clone();
                 }
                 unreachable!()
@@ -426,7 +356,7 @@ mod tests {
 
     fn modified_conflict(conflict: &RecordConflict, record: Record) -> RecordConflict {
         let mut conflict = conflict.clone();
-        if let Record::Value(v) = record {
+        if let Record::Entry(v) = record {
             conflict.entries.insert(v);
             conflict.revision += 1;
             return conflict;
@@ -436,7 +366,7 @@ mod tests {
 
     fn parse_entry(text: &str, revision: usize) -> Record {
         let entry = Entry::parse(&format!("{ENTRY_PREFIX} {}", text)).unwrap();
-        Record::Value(RecordValue::Entry(RecordEntry { revision, entry }))
+        Record::Entry(RecordEntry { revision, entry })
     }
 
     #[derive(Default)]
@@ -467,7 +397,7 @@ mod tests {
                 .map(|(date_range, record)| (*date_range, record))
                 .collect();
             let want: Vec<(DateTimeRange, &Record)> =
-                want.into_iter().map(|v| (v.daterange(), v)).collect();
+                want.into_iter().map(|v| (*v.daterange(), v)).collect();
             assert_eq!(got, want);
         }
 
@@ -564,9 +494,9 @@ mod tests {
                 from: rec1,
                 to: Record::Conflict(conflict1.clone()),
             },
-            ChangeEvent::ConflictUpdated {
-                from: conflict1,
-                to: conflict2.clone(),
+            ChangeEvent::Replaced {
+                from: Record::Conflict(conflict1),
+                to: Record::Conflict(conflict2.clone()),
             },
         ]);
         db.assert_record(vec![&Record::Conflict(conflict2)]);
@@ -591,9 +521,9 @@ mod tests {
                 from: rec1,
                 to: Record::Conflict(conflict1.clone()),
             },
-            ChangeEvent::ConflictUpdated {
-                from: conflict1,
-                to: conflict2.clone(),
+            ChangeEvent::Replaced {
+                from: Record::Conflict(conflict1),
+                to: Record::Conflict(conflict2.clone()),
             },
         ]);
         db.assert_record(vec![&Record::Conflict(conflict2)]);
