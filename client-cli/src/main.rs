@@ -1,4 +1,5 @@
 use operations::{
+    delete::{delete, DeleteOpts},
     download::{download, DownloadOpts},
     init::{init, InitOpts},
     report::{report, ReportOpts},
@@ -17,6 +18,7 @@ enum Opts {
     Upload(UploadOpts),
     Download(DownloadOpts),
     Report(ReportOpts),
+    Delete(DeleteOpts),
 }
 
 fn main() {
@@ -34,6 +36,7 @@ fn main() {
         Opts::Init(opts) => init(opts),
         Opts::Upload(opts) => upload(opts),
         Opts::Report(opts) => report(opts),
+        Opts::Delete(opts) => delete(opts),
         Opts::Download(opts) => {
             download(opts);
         }
