@@ -6,7 +6,7 @@ use structopt::StructOpt;
 use tracing::{error, info};
 
 #[derive(StructOpt, Debug)]
-#[structopt(about = "Creates new keys and saves it in the config.toml")]
+#[structopt(about = "Creates new key file")]
 pub struct InitOpts {
     /// Where new generated keys will be stored
     #[structopt(short, long, default_value = "qqself_keys.txt")]
@@ -25,7 +25,7 @@ pub fn init(opts: InitOpts) {
         exit(1);
     }
     info!(
-        "Initializing. Generating new keys and storing config file at {:?}",
+        "Initializing. Generating new keys and storing it at {:?}",
         keys_path
     );
     let keys = KeyFile::new(Keys::generate_new());
