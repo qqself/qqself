@@ -1,13 +1,13 @@
 import "../controls/logo"
 import "../controls/button"
-import "./entryInput"
+import "./recordInput"
 
 import { css, html, LitElement, PropertyValues } from "lit"
 import { customElement, property, query, state } from "lit/decorators.js"
 
-import { validateQuery } from "../../../bridge/pkg"
+import { UiRecord, validateQuery } from "../../../bridge/pkg"
 import { colors } from "../styles"
-import { EntrySaveEvent, EntryUpdateEvent } from "./entryInput"
+import { RecordSaveEvent, RecordUpdateEvent } from "./recordInput"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -20,16 +20,10 @@ export type QueryUpdatedEvent = CustomEvent<{ query: string }>
 @customElement("q-query-results")
 export class QueryResults extends LitElement {
   @property({ type: Object })
-  data: Record<string, string[]> = {}
+  data?: Record<string, UiRecord[]>
 
   @property()
-  query = ""
-
-  @state()
-  currentQuery = ""
-
-  @state()
-  queryValidationError: string | undefined = undefined
+  query?: string
 
   @query(".query")
   queryElement!: HTMLInputElement
@@ -38,7 +32,16 @@ export class QueryResults extends LitElement {
   resultsElement!: HTMLElement
 
   @state()
-  entry = ""
+  currentQuery = ""
+
+  @state()
+  queryValidationError?: string
+
+  @state()
+  currentRecord?: UiRecord
+
+  @state()
+  currentRecordString = ""
 
   static styles = css`
     .queryResults .query {
@@ -72,32 +75,35 @@ export class QueryResults extends LitElement {
       display: flex;
       justify-content: space-between;
     }
-    .entries .result .edit {
+    .entries .result .edit,
+    .entries .result .delete {
       display: none;
     }
-    .entries .result:hover .edit {
+    .entries .result:hover .edit,
+    .entries .result:hover .delete {
       display: block;
     }
   `
 
   firstUpdated() {
-    this.queryElement.value = this.query
+    this.queryElement.value = this.query ?? ""
     // Force input event handler to run
     this.queryElement.dispatchEvent(new Event("input"))
   }
 
-  onSave(e: EntrySaveEvent) {
-    const event: EntrySaveEvent = new CustomEvent("save", {
+  onSave(e: RecordSaveEvent) {
+    const event: RecordSaveEvent = new CustomEvent("save", {
       detail: {
-        entry: e.detail.entry,
+        record: e.detail.record,
       },
     })
     this.dispatchEvent(event)
-    this.entry = ""
+    this.currentRecord = undefined
+    this.currentRecordString = ""
   }
 
-  onEntryUpdated(e: EntryUpdateEvent) {
-    this.entry = e.detail.entry
+  onEntryUpdated(e: RecordUpdateEvent) {
+    this.currentRecordString = e.detail.input
   }
 
   onQueryUpdated(sender: InputEvent) {
@@ -113,23 +119,38 @@ export class QueryResults extends LitElement {
     }
   }
 
-  onEditClicked(entry: string) {
-    this.entry = entry
+  onEditClicked(record: UiRecord) {
+    this.currentRecord = record
+    this.currentRecordString = record.to_string(true, false)
   }
 
-  renderDay(day: string, entry: string[]) {
+  onDeleteClicked(record: UiRecord) {
+    const event: RecordSaveEvent = new CustomEvent("save", {
+      detail: {
+        record: record.created_deleted_record(),
+      },
+    })
+    this.dispatchEvent(event)
+  }
+
+  renderDay(day: string, records: UiRecord[]) {
     return html`
       <div>
         <div class="day">${day}</div>
         <div class="entries">
-          ${entry.map(
+          ${records.map(
             (v) =>
               html`<div class="result">
-                <div class="text">${v}</div>
+                <div class="text">${v.to_string(false, false)}</div>
                 <q-button
                   class="edit"
-                  @clicked=${this.onEditClicked.bind(this, `${day} ${v}`)}
+                  @clicked=${this.onEditClicked.bind(this, v)}
                   icon="edit"
+                ></q-button>
+                <q-button
+                  class="delete"
+                  @clicked=${this.onDeleteClicked.bind(this, v)}
+                  icon="delete"
                 ></q-button>
               </div>`,
           )}
@@ -141,15 +162,15 @@ export class QueryResults extends LitElement {
   render() {
     return html`<div class="queryResults">
       <input placeholder="Query to filter the data" class="query" .value="${
-        this.query
+        this.query ?? ""
       }" @input=${this.onQueryUpdated.bind(this)}></input>
       <div class="error">${this.queryValidationError}</div>
       <div class="results">
-        ${Object.entries(this.data).map(([day, entry]) => this.renderDay(day, entry))}
+        ${Object.entries(this.data ?? {}).map(([day, entry]) => this.renderDay(day, entry))}
       </div>
-      <q-entry-input class="newEntry" .entry=${this.entry} @save=${this.onSave.bind(
-        this,
-      )} @update=${this.onEntryUpdated.bind(this)}></q-entry-input>
+      <q-record-input class="newEntry" .initialRecord=${this.currentRecord} .input=${
+        this.currentRecordString
+      } @update=${this.onEntryUpdated.bind(this)}  @save=${this.onSave.bind(this)}></q-record-input>
     </div>`
   }
 

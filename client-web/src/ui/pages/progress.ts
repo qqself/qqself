@@ -8,10 +8,10 @@ import "../components/statusBar"
 import { css, html, LitElement } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
 
-import { DateDay, SkillData } from "../../../bridge/pkg"
+import { DateDay, SkillData, UiRecord } from "../../../bridge/pkg"
 import { Store } from "../../app/store"
-import { EntrySaveEvent } from "../components/entryInput"
 import { QueryUpdatedEvent } from "../components/queryResults"
+import { RecordSaveEvent } from "../components/recordInput"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -28,7 +28,7 @@ export class ProgressPage extends LitElement {
   currentDay!: DateDay
 
   @state()
-  queryResultsData: Record<string, string[]> = {}
+  queryResultsData: Record<string, UiRecord[]> = {}
 
   @state()
   skillsData: SkillData[] = []
@@ -76,19 +76,22 @@ export class ProgressPage extends LitElement {
     await this.store.dispatch("views.queryResults.queryUpdated", { query: e.detail.query })
   }
 
-  onEntryAdded(e: EntrySaveEvent) {
-    return this.store.dispatch("data.entry.added", { entry: e.detail.entry, callSyncAfter: true })
+  onEntryAdded(e: RecordSaveEvent) {
+    return this.store.dispatch("data.entry.added", {
+      entry: e.detail.record.to_string(true, true),
+      callSyncAfter: true,
+    })
   }
 
   updateQueryResults() {
     this.queryResultsData = this.store.userState.views
       .query_results()
-      .reduce<Record<string, string[]>>((acc, cur) => {
-        const day = cur.day
+      .reduce<Record<string, UiRecord[]>>((acc, cur) => {
+        const day = cur.day()
         if (day in acc) {
-          acc[day].push(cur.text)
+          acc[day].push(cur)
         } else {
-          acc[day] = [cur.text]
+          acc[day] = [cur]
         }
         return acc
       }, {})

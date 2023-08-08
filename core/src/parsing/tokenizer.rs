@@ -306,6 +306,9 @@ impl<'a> Tokenizer<'a> {
                 self.tokens.len(),
             ));
         }
+        if let Some(Token::TagSeparator) = self.tokens.last() {
+            return Ok(None); // Reached new token while reading properties
+        }
         Ok(Some(()))
     }
 
@@ -359,7 +362,7 @@ impl<'a> Tokenizer<'a> {
             Token::PropertyValue,
             Char::AnyNonSeparator,
             1..usize::MAX,
-            true,
+            value_read.is_none(), // If have no property value read yet, then space prefix is allowed. Otherwise space is not valid
         ) {
             Ok(read) => {
                 if read > 0 {
@@ -701,6 +704,18 @@ mod tests {
                 "aa. bb pp=🧠. Ccc",
                 vec![tn, tn, ts, s, tn, tn, s, pn, pn, po, pv, ts, s, c, c, c],
                 vec![Token::Comment],
+                None,
+            ),
+            (
+                "a b=1. c d=2",
+                vec![tn, s, pn, po, pv, ts, s, tn, s, pn, po, pv],
+                vec![Token::PropertyValue],
+                None,
+            ),
+            (
+                "a b=2 d",
+                vec![tn, s, pn, po, pv, s, pn],
+                vec![Token::PropertyName],
                 None,
             ),
         ];

@@ -8,7 +8,6 @@ use std::{
 use qqself_core::{
     date_time::datetime::DateDay,
     db::{Query, Record, DB},
-    record::Entry,
 };
 use structopt::{clap::arg_enum, StructOpt};
 use tracing::error;
@@ -54,9 +53,9 @@ pub fn report(opts: ReportOpts) {
             return; // Skip empty lines
         }
         // Parse the record to see if it's a valid one
-        let entry = Entry::parse(&line)
-            .unwrap_or_else(|err| panic!("error parsing the line '{line}' - {err}"));
-        db.add(Record::from_entry(entry, 0), false, None);
+        let record =
+            Record::parse(&line).unwrap_or_else(|_| panic!("entry should be valid, line='{line}'"));
+        db.add(record, false, None);
     });
     println!("Skills:");
     db.skills().iter().for_each(|(_, skill)| {
@@ -76,7 +75,7 @@ pub fn report(opts: ReportOpts) {
             prev_day.replace(entry.date_range().start().date());
             println!("Day {}", entry.date_range().start().date());
         }
-        println!("\t{}", entry.to_string_short());
+        println!("\t{}", entry.to_string(true, false));
     }
 }
 

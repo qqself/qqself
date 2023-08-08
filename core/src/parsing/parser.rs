@@ -307,6 +307,18 @@ mod tests {
                 ),
             ),
             (
+                // Special handling of floats doesn't break multiple tags reading
+                "2000-01-01 01:01 01:01 run distance=18. entry revision=2",
+                Entry::new(
+                    dr(1, 1),
+                    None,
+                    vec![
+                        tag("run", vec![prop("distance", PropVal::Number(18f32))]),
+                        tag("entry", vec![prop("revision", PropVal::Number(2f32))]),
+                    ],
+                ),
+            ),
+            (
                 // Simple tag, simple prop and a comment
                 "2000-01-01 01:01 01:01 tag1 prop1. Comment",
                 Entry::new(
@@ -363,6 +375,21 @@ mod tests {
                     ],
                 ),
             ),
+            (
+                // Prop value followed by valueless property name
+                "2000-01-01 01:01 01:01 entry revision=10 deleted",
+                Entry::new(
+                    dr(1, 1),
+                    None,
+                    vec![tag(
+                        "entry",
+                        vec![
+                            prop("revision", PropVal::Number(10_f32)),
+                            prop("deleted", PropVal::None),
+                        ],
+                    )],
+                ),
+            ),
         ];
         for (input, want) in cases {
             let mut parser = Parser::new(input);
@@ -392,7 +419,7 @@ mod tests {
             let input = format!("2000-01-01 02:02 - 2000-01-02 02:02 {input}");
             let mut parser = Parser::new(&input);
             let entry = parser.parse_date_record().unwrap();
-            let decoded = entry.to_string();
+            let decoded = entry.serialize(true, true);
             assert_eq!(decoded, input);
         }
     }
@@ -425,7 +452,7 @@ mod tests {
         for (input, normalized) in cases {
             let mut parser = Parser::new(input);
             let entry = parser.parse_date_record().unwrap();
-            assert_eq!(entry.to_string(), normalized);
+            assert_eq!(entry.serialize(true, true), normalized);
         }
     }
 

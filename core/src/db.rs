@@ -7,46 +7,91 @@ use crate::parsing::parser::{ParseError, Parser};
 use crate::progress::skill::Skill;
 use crate::record::{Entry, PropVal, Tag};
 
-#[derive(Clone, PartialEq, Debug, Ord, PartialOrd, Eq)]
-pub struct RecordEntry {
-    pub(crate) revision: usize,
-    pub(crate) entry: Entry,
-}
-
-#[derive(PartialEq, Eq, Debug, Clone)]
-pub struct RecordConflict {
-    revision: usize,
-    entries: BTreeSet<RecordEntry>,
-}
-
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug, PartialOrd, Ord)]
 pub enum Record {
-    Entry(RecordEntry),
-    Conflict(RecordConflict),
+    Entry(Entry),
+    Conflict(BTreeSet<Entry>),
 }
 
 impl Record {
-    fn revision(&self) -> usize {
+    pub fn revision(&self) -> usize {
         match self {
-            Record::Entry(v) => v.revision,
-            Record::Conflict(v) => v.revision,
+            Record::Entry(v) => v.revision(),
+            Record::Conflict(v) => v.first().expect("conflict contains entries").revision(),
         }
     }
-    pub fn daterange(&self) -> &DateTimeRange {
+
+    pub fn date_range(&self) -> &DateTimeRange {
         match self {
-            Record::Entry(v) => &v.entry.date_range,
-            Record::Conflict(v) => {
-                &v.entries
-                    .first()
-                    .expect("Conflict should have entries")
-                    .entry
-                    .date_range
+            Record::Entry(v) => &v.date_range,
+            Record::Conflict(v) => &v.first().expect("conflict contains entries").date_range,
+        }
+    }
+
+    pub fn to_string(&self, include_date: bool, include_entry_tag: bool) -> String {
+        match self {
+            Record::Entry(entry) => entry.serialize(include_date, include_entry_tag),
+            Record::Conflict(conflict) => {
+                let entries: Vec<_> = conflict.iter().map(|v| v.serialize(true, true)).collect();
+                entries.join("\n")
             }
         }
     }
 
-    pub fn from_entry(entry: Entry, revision: usize) -> Self {
-        Self::Entry(RecordEntry { revision, entry })
+    pub fn to_deleted_string(&self) -> String {
+        format!(
+            "{} entry revision={} deleted. Marker that entry for this data range was deleted",
+            self.date_range(),
+            self.revision() + 1
+        )
+    }
+
+    pub fn is_deleted_record(&self) -> bool {
+        let Record::Entry(entry) = self else { return false };
+        for tag in &entry.tags {
+            if tag.name == "entry" {
+                for prop in &tag.props {
+                    if prop.name == "deleted" {
+                        return true;
+                    }
+                }
+            }
+        }
+        false
+    }
+
+    pub fn next_revision(&self) -> Record {
+        match self {
+            Record::Entry(entry) => {
+                let mut entry = entry.clone();
+                entry.increase_revision();
+                Record::Entry(entry)
+            }
+            Record::Conflict(conflict) => {
+                let mut conflicts = BTreeSet::new();
+                for entry in conflict.iter() {
+                    let mut entry = entry.clone();
+                    entry.increase_revision();
+                    conflicts.insert(entry);
+                }
+                Record::Conflict(conflicts)
+            }
+        }
+    }
+
+    pub fn parse(input: &str) -> Result<Record, String> {
+        // There are multiple lines in the entry, it's a conflict
+        if input.lines().count() > 1 {
+            let mut entries = BTreeSet::new();
+            for input in input.lines() {
+                let entry = Entry::parse(input).map_err(|err| err.to_string())?;
+                entries.insert(entry);
+            }
+            Ok(Record::Conflict(entries))
+        } else {
+            let entry = Entry::parse(input).map_err(|err| err.to_string())?;
+            Ok(Record::Entry(entry))
+        }
     }
 }
 
@@ -94,7 +139,7 @@ impl DB {
         self.view_skills.data()
     }
 
-    pub fn query_results(&self) -> &BTreeSet<Entry> {
+    pub fn query_results(&self) -> &BTreeSet<Record> {
         self.view_query_results.data()
     }
 
@@ -141,7 +186,7 @@ impl DB {
         //     - If existing record is conflict, but new one is value - append new value to conflict entries
         //     - If new one is conflict, but existing record is value - replace existing record with new conflict with added existing record
         let mut record_new = record_new;
-        let entry_new_key = record_new.daterange();
+        let entry_new_key = record_new.date_range();
         let mut record_old = match self.entries.get_mut(entry_new_key) {
             None => {
                 let event = ChangeEvent::Added(record_new.clone());
@@ -169,8 +214,7 @@ impl DB {
             (Record::Conflict(conflict_old), Record::Conflict(conflict_new)) => {
                 let conflict_before = conflict_old.clone();
                 // Existing and new are conflicts - merge it's entries
-                conflict_old.entries.append(&mut conflict_new.entries);
-                conflict_old.revision += 1;
+                conflict_old.append(conflict_new);
                 Some(ChangeEvent::Replaced {
                     from: Record::Conflict(conflict_before),
                     to: Record::Conflict(conflict_old.clone()),
@@ -179,10 +223,8 @@ impl DB {
             (Record::Entry(value_old), Record::Entry(value_new)) => {
                 // Two conflicting values - replace existing record with Conflict value and append new entry there
                 let value_before = value_old.clone();
-                *record_old = Record::Conflict(RecordConflict {
-                    revision: value_new.revision,
-                    entries: BTreeSet::from([value_old.clone(), value_new.to_owned()]),
-                });
+                *record_old =
+                    Record::Conflict(BTreeSet::from([value_old.clone(), value_new.to_owned()]));
                 Some(ChangeEvent::Replaced {
                     from: Record::Entry(value_before),
                     to: record_old.clone(),
@@ -191,8 +233,7 @@ impl DB {
             (Record::Conflict(conflict_old), Record::Entry(value_new)) => {
                 let conflict_before = conflict_old.clone();
                 // Existing conflict - append new entry
-                conflict_old.entries.insert(value_new.to_owned());
-                conflict_old.revision += 1;
+                conflict_old.insert(value_new.to_owned());
                 Some(ChangeEvent::Replaced {
                     from: Record::Conflict(conflict_before),
                     to: Record::Conflict(conflict_old.clone()),
@@ -201,12 +242,9 @@ impl DB {
             (Record::Entry(value_old), Record::Conflict(conflict_new)) => {
                 // Existing value, but new conflict, merge to conflict
                 let value_before = value_old.clone();
-                let mut entries = conflict_new.entries.to_owned();
+                let mut entries = conflict_new.to_owned();
                 entries.insert(value_old.clone());
-                *record_old = Record::Conflict(RecordConflict {
-                    revision: value_old.revision,
-                    entries,
-                });
+                *record_old = Record::Conflict(entries);
                 Some(ChangeEvent::Replaced {
                     from: Record::Entry(value_before),
                     to: record_old.clone(),
@@ -316,22 +354,25 @@ impl Query {
         })
     }
 
-    pub fn matches(&self, entry: &Entry) -> bool {
+    pub fn matches(&self, record: &Record) -> bool {
         // Check first for date limits
         if let Some(min_date) = self.date_start {
-            if entry.date_range.start().date() < min_date {
+            if record.date_range().start().date() < min_date {
                 return false;
             }
         }
         if let Some(max_date) = self.date_end {
-            if entry.date_range.end().date() > max_date {
+            if record.date_range().end().date() > max_date {
                 return false;
             }
         }
         if self.selector.tags.is_empty() {
             return true; // It's just a date filter
         }
-        self.selector.matches(entry)
+        match record {
+            Record::Entry(entry) => self.selector.matches(entry),
+            Record::Conflict(_) => true, // All conflicts matches any tag selector to make it visible for the user
+        }
     }
 }
 
@@ -341,8 +382,8 @@ mod tests {
 
     const ENTRY_PREFIX: &str = "2000-01-01 00:00";
 
-    fn new_conflict(revision: usize, records: Vec<&Record>) -> RecordConflict {
-        let entries: BTreeSet<_> = records
+    fn new_conflict(records: Vec<&Record>) -> BTreeSet<Entry> {
+        records
             .iter()
             .map(|v| {
                 if let Record::Entry(v) = v {
@@ -350,23 +391,21 @@ mod tests {
                 }
                 unreachable!()
             })
-            .collect();
-        RecordConflict { revision, entries }
+            .collect()
     }
 
-    fn modified_conflict(conflict: &RecordConflict, record: Record) -> RecordConflict {
+    fn modified_conflict(conflict: &BTreeSet<Entry>, record: Record) -> BTreeSet<Entry> {
         let mut conflict = conflict.clone();
         if let Record::Entry(v) = record {
-            conflict.entries.insert(v);
-            conflict.revision += 1;
+            conflict.insert(v);
             return conflict;
         }
         unreachable!()
     }
 
-    fn parse_entry(text: &str, revision: usize) -> Record {
+    fn parse_entry(text: &str) -> Record {
         let entry = Entry::parse(&format!("{ENTRY_PREFIX} {}", text)).unwrap();
-        Record::Entry(RecordEntry { revision, entry })
+        Record::Entry(entry)
     }
 
     #[derive(Default)]
@@ -382,7 +421,7 @@ mod tests {
         }
 
         fn add_entry(&mut self, entry: &'static str) {
-            self.add(parse_entry(entry, 1));
+            self.add(parse_entry(entry));
         }
 
         fn assert_events(&self, want: Vec<ChangeEvent>) {
@@ -397,7 +436,7 @@ mod tests {
                 .map(|(date_range, record)| (*date_range, record))
                 .collect();
             let want: Vec<(DateTimeRange, &Record)> =
-                want.into_iter().map(|v| (*v.daterange(), v)).collect();
+                want.into_iter().map(|v| (*v.date_range(), v)).collect();
             assert_eq!(got, want);
         }
 
@@ -409,7 +448,7 @@ mod tests {
                 .query_results()
                 .iter()
                 .map(|v| {
-                    let s = &v.to_string()[ENTRY_PREFIX.len() + 1..].to_string();
+                    let s = &v.to_string(true, true)[ENTRY_PREFIX.len() + 1..].to_string();
                     s.clone()
                 })
                 .collect();
@@ -420,8 +459,8 @@ mod tests {
     #[test]
     fn merge_logic_append() {
         // Adding entries with different dateranges just appends
-        let rec1 = parse_entry("00:01 a", 0);
-        let rec2 = parse_entry("00:02 a", 0);
+        let rec1 = parse_entry("00:01 a");
+        let rec2 = parse_entry("00:02 a");
         let mut db = TestDB::default();
         db.add(rec1.clone());
         db.add(rec2.clone());
@@ -435,15 +474,15 @@ mod tests {
     #[test]
     fn merge_logic_ignore() {
         // Adding the same entry is ignored
-        let rec1 = parse_entry("00:01 a", 1);
-        let rec2 = parse_entry("00:01 a", 1);
+        let rec1 = parse_entry("00:01 a. entry revision=2");
+        let rec2 = parse_entry("00:01 a. entry revision=2");
         let mut db = TestDB::default();
         db.add(rec1.clone());
         db.add(rec2);
         db.assert_events(vec![ChangeEvent::Added(rec1.clone())]);
         db.assert_record(vec![&rec1]);
         // Adding entry with lower revision is ignored
-        let rec3 = parse_entry("00:01 c", 0);
+        let rec3 = parse_entry("00:01 c. entry revision=1");
         db.add(rec3);
         db.assert_events(vec![ChangeEvent::Added(rec1.clone())]);
         db.assert_record(vec![&rec1]);
@@ -452,8 +491,8 @@ mod tests {
     #[test]
     fn merge_logic_replace() {
         // Adding entry with higher revision replaces
-        let rec1 = parse_entry("00:01 a", 1);
-        let rec2 = parse_entry("00:01 b", 2);
+        let rec1 = parse_entry("00:01 a. entry revision=1");
+        let rec2 = parse_entry("00:01 b. entry revision=2");
         let mut db = TestDB::default();
         db.add(rec1.clone());
         db.add(rec2.clone());
@@ -470,12 +509,12 @@ mod tests {
     #[test]
     fn merge_logic_conflict() {
         // Two records with the same daterange and revision creates a conflict
-        let rec1 = parse_entry("00:01 a", 1);
-        let rec2 = parse_entry("00:01 b", 1);
+        let rec1 = parse_entry("00:01 a");
+        let rec2 = parse_entry("00:01 b");
         let mut db = TestDB::default();
         db.add(rec1.clone());
         db.add(rec2.clone());
-        let conflict1 = new_conflict(1, vec![&rec1, &rec2]);
+        let conflict1 = new_conflict(vec![&rec1, &rec2]);
         db.assert_events(vec![
             ChangeEvent::Added(rec1.clone()),
             ChangeEvent::Replaced {
@@ -485,7 +524,7 @@ mod tests {
         ]);
         db.assert_record(vec![&Record::Conflict(conflict1.clone())]);
         // Adding new value will be added to the conflict
-        let rec3 = parse_entry("00:01 c", 1);
+        let rec3 = parse_entry("00:01 c");
         db.add(rec3.clone());
         let conflict2 = modified_conflict(&conflict1, rec3);
         db.assert_events(vec![
@@ -504,17 +543,17 @@ mod tests {
 
     #[test]
     fn merge_logic_two_conflicts() {
-        let rec1 = parse_entry("00:01 a", 1);
-        let rec2 = parse_entry("00:01 b", 1);
+        let rec1 = parse_entry("00:01 a");
+        let rec2 = parse_entry("00:01 b");
         let mut db = TestDB::default();
         db.add(rec1.clone());
         db.add(rec2.clone());
-        let rec3 = parse_entry("00:01 c", 1);
-        let rec4 = parse_entry("00:01 d", 1);
-        let conflict = new_conflict(1, vec![&rec3, &rec4]);
+        let rec3 = parse_entry("00:01 c");
+        let rec4 = parse_entry("00:01 d");
+        let conflict = new_conflict(vec![&rec3, &rec4]);
         db.add(Record::Conflict(conflict));
-        let conflict1 = new_conflict(1, vec![&rec1, &rec2]);
-        let conflict2 = new_conflict(2, vec![&rec1, &rec2, &rec3, &rec4]);
+        let conflict1 = new_conflict(vec![&rec1, &rec2]);
+        let conflict2 = new_conflict(vec![&rec1, &rec2, &rec3, &rec4]);
         db.assert_events(vec![
             ChangeEvent::Added(rec1.clone()),
             ChangeEvent::Replaced {
@@ -531,14 +570,14 @@ mod tests {
 
     #[test]
     fn merge_logic_external_conflict() {
-        let rec1 = parse_entry("00:01 a", 1);
+        let rec1 = parse_entry("00:01 a");
         let mut db = TestDB::default();
         db.add(rec1.clone());
-        let rec2 = parse_entry("00:01 b", 1);
-        let rec3 = parse_entry("00:01 c", 1);
-        let conflict = new_conflict(1, vec![&rec2, &rec3]);
+        let rec2 = parse_entry("00:01 b");
+        let rec3 = parse_entry("00:01 c");
+        let conflict = new_conflict(vec![&rec2, &rec3]);
         db.add(Record::Conflict(conflict));
-        let conflict = new_conflict(1, vec![&rec1, &rec2, &rec3]);
+        let conflict = new_conflict(vec![&rec1, &rec2, &rec3]);
         db.assert_events(vec![
             ChangeEvent::Added(rec1.clone()),
             ChangeEvent::Replaced {
