@@ -3,12 +3,11 @@ use std::collections::{btree_map::Iter, BTreeSet};
 use crate::{
     date_time::datetime::DateTimeRange,
     db::{ChangeEvent, Query, Record, ViewUpdate},
-    record::Entry,
 };
 
 #[derive(Default)]
 pub struct QueryResultsView {
-    data: BTreeSet<Entry>,
+    data: BTreeSet<Record>,
     query: Query,
 }
 
@@ -19,25 +18,31 @@ impl QueryResultsView {
         on_view_update: &Option<Box<dyn Fn(ViewUpdate)>>,
     ) {
         // Extract an entry from the change event
-        let entry = if let ChangeEvent::Added(Record::Entry(entry)) = event {
-            Some(entry)
+        let record = if let ChangeEvent::Added(record) = event {
+            Some(record)
         } else if let ChangeEvent::Replaced {
-            from: Record::Entry(entry_old),
-            to: Record::Entry(entry_new),
+            from: record_old,
+            to: record_new,
         } = event
         {
             // We are replacing an entry, so remove old one if existed
-            self.data.remove(&entry_old.entry);
-            Some(entry_new)
+            self.data.remove(record_old);
+            Some(record_new)
         } else {
             None
         };
 
-        let Some(entry) = entry else { return };
-        if !self.query.matches(&entry.entry) {
+        let Some(record) = record else { return };
+        if record.is_deleted_record() {
+            if let Some(update) = on_view_update {
+                update(ViewUpdate::QueryResults);
+            }
+            return;
+        }
+        if !self.query.matches(record) {
             return; // Not a relevant entry for the query
         }
-        self.data.insert(entry.entry.clone());
+        self.data.insert(record.clone());
         if let Some(update) = on_view_update {
             update(ViewUpdate::QueryResults);
         }
@@ -55,11 +60,13 @@ impl QueryResultsView {
         //      similar to the previous one and updating it should be much faster
         let mut results = BTreeSet::default();
         for (_, record) in all.clone() {
-            let Record::Entry(entry) = record else { continue; };
-            if !self.query.matches(&entry.entry) {
+            if record.is_deleted_record() {
                 continue;
             }
-            results.insert(entry.entry.clone());
+            if !self.query.matches(record) {
+                continue;
+            }
+            results.insert(record.clone());
         }
         let updated = self.data != results;
         self.data = results;
@@ -69,7 +76,7 @@ impl QueryResultsView {
         }
     }
 
-    pub fn data(&self) -> &BTreeSet<Entry> {
+    pub fn data(&self) -> &BTreeSet<Record> {
         &self.data
     }
 }
@@ -78,23 +85,21 @@ impl QueryResultsView {
 mod tests {
     use std::collections::BTreeMap;
 
-    use crate::db::RecordEntry;
+    use crate::record::Entry;
 
     use super::*;
 
     const ENTRY_PREFIX: &str = "2000-01-01 00:00";
 
     fn record(s: &str) -> Record {
-        Record::Entry(RecordEntry {
-            revision: 1,
-            entry: Entry::parse(&format!("{ENTRY_PREFIX} {s}")).unwrap(),
-        })
+        Record::Entry(Entry::parse(&format!("{ENTRY_PREFIX} {s}")).unwrap())
     }
+
     fn assert_data(view: &QueryResultsView, want: Vec<&'static str>) {
         let got: Vec<_> = view
             .data
             .iter()
-            .map(|v| v.to_string()[ENTRY_PREFIX.len() + 1..].to_string())
+            .map(|v| v.to_string(true, true)[ENTRY_PREFIX.len() + 1..].to_string())
             .collect();
         let want: Vec<_> = want.iter().map(|v| v.to_string()).collect();
         assert_eq!(got, want);
@@ -143,5 +148,30 @@ mod tests {
             &None,
         );
         assert_data(&view, vec!["00:00 tag1. Comment2"]);
+    }
+
+    #[test]
+    fn update_delete() {
+        let mut view = QueryResultsView::default();
+        view.update_query(
+            Query::new("tag1").unwrap(),
+            BTreeMap::default().iter(),
+            &None,
+        );
+        let rec1 = record("00:00 tag1");
+        view.update(&ChangeEvent::Added(rec1.clone()), &None);
+        let rec2 = Record::parse(&rec1.to_deleted_string()).unwrap();
+        view.update(
+            &ChangeEvent::Replaced {
+                from: rec1.clone(),
+                to: rec2.clone(),
+            },
+            &None,
+        );
+        assert_data(&view, vec![]);
+        // Updating query to empty doesn't return deleted entries
+        let all = BTreeMap::from([(*rec1.date_range(), rec1), (*rec2.date_range(), rec2)]);
+        view.update_query(Query::new("").unwrap(), all.iter(), &None);
+        assert_data(&view, vec![]);
     }
 }

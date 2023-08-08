@@ -21,30 +21,71 @@ impl Entry {
             tags,
         }
     }
+
     pub fn parse(input: &str) -> Result<Entry, ParseError> {
         let mut parser = Parser::new(input);
         parser.parse_date_record()
     }
+
     pub fn comment(&self) -> &Option<String> {
         &self.comment
     }
+
     pub fn date_range(&self) -> &DateTimeRange {
         &self.date_range
     }
-    /// Returns string representation of an entry but uses only time for datetime ranges
-    /// Useful for rendering data when date is visible via other means e.g. journal view
-    pub fn to_string_short(&self) -> String {
-        self.serialize(true)
+
+    pub fn revision(&self) -> usize {
+        for t in self.tags.iter() {
+            if t.name == "entry" {
+                for p in t.props.iter() {
+                    if let (PropVal::Number(rev), "revision") = (&p.val, p.name.as_str()) {
+                        return *rev as usize;
+                    }
+                }
+            }
+        }
+        1 // No revision found, return default
     }
-    fn serialize(&self, omit_dates: bool) -> String {
-        let tags: Vec<String> = self.tags.iter().map(|t| t.to_string()).collect();
+
+    pub fn increase_revision(&mut self) {
+        for t in self.tags.iter_mut() {
+            if t.name == "entry" {
+                for p in t.props.iter_mut() {
+                    if let (PropVal::Number(rev), "revision") = (&p.val, p.name.as_str()) {
+                        p.val = PropVal::Number(rev + 1_f32);
+                        return;
+                    }
+                }
+            }
+        }
+        // No revision exists, create a new tag
+        self.tags.push(Tag::new(
+            "entry".to_string(),
+            vec![Prop {
+                name: "revision".to_string(),
+                val: PropVal::Number(2.0),
+                operator: PropOperator::Eq,
+                start_pos: 0,
+            }],
+            0,
+        ))
+    }
+
+    pub fn serialize(&self, include_date: bool, include_entry_tag: bool) -> String {
+        let tags: Vec<String> = self
+            .tags
+            .iter()
+            .filter(|t| t.name != "entry" || include_entry_tag)
+            .map(|t| t.to_string())
+            .collect();
         let mut s = String::new();
-        if omit_dates {
+        if include_date {
+            s.push_str(&self.date_range().to_string());
+        } else {
             s.push_str(&self.date_range.start().time().to_string());
             s.push(' ');
             s.push_str(&self.date_range.end().time().to_string());
-        } else {
-            s.push_str(&self.date_range().to_string());
         }
         s.push(' ');
         s.push_str(&tags.join(". "));
@@ -58,15 +99,9 @@ impl Entry {
     }
 }
 
-impl Display for Entry {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.serialize(false))
-    }
-}
-
 impl Debug for Entry {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.to_string())
+        f.write_str(&self.serialize(true, true))
     }
 }
 
@@ -75,7 +110,7 @@ impl Ord for Entry {
         self.date_range
             .cmp(&other.date_range)
             // TODO Hack for now, implement proper ordering for all intermediate objects
-            .then_with(|| self.to_string().cmp(&other.to_string()))
+            .then_with(|| self.serialize(true, true).cmp(&other.serialize(true, true)))
     }
 }
 
@@ -250,3 +285,70 @@ impl PartialOrd for PropVal {
 }
 
 impl Eq for PropVal {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn revision() {
+        // Default revision is 1
+        let mut entry = Entry::parse("2023-07-03 10:00 11:00 run distance=18").unwrap();
+        assert_eq!(entry.revision(), 1);
+
+        // Increase default revision
+        entry.increase_revision();
+        assert_eq!(entry.revision(), 2);
+
+        // Default entry revision is not serialized
+        let mut entry = Entry::parse("2023-07-03 10:00 11:00 run distance=18").unwrap();
+        let entry_text = entry.serialize(true, true);
+        assert_eq!(entry_text, "2023-07-03 10:00 11:00 run distance=18");
+
+        // Non default revisions is serialized
+        entry.increase_revision();
+        let entry_text = entry.serialize(true, true);
+        assert_eq!(
+            entry_text,
+            "2023-07-03 10:00 11:00 run distance=18. entry revision=2"
+        );
+
+        // Parsing entry revision
+        let mut entry = Entry::parse(&entry_text).unwrap();
+        assert_eq!(entry.revision(), 2);
+
+        // Increasing parsed revision
+        entry.increase_revision();
+        assert_eq!(entry.revision(), 3);
+        assert_eq!(
+            entry.serialize(true, true),
+            "2023-07-03 10:00 11:00 run distance=18. entry revision=3"
+        );
+    }
+
+    #[test]
+    fn serialize() {
+        // Full serialization
+        let entry =
+            Entry::parse("2023-07-03 10:00 11:00 run distance=18. entry revision=10").unwrap();
+        assert_eq!(
+            entry.serialize(true, true),
+            "2023-07-03 10:00 11:00 run distance=18. entry revision=10"
+        );
+
+        // Omit date
+        assert_eq!(
+            entry.serialize(false, true),
+            "10:00 11:00 run distance=18. entry revision=10"
+        );
+
+        // Omit entry
+        assert_eq!(
+            entry.serialize(true, false),
+            "2023-07-03 10:00 11:00 run distance=18"
+        );
+
+        // Omit date and entry
+        assert_eq!(entry.serialize(false, false), "10:00 11:00 run distance=18");
+    }
+}

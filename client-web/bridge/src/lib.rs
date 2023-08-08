@@ -30,7 +30,6 @@ use qqself_core::{
         payload::PayloadId,
         tokens::{DeleteToken, SearchToken},
     },
-    record::Entry,
 };
 use wasm_bindgen::{prelude::wasm_bindgen, JsCast, JsValue};
 
@@ -199,10 +198,41 @@ pub struct Views {
     db: RefCell<DB>,
 }
 
-#[wasm_bindgen(getter_with_clone)]
-pub struct QueryResultEntry {
-    pub day: String,
-    pub text: String,
+#[wasm_bindgen]
+pub struct UiRecord {
+    record: Record,
+}
+
+#[wasm_bindgen]
+impl UiRecord {
+    pub fn to_string(&self, include_date: bool, include_entry_tag: bool) -> String {
+        self.record.to_string(include_date, include_entry_tag)
+    }
+
+    pub fn created_deleted_record(&self) -> UiRecord {
+        let input = self.record.to_deleted_string();
+        UiRecord::parse(input, false).expect("deleted string should always be parsable")
+    }
+
+    pub fn day(&self) -> String {
+        self.record.date_range().start().date().to_string()
+    }
+
+    pub fn revision(&self) -> usize {
+        self.record.revision()
+    }
+
+    pub fn parse(input: String, increaseRevision: bool) -> Result<UiRecord, String> {
+        if increaseRevision {
+            let record = Record::parse(&input)?;
+            Ok(UiRecord {
+                record: record.next_revision(),
+            })
+        } else {
+            let record = Record::parse(&input)?;
+            Ok(UiRecord { record })
+        }
+    }
 }
 
 #[wasm_bindgen(getter_with_clone)]
@@ -214,8 +244,8 @@ pub struct SkillData {
 
 #[wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen(typescript_type = "Array<QueryResultEntry>")]
-    pub type QueryResultsEntryArray;
+    #[wasm_bindgen(typescript_type = "Array<UiRecord>")]
+    pub type QueryResultsRecordArray;
 
     #[wasm_bindgen(typescript_type = "Array<SkillData>")]
     pub type SkillDataArray;
@@ -262,17 +292,9 @@ impl Views {
         }
     }
 
-    pub fn add_entry(
-        &self,
-        input: String,
-        interactive: bool,
-        now: Option<DateDay>,
-    ) -> Result<(), String> {
-        let entry = Entry::parse(&input).map_err(|err| err.to_string())?;
-        let record = Record::from_entry(entry, 1);
+    pub fn add_record(&self, record: &UiRecord, interactive: bool, now: Option<DateDay>) {
         let mut db = self.db.borrow_mut();
-        db.add(record, interactive, now);
-        Ok(())
+        db.add(record.record.clone(), interactive, now);
     }
 
     pub fn update_query(&self, query: String) -> Result<(), String> {
@@ -282,16 +304,15 @@ impl Views {
         Ok(())
     }
 
-    pub fn query_results(&self) -> QueryResultsEntryArray {
-        let entries = js_sys::Array::default();
-        for entry in self.db.borrow().query_results().iter() {
-            let entry = QueryResultEntry {
-                day: entry.date_range().start().date().to_string(),
-                text: entry.to_string_short(),
+    pub fn query_results(&self) -> QueryResultsRecordArray {
+        let records = js_sys::Array::default();
+        for record in self.db.borrow().query_results().iter() {
+            let record = UiRecord {
+                record: record.clone(),
             };
-            entries.push(&JsValue::from(entry));
+            records.push(&JsValue::from(record));
         }
-        entries.unchecked_into::<QueryResultsEntryArray>()
+        records.unchecked_into::<QueryResultsRecordArray>()
     }
 
     pub fn entry_count(&self) -> usize {
@@ -314,11 +335,6 @@ impl Views {
         }
         output.unchecked_into::<SkillDataArray>()
     }
-}
-
-#[wasm_bindgen]
-pub fn validateEntry(input: String) -> Option<String> {
-    Entry::parse(&input).map_err(|e| e.to_string()).err()
 }
 
 #[wasm_bindgen]

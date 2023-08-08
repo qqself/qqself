@@ -10,7 +10,6 @@ use qqself_core::{
     date_time::datetime::DateDay,
     db::{Record, DB},
     encryption::{keys::PrivateKey, payload::PayloadBytes},
-    record::Entry,
 };
 use rayon::prelude::*;
 use rayon::str::ParallelString;
@@ -58,16 +57,16 @@ fn download_journal(journal_path: &Path, keys: KeyFile) -> PathBuf {
             let plain_text =
                 decrypt(line.to_string(), &keys.keys().private_key).expect("Failure decrypting");
             Some(
-                Entry::parse(&plain_text)
-                    .unwrap_or_else(|_| panic!("Cannot parse an entry: {}", line)),
+                Record::parse(&plain_text)
+                    .unwrap_or_else(|_| panic!("entry should be valid: {line}")),
             )
         })
         .collect::<Vec<_>>();
 
     info!("Processing entries...");
     let mut db = DB::default();
-    for entry in entries {
-        db.add(Record::from_entry(entry, 1), false, None);
+    for record in entries {
+        db.add(record, false, None);
     }
     let mut output = String::new();
     let mut prev_day = None;
@@ -76,7 +75,7 @@ fn download_journal(journal_path: &Path, keys: KeyFile) -> PathBuf {
             prev_day.replace(entry.date_range().start().date());
             output.push('\n');
         }
-        output.push_str(&format!("{}\n", entry));
+        output.push_str(&format!("{}\n", entry.to_string(true, true)));
     });
     info!("Writing entries to journal {:?} ...", journal_path);
     fs::write(journal_path, output).expect("Failed to write journal file");

@@ -1,4 +1,4 @@
-import { DateDay, stringHash } from "../../bridge/pkg"
+import { DateDay, stringHash, UiRecord } from "../../bridge/pkg"
 import { APIProvider } from "../app/api"
 import { trace } from "../logger"
 import { isBrowser } from "../utils"
@@ -34,11 +34,13 @@ export class DataEvents {
     let loadedRemote = 0
     let loadedLocal = 0
     for (const entry of await storage.values(KeyPrefixes.EntryRemote)) {
-      this.store.userState.views.add_entry(entry.value, false)
+      const record = UiRecord.parse(entry.value, false)
+      this.store.userState.views.add_record(record, false)
       loadedRemote++
     }
     for (const entry of await storage.values(KeyPrefixes.EntryLocal)) {
-      this.store.userState.views.add_entry(entry.value, false)
+      const record = UiRecord.parse(entry.value, false)
+      this.store.userState.views.add_record(record, false)
       loadedLocal++
     }
     trace(`DataEvents loaded cached data: remote=${loadedRemote}, local=${loadedLocal}`)
@@ -80,7 +82,8 @@ export class DataEvents {
   }
 
   async onEntryAdded(entry: string, callSyncAfter: boolean): Promise<void> {
-    this.store.userState.views.add_entry(entry, true, DateDay.fromDate(new Date()))
+    const record = UiRecord.parse(entry, false)
+    this.store.userState.views.add_record(record, true, DateDay.fromDate(new Date()))
     await this.addEntryToCache(entry, null)
     await this.store.dispatch("status.sync", { status: "pending" })
     if (callSyncAfter) {
@@ -134,7 +137,8 @@ export class DataEvents {
     const requestFinished = performance.now()
     const decrypted = await this.store.userState.encryptionPool.decryptAll(remoteEntries)
     for (const entry of decrypted) {
-      this.store.userState.views.add_entry(entry.text, false)
+      const record = UiRecord.parse(entry.text, false)
+      this.store.userState.views.add_record(record, false)
       await this.addEntryToCache(entry.text, entry.id)
     }
     if (decrypted.length > 1) {

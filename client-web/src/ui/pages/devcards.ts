@@ -1,5 +1,5 @@
 import "../components/skills"
-import "../components/entryInput"
+import "../components/recordInput"
 import "../components/queryResults"
 import "../components/statusBar"
 import "../controls/panel"
@@ -10,10 +10,10 @@ import "../pages/progress"
 import { html, LitElement, TemplateResult } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
 
-import { DateDay } from "../../../bridge/pkg/qqself_client_web_bridge"
+import { DateDay, UiRecord } from "../../../bridge/pkg/qqself_client_web_bridge"
 import { trace } from "../../logger"
 import { OfflineApi, TestStore } from "../../utilsTests"
-import { EntrySaveEvent } from "../components/entryInput"
+import { RecordSaveEvent } from "../components/recordInput"
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -90,12 +90,12 @@ export class DevcardsPage extends LitElement {
 
     const groupedEntries = this.store.userState.views
       .query_results()
-      .reduce<Record<string, string[]>>((acc, cur) => {
-        const day = cur.day
+      .reduce<Record<string, UiRecord[]>>((acc, cur) => {
+        const day = cur.day()
         if (day in acc) {
-          acc[day].push(cur.text)
+          acc[day].push(cur)
         } else {
-          acc[day] = [cur.text]
+          acc[day] = [cur]
         }
         return acc
       }, {})
@@ -136,18 +136,18 @@ export class DevcardsPage extends LitElement {
       </q-card>
 
       <q-card name="AddEntry - Valid">
-        <q-entry-input
-          entry="2022-11-09 11:25 12:30 qqself. Added entry input"
-          @save=${(e: EntrySaveEvent) => trace(JSON.stringify(e.detail))}
-        ></q-entry-input>
+        <q-record-input
+          input="2022-11-09 11:25 12:30 qqself. Added entry input"
+          @save=${(e: RecordSaveEvent) => trace(JSON.stringify(e.detail))}
+        ></q-record-input>
       </q-card>
 
       <q-card name="AddEntry - Invalid">
-        <q-entry-input entry="2022-11-09 11:25 12:30 foo. foo"></q-entry-input>
+        <q-record-input input="2022-11-09 11:25 12:30 foo. foo"></q-record-input>
       </q-card>
 
       <q-card name="AddEntry - Empty">
-        <q-entry-input></q-entry-input>
+        <q-record-input></q-record-input>
       </q-card>
 
       <q-card name="Status bar - Default">
