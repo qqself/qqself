@@ -7,6 +7,7 @@ use crate::{
     date_time::datetime::{DateDay, DateTimeRange},
     db::{ChangeEvent, Notification, Record, ViewUpdate},
     progress::skill::{Skill, SkillProgress},
+    record::Entry,
 };
 
 /// View shows data from perspective of skill development
@@ -37,7 +38,19 @@ impl SkillsView {
         on_view_update: &Option<Box<dyn Fn(ViewUpdate)>>,
         on_notification: &Option<Box<dyn Fn(Notification)>>,
     ) {
-        let ChangeEvent::Added(Record::Entry(entry)) = event else { return };
+        let entry = match event {
+            ChangeEvent::Added(Record::Entry(entry)) => entry,
+            ChangeEvent::Replaced {
+                from: Record::Entry(from),
+                to: Record::Entry(to),
+            } => {
+                // It's a replacement, remove previous entry from calculation and continue processing new one as usual
+                self.delete_entry(from, on_view_update);
+                to
+            }
+            _ => return, // TODO Handle conflicts
+        };
+
         if let Some(mut skill) = Skill::from_record(entry) {
             // If it's a Skill - go back and re-read all previous record to accumulate duration
             for (_, record) in all.clone() {
@@ -77,6 +90,26 @@ impl SkillsView {
                         // Entry may have multiple tags/skills attached, but we want notification about total processed only once
                         send_total_notification = false;
                     }
+                }
+            }
+        }
+    }
+
+    fn delete_entry(&mut self, entry: &Entry, on_view_update: &Option<Box<dyn Fn(ViewUpdate)>>) {
+        if let Some(skill) = Skill::from_record(entry) {
+            self.data.remove(skill.title());
+            self.process_update(&skill, on_view_update);
+            return;
+        }
+        // If it's a record - remove it from the corresponding skills if any
+        for (_, skill) in self.data.iter_mut() {
+            if skill.selector().matches(entry) {
+                skill.remove_duration(entry.date_range.duration());
+                // self.process_update cannot be used as self is borrowed as mut inside a loop
+                if let Some(on_view_update) = on_view_update {
+                    on_view_update(ViewUpdate::Skills(SkillsUpdate {
+                        skill: skill.title().to_string(),
+                    }))
                 }
             }
         }
@@ -304,36 +337,43 @@ mod tests {
 
     #[derive(Default)]
     struct TestSkillView {
-        entries: BTreeMap<DateTimeRange, Record>,
+        records: BTreeMap<DateTimeRange, Record>,
         skill_view: SkillsView,
     }
 
     impl TestSkillView {
-        fn add(&mut self, entry: &str) {
+        fn add(&mut self, entry: &str) -> Record {
             let record = Record::Entry(Entry::parse(entry).unwrap());
-            self.entries.insert(*record.date_range(), record.clone());
+            self.records.insert(*record.date_range(), record.clone());
             self.skill_view.update(
-                self.entries.iter(),
-                &ChangeEvent::Added(record),
+                self.records.iter(),
+                &ChangeEvent::Added(record.clone()),
                 false,
                 None,
                 &None,
                 &None,
             );
+            record
         }
 
         fn check_notification(
             &mut self,
-            entry: &str,
+            event: ChangeEvent,
             now: Option<DateDay>,
         ) -> Vec<SkillsNotification> {
-            let record = Record::Entry(Entry::parse(entry).unwrap());
-            self.entries.insert(*record.date_range(), record.clone());
+            match &event {
+                ChangeEvent::Added(record) => {
+                    self.records.insert(*record.date_range(), record.clone())
+                }
+                ChangeEvent::Replaced { from: _, to } => {
+                    self.records.insert(*to.date_range(), to.clone())
+                }
+            };
             let called = Rc::new(RefCell::new(Vec::new()));
             let called_clone = called.clone();
             self.skill_view.update(
-                self.entries.iter(),
-                &ChangeEvent::Added(record),
+                self.records.iter(),
+                &event,
                 true,
                 now,
                 &None,
@@ -348,6 +388,16 @@ mod tests {
             );
             called.take()
         }
+
+        fn check_skills(&self, want: Vec<(&'static str, usize)>) {
+            let got: Vec<_> = self
+                .skill_view
+                .data
+                .values()
+                .map(|v| (v.title(), v.progress().duration_minutes))
+                .collect();
+            assert_eq!(got, want);
+        }
     }
 
     #[test]
@@ -357,14 +407,20 @@ mod tests {
 
         // No skill attached for the entity
         assert_eq!(
-            view.check_notification("2022-06-06 10:00 12:00 run", now),
+            view.check_notification(
+                ChangeEvent::Added(Record::parse("2022-06-06 10:00 12:00 run").unwrap()),
+                now
+            ),
             vec![]
         );
 
         // Adding skill afterwards recalculates all previously added entities
         assert_eq!(
             view.check_notification(
-                "2022-06-06 13:00 13:00 run. skill kind=physical. Running",
+                ChangeEvent::Added(
+                    Record::parse("2022-06-06 13:00 13:00 run. skill kind=physical. Running")
+                        .unwrap()
+                ),
                 now
             ),
             vec![SkillsNotification::LevelUp(
@@ -374,13 +430,19 @@ mod tests {
 
         // Adding not enough for level up
         assert_eq!(
-            view.check_notification("2022-06-06 14:00 14:05 run", now),
+            view.check_notification(
+                ChangeEvent::Added(Record::parse("2022-06-06 14:00 14:05 run").unwrap()),
+                now
+            ),
             vec![]
         );
 
         // Adding more to cause another level up
         assert_eq!(
-            view.check_notification("2022-06-06 15:00 17:00 run", now),
+            view.check_notification(
+                ChangeEvent::Added(Record::parse("2022-06-06 15:00 17:00 run").unwrap()),
+                now
+            ),
             vec![SkillsNotification::LevelUp(
                 "Running level increased to 4".to_string()
             )]
@@ -394,21 +456,31 @@ mod tests {
 
         // Total time is ignored for non skill entries
         assert_eq!(
-            view.check_notification("2022-06-08 00:00 23:00 foo", now),
+            view.check_notification(
+                ChangeEvent::Added(Record::parse("2022-06-08 00:00 23:00 foo").unwrap()),
+                now
+            ),
             vec![]
         );
 
         // Total time in a week
         view.check_notification(
-            "2022-06-08 00:00 00:00 bar1. skill kind=physical. Bar1",
+            ChangeEvent::Added(
+                Record::parse("2022-06-08 00:00 00:00 bar1. skill kind=physical. Bar1").unwrap(),
+            ),
             now,
         );
         view.check_notification(
-            "2022-06-08 00:00 00:00 bar2. skill kind=physical. Bar2",
+            ChangeEvent::Added(
+                Record::parse("2022-06-08 00:00 00:00 bar2. skill kind=physical. Bar2").unwrap(),
+            ),
             now,
         );
         assert_eq!(
-            view.check_notification("2022-06-08 00:00 19:00 bar1", now),
+            view.check_notification(
+                ChangeEvent::Added(Record::parse("2022-06-08 00:00 19:00 bar1").unwrap()),
+                now
+            ),
             vec![
                 SkillsNotification::LevelUp("Bar1 level increased to 13".to_string()),
                 SkillsNotification::HourProgress(
@@ -422,7 +494,10 @@ mod tests {
 
         // Another skill
         assert_eq!(
-            view.check_notification("2022-06-08 00:00 05:00 bar2", now),
+            view.check_notification(
+                ChangeEvent::Added(Record::parse("2022-06-08 00:00 05:00 bar2").unwrap()),
+                now
+            ),
             vec![
                 SkillsNotification::LevelUp("Bar2 level increased to 5".to_string()),
                 SkillsNotification::HourProgress(
@@ -445,7 +520,7 @@ mod tests {
         // Adding entry on Tuesday should emit notification about 20 hours of running in a week
         assert_eq!(
             view.check_notification(
-                "2023-07-18 00:00 10:00 run",
+                ChangeEvent::Added(Record::parse("2023-07-18 00:00 10:00 run").unwrap()),
                 Some(DateDay::new(2023, 7, 18))
             ),
             vec![
@@ -472,7 +547,10 @@ mod tests {
         // Adding entry with multiple tags should be calculated once for total notifications
         assert_eq!(
             view.check_notification(
-                "2023-07-13 00:00 20:00 swim. run. Practices swimrun first time",
+                ChangeEvent::Added(
+                    Record::parse("2023-07-13 00:00 20:00 swim. run. Practices swimrun first time")
+                        .unwrap()
+                ),
                 Some(DateDay::new(2023, 7, 13))
             ),
             vec![
@@ -495,5 +573,119 @@ mod tests {
                 )
             ]
         );
+    }
+
+    #[test]
+    fn delete_entry() {
+        let mut view = TestSkillView::default();
+        view.add("2023-07-13 00:00 00:00 run. skill kind=physical. Running");
+        let entry = "2023-07-13 00:00 01:00 run";
+        view.add(entry);
+        view.check_skills(vec![("Running", 60)]);
+        let record = Record::parse(entry).unwrap();
+
+        // Delete a record should reset running to the initial value
+        assert_eq!(
+            view.check_notification(
+                ChangeEvent::Replaced {
+                    from: record.clone(),
+                    to: Record::parse(&record.to_deleted_string()).unwrap()
+                },
+                Some(DateDay::new(2023, 7, 13))
+            ),
+            vec![]
+        );
+        view.check_skills(vec![("Running", 0)]);
+    }
+
+    #[test]
+    fn delete_skill() {
+        let mut view = TestSkillView::default();
+        let skill = "2023-07-13 00:00 00:00 run1. skill kind=physical. Running1";
+        view.add(skill);
+        view.add("2023-07-13 00:01 00:01 run2. skill kind=physical. Running2");
+        view.add("2023-07-13 00:00 10:00 run1");
+        view.check_skills(vec![("Running1", 600), ("Running2", 0)]);
+
+        // Delete a skill should remove it from the skills and from the total calculations
+        let record = Record::parse(skill).unwrap();
+        assert_eq!(
+            view.check_notification(
+                ChangeEvent::Replaced {
+                    from: record.clone(),
+                    to: Record::parse(&record.to_deleted_string()).unwrap()
+                },
+                Some(DateDay::new(2023, 7, 13))
+            ),
+            vec![]
+        );
+        view.check_skills(vec![("Running2", 0)]);
+        
+        // Add another 10 hours to ensure that notification about 20 hours of total is not triggered
+        assert_eq!(
+            view.check_notification(
+                ChangeEvent::Added(Record::parse("2023-07-13 10:00 20:00 run2").unwrap()),
+                Some(DateDay::new(2023, 7, 13))
+            ),
+            vec![
+                SkillsNotification::LevelUp("Running2 level increased to 8".to_string()),
+                SkillsNotification::HourProgress(
+                    "Great job - you've practiced 10 hours of Running2 this month".to_string()
+                ),
+                SkillsNotification::HourProgress(
+                    "Great job - you've practiced 10 hours of Running2 this week".to_string()
+                ),
+            ]
+        );
+        view.check_skills(vec![("Running2", 600)]);
+    }
+
+    #[test]
+    fn replace_entry() {
+        let mut view = TestSkillView::default();
+        view.add("2023-07-13 00:00 00:00 run. skill kind=physical. Running");
+        view.add("2023-07-13 00:00 01:00 run");
+        let entry = "2023-07-13 01:00 02:00 run";
+        view.add(entry);
+        view.check_skills(vec![("Running", 120)]);
+
+        // Replacing with bigger amounts
+        assert_eq!(
+            view.check_notification(
+                ChangeEvent::Replaced {
+                    from: Record::parse(entry).unwrap(),
+                    to: Record::parse("2023-07-13 00:00 19:00 run").unwrap()
+                },
+                Some(DateDay::new(2023, 7, 13))
+            ),
+            vec![
+                SkillsNotification::LevelUp("Running level increased to 13".to_string()),
+                SkillsNotification::HourProgress(
+                    "Great job - across all skills you've practiced 20 hours this week".to_string()
+                ),
+                SkillsNotification::HourProgress(
+                    "Great job - you've practiced 20 hours of Running this month".to_string()
+                ),
+                SkillsNotification::HourProgress(
+                    "Great job - you've practiced 20 hours of Running this week".to_string()
+                ),
+            ]
+        );
+        view.check_skills(vec![("Running", 1200)]);
+
+        // Replacing with smaller amounts
+        assert_eq!(
+            view.check_notification(
+                ChangeEvent::Replaced {
+                    from: Record::parse("2023-07-13 00:00 19:00 run").unwrap(),
+                    to: Record::parse("2023-07-13 00:00 00:30 run").unwrap()
+                },
+                Some(DateDay::new(2023, 7, 13))
+            ),
+            vec![SkillsNotification::LevelUp(
+                "Running level increased to 2".to_string()
+            )]
+        );
+        view.check_skills(vec![("Running", 90)]);
     }
 }

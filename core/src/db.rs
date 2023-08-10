@@ -288,6 +288,8 @@ impl Selector {
         }
         tags
     }
+
+    // TODO Query should never match skills itself
     pub fn matches(&self, entry: &Entry) -> bool {
         for query_tag in &self.tags {
             for entry_tag in &entry.tags {

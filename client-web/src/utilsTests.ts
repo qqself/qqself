@@ -28,10 +28,6 @@ export class TestStore extends Store {
       throw new Error("Expect is missing")
     }
     await this.dispatch(event, eventArgs)
-    // Dynamically load `expect` as it's sometimes useful to use TestStore outside of testing context.
-    // Importing `vitest` causes errors if imported outside of vitest context
-    // TODO: Still it gives warning during production build, accept `expect` as a parameter
-
     if (!this.gotEvents.has(expectedEvent)) {
       // Fail if expected event didn't occur
       console.log(this.gotEvents.keys())
