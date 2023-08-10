@@ -124,6 +124,10 @@ impl Skill {
         self.duration_minutes += duration.minutes();
     }
 
+    pub fn remove_duration(&mut self, duration: Duration) {
+        self.duration_minutes -= duration.minutes();
+    }
+
     pub fn merge_selector(&mut self, mut another: Skill) {
         self.selector.tags.append(&mut another.selector.tags);
     }
