@@ -14,6 +14,23 @@ jobs:
     - uses: actions/setup-node@v3
       with:
         node-version: 20
+    - name: cache-cargo
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: cargo-
+    - name: cache-yarn
+      uses: actions/cache@v3
+      with:
+        path: "client-web/node_modules"
+        key: yarn-${{ hashFiles('client-web/yarn.lock') }}
+        restore-keys: yarn-
     - run: ./run.sh deps
     - run: ./run.sh build
     - run: ./run.sh test
