@@ -620,7 +620,7 @@ mod tests {
             vec![]
         );
         view.check_skills(vec![("Running2", 0)]);
-        
+
         // Add another 10 hours to ensure that notification about 20 hours of total is not triggered
         assert_eq!(
             view.check_notification(
