@@ -25,4 +25,4 @@ default = []
 storage-dynamodb = ["dep:aws-config", "dep:aws-sdk-dynamodb"]
 
 [build-dependencies]
-vergen = { version = "8.2.4", features = ["build", "cargo", "git", "gitcl", "rustc"] }
+vergen = { version = "8.2.4", features = ["build", "cargo", "git", "git2", "rustc"] }
