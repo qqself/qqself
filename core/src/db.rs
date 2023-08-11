@@ -269,17 +269,23 @@ impl DB {
 
 #[derive(PartialEq, Eq, Debug, Clone, Default)]
 pub struct Selector {
-    pub tags: Vec<Tag>,
+    pub inclusive_tags: Vec<Tag>,
+    pub exclusive_tags: Vec<Tag>,
 }
 
+// Entry doesn't match if it has any exclusive_tag. Inclusive tags are considered
+// as part of OR statements and entry matches if any of the tags matches
 impl Selector {
     pub fn matched_tags(&self, entry: &Entry) -> Vec<Tag> {
-        // We consider query tags as part of OR statements and entry
-        // is matched if any of the tags matches, which matched if any of props matches.
-        // Probably should optimize it as it's quadratic and inside prop matching is
-        // quadratic as well. On the other hand usually we have 1-2 tags with 1-2 props
+        for query_tag in &self.exclusive_tags {
+            for entry_tag in &entry.tags {
+                if entry_tag.matches(query_tag) {
+                    return vec![];
+                }
+            }
+        }
         let mut tags = Vec::new();
-        for query_tag in &self.tags {
+        for query_tag in &self.inclusive_tags {
             for entry_tag in &entry.tags {
                 if entry_tag.matches(query_tag) {
                     tags.push(entry_tag.clone());
@@ -289,16 +295,24 @@ impl Selector {
         tags
     }
 
-    // TODO Query should never match skills itself
     pub fn matches(&self, entry: &Entry) -> bool {
-        for query_tag in &self.tags {
+        for query_tag in &self.exclusive_tags {
+            for entry_tag in &entry.tags {
+                if entry_tag.matches(query_tag) {
+                    return false;
+                }
+            }
+        }
+        for query_tag in &self.inclusive_tags {
             for entry_tag in &entry.tags {
                 if entry_tag.matches(query_tag) {
                     return true;
                 }
             }
         }
-        false
+        // If query is empty and has no inclusive_tags then it matches everything
+        // as long as entry doesn't have exclusive_tags
+        self.inclusive_tags.is_empty()
     }
 }
 
@@ -347,7 +361,8 @@ impl Query {
             }
         }
         let selector = Selector {
-            tags: tags.into_iter().filter(|v| v.name != "filter").collect(), // filter is a special tag and should not be considered as a selector
+            inclusive_tags: tags.into_iter().filter(|v| v.name != "filter").collect(), // filter is a special tag and should not be considered as a selector
+            exclusive_tags: vec![],
         };
         Ok(Query {
             selector,
@@ -367,9 +382,6 @@ impl Query {
             if record.date_range().end().date() > max_date {
                 return false;
             }
-        }
-        if self.selector.tags.is_empty() {
-            return true; // It's just a date filter
         }
         match record {
             Record::Entry(entry) => self.selector.matches(entry),
