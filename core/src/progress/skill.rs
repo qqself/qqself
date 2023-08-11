@@ -1,6 +1,10 @@
 use std::{fmt::Display, str::FromStr};
 
-use crate::{date_time::datetime::Duration, db::Selector, record::Entry};
+use crate::{
+    date_time::datetime::Duration,
+    db::Selector,
+    record::{Entry, Tag},
+};
 
 /*
 Skill - activity where we can become better by practicing.
@@ -87,7 +91,8 @@ impl Skill {
         for tag in &record.tags {
             if tag.name == "skill" {
                 skill_tag = Some(tag);
-            } else {
+            } else if tag.name != "entry" {
+                // entry is a special internal tag which is not part of the query
                 query.push(tag);
             }
         }
@@ -97,7 +102,8 @@ impl Skill {
             title: record.comment.as_ref().cloned()?,
             kind: symbol.val.to_string().parse().ok()?,
             selector: Selector {
-                tags: query.into_iter().cloned().collect(),
+                inclusive_tags: query.into_iter().cloned().collect(),
+                exclusive_tags: vec![Tag::new("skill".to_string(), vec![], 0)], // skills entries should be excluded
             },
             duration_minutes: 0,
         })
@@ -129,7 +135,9 @@ impl Skill {
     }
 
     pub fn merge_selector(&mut self, mut another: Skill) {
-        self.selector.tags.append(&mut another.selector.tags);
+        self.selector
+            .inclusive_tags
+            .append(&mut another.selector.inclusive_tags);
     }
 }
 
@@ -199,5 +207,44 @@ mod tests {
             let got = skill_level(time);
             assert_eq!(got, want);
         }
+    }
+
+    #[test]
+    fn matching() {
+        let matches = |skill, entry| {
+            let skill = Skill::from_record(&Entry::parse(skill).unwrap()).unwrap();
+            let entry = Entry::parse(entry).unwrap();
+            skill.selector.matches(&entry)
+        };
+
+        // Matching by tag
+        assert!(matches(
+            "2023-07-13 00:00 00:00 foo. skill kind=physical. Foo",
+            "2023-07-13 01:00 02:00 foo"
+        ));
+
+        // No match
+        assert!(!matches(
+            "2023-07-13 00:00 00:00 foo. skill kind=physical. Foo",
+            "2023-07-13 01:00 02:00 bar"
+        ));
+
+        // Multi tag selector
+        assert!(matches(
+            "2023-07-13 00:00 00:00 foo. bar. skill kind=physical. Foo",
+            "2023-07-13 01:00 02:00 foo"
+        ));
+
+        // Entry tag is ignored
+        assert!(!matches(
+            "2023-07-13 00:00 00:00 foo. entry revision=2. skill kind=physical. Foo",
+            "2023-07-13 00:00 00:00 bar. entry revision=2",
+        ));
+
+        // No match on skill entries
+        assert!(!matches(
+            "2023-07-13 00:00 00:00 foo. skill kind=physical. Foo",
+            "2023-07-13 00:00 00:00 foo. bar. skill kind=physical. Foo2",
+        ));
     }
 }
