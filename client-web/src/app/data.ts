@@ -34,12 +34,12 @@ export class DataEvents {
     let loadedRemote = 0
     let loadedLocal = 0
     for (const entry of await storage.values(KeyPrefixes.EntryRemote)) {
-      const record = UiRecord.parse(entry.value, false)
+      const record = UiRecord.parse(entry.value)
       this.store.userState.views.add_record(record, false)
       loadedRemote++
     }
     for (const entry of await storage.values(KeyPrefixes.EntryLocal)) {
-      const record = UiRecord.parse(entry.value, false)
+      const record = UiRecord.parse(entry.value)
       this.store.userState.views.add_record(record, false)
       loadedLocal++
     }
@@ -82,7 +82,7 @@ export class DataEvents {
   }
 
   async onEntryAdded(entry: string, callSyncAfter: boolean): Promise<void> {
-    const record = UiRecord.parse(entry, false)
+    const record = UiRecord.parse(entry)
     this.store.userState.views.add_record(record, true, DateDay.fromDate(new Date()))
     await this.addEntryToCache(entry, null)
     await this.store.dispatch("status.sync", { status: "pending" })
@@ -137,7 +137,7 @@ export class DataEvents {
     const requestFinished = performance.now()
     const decrypted = await this.store.userState.encryptionPool.decryptAll(remoteEntries)
     for (const entry of decrypted) {
-      const record = UiRecord.parse(entry.text, false)
+      const record = UiRecord.parse(entry.text)
       this.store.userState.views.add_record(record, false)
       await this.addEntryToCache(entry.text, entry.id)
     }
