@@ -6,7 +6,7 @@ build = "build.rs"
 
 [dependencies]
 actix-web = "4.3.1"
-async-trait = "0.1.72"
+async-trait = "0.1.73"
 env_logger = "0.10.0"
 futures = "0.3.28"
 lazy_static = "1.4.0"
