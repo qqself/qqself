@@ -41,14 +41,21 @@ Deliberate practice assumes focusing on your weakest point and work towards impr
 
 ## Recovery
 
-Many know how to rest, but few know how to recover. Learning new skill is an effort, it's difficult mentally and sometimes physically. To be able to keep doing it, to keep improving day after day, year after year we need to learn how to recover. 
+Many know how to rest, but few know how to recover. To keep moving and getting better day after day, year after year we have to learn how to recover. 
 
-Rest means not doing an activity, while recovery assumes re-charging our batteries and be ready to start practice all over again. 
+Rest means not doing an activity, while recovery means doing something that help us get energy back and be ready to practice again. Lying on a sofa is a rest, but it's not really recovering. Actually, just lying on a sofa can be a way to recover, and it's actually quite difficult to do – just lying there without holding a phone or watching TV.
 
-If after hard working day you spend evening laying down on the sofa, watching Netflix, and going sleep late then it is a rest. Spending time in Internet watching cats and Netflix can be relaxing and for sure entertain us a lot, but it's hardly allows us to proper recover and restore our energy levels back. Almost any kind of consumption requires cognitive effort and doesn't give our brain a proper break.
+Many times, when we feel tired, we turn to things that entertain us: games, Netflix or watching cats on YouTube. Watching cats can be relaxing and definitely entertaining, but it doesn't help us to recover and doesn't restore our mental energy levels. Almost any kind of consumption requires cognitive effort and doesn't give our brain a proper break.
 
-Activities that recovers the energy are: meditation, taking a walk in nature, reading a book, or even simply sitting quietly can be more effective for providing true rest. These activities allow our mind to wander, reduce stress, and give our brain a break from constant stimulation.
+Some skills require physical recovery, but all skills require the restoration of mental energy. We skip training not because we physically cannot get to the gym, but because we cannot convince ourselves to go there. When our mental capacity is exhausted, we feel like we've lost motivation and interest in doing things – all because we've failed to give our brain a chance to recover.
 
+In our modern world, filled with many distractions, we need to consciously make an effort to give our brains a break from constant stimulation.
+
+Sleep is the most effective way to recover, and a full night of sleep have the greatest impact on energy levels. When you read about masters or scholars who have gone through intense learning, you may find that daily naps mentioned frequently. 
+
+Activities like meditation, taking a walk outside, reading a book, taking shower or even simply sitting quietly can provide an effective recovery. Being lost in doing music or art can provide an effective way to recover as well.
+
+When feeling tired don't rest - recover. 
 ## Identities
 
 If you Google "How to write a book?" you'll find a lot of great articles from established authors with many helpful advices. Before starting to write, you have to think about the main topic of your book, imagine your audience, create an outline, and then, even before you write an opening, the common advice is to start calling yourself a writer. It sounds silly and premature, but it actually helps.
