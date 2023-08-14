@@ -60,18 +60,18 @@ impl Record {
         false
     }
 
-    pub fn next_revision(&self) -> Record {
+    pub fn with_updated_revision(&self, revision: usize) -> Record {
         match self {
             Record::Entry(entry) => {
                 let mut entry = entry.clone();
-                entry.increase_revision();
+                entry.set_revision(revision);
                 Record::Entry(entry)
             }
             Record::Conflict(conflict) => {
                 let mut conflicts = BTreeSet::new();
                 for entry in conflict.iter() {
                     let mut entry = entry.clone();
-                    entry.increase_revision();
+                    entry.set_revision(revision);
                     conflicts.insert(entry);
                 }
                 Record::Conflict(conflicts)
