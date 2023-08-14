@@ -23,6 +23,32 @@ Every skill, every master, and every scholar are unique, yet there are common re
 
 There are numerous books and reports from the best masters that we can learn from - what strategies musicians use to perfect their skill; what strategies writers use to focus on their work and avoid distraction of the daily life; what keeps us motivated and how to deal with the failures. All the is the `Mastering System`.
 
+## Progress
+
+Feeling of a progress is the main motivator in a skill learning: You become better, you unlock things that were not possible before and see the results of your practice and training. When progress is invisible it's hard to continue to put an effort into learning.
+
+In some skills the hardest part is the beginning - with musical instruments at first you'll be doing sounds, instead of music; going to the gym first few months will result only in muscle pain, rather than it's grow; doing art will results with ugliness, instead of the beauty. 
+
+The could be no deliveries which could be used as markers of your progress. It's a main reason why newcomers give up so often in the beginning - they see no results of their effort. It's also a reason why people who have been practiced skill for many years can hardly understand why newcomers give up. When you've reached advanced levels of the skill it's keep delivering the results: You collect medals for race participations, have new sculptures on a shelf or add learned songs to your repertoire. 
+
+There is one metric exists that is keep progressing no matter what your skill level is or what kind of skill you are practicing - it is time. Time spent on skill practice is a best indicator for the beginners to have a sense of the progress. Having arbitrary goal like spent 5 hours a week in a gym; achieve 50 hours of total time in there; reach 200 hours of running per year will create a great sense of progress and could be playing role of deliveries, until the skill itself will start doing it. 
+
+Not all time spent is equal and time spent is not a perfect indicator - optimising this metric may result with a lot of time spent in a gym doing nothing. It's not a KPI that your company needs to optimise. It's a number that you measure, not optimise. It's a number only for yourself, not a public number that your share in social networks.
+
+The lack of a feeling of progress may affect not only newcomers. In fact, when you've reached more advanced levels, most of the time is spent on a plateau. It feels even more frustrating than for new-comers as you put more effort, you work hard on reaching new limits and yet masters may look further and further from what you can achieve. One way to fight through such plateau is patience, time and deliberate practice.
+
+Deliberate practice assumes focusing on your weakest point and work towards improving it. 
+
+## Recovery
+
+Many know how to rest, but few know how to recover. Learning new skill is an effort, it's difficult mentally and sometimes physically. To be able to keep doing it, to keep improving day after day, year after year we need to learn how to recover. 
+
+Rest means not doing an activity, while recovery assumes re-charging our batteries and be ready to start practice all over again. 
+
+If after hard working day you spend evening laying down on the sofa, watching Netflix, and going sleep late then it is a rest. Spending time in Internet watching cats and Netflix can be relaxing and for sure entertain us a lot, but it's hardly allows us to proper recover and restore our energy levels back. Almost any kind of consumption requires cognitive effort and doesn't give our brain a proper break.
+
+Activities that recovers the energy are: meditation, taking a walk in nature, reading a book, or even simply sitting quietly can be more effective for providing true rest. These activities allow our mind to wander, reduce stress, and give our brain a break from constant stimulation.
+
 ## Identities
 
 If you Google "How to write a book?" you'll find a lot of great articles from established authors with many helpful advices. Before starting to write, you have to think about the main topic of your book, imagine your audience, create an outline, and then, even before you write an opening, the common advice is to start calling yourself a writer. It sounds silly and premature, but it actually helps.
