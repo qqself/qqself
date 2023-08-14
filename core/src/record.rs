@@ -48,12 +48,12 @@ impl Entry {
         1 // No revision found, return default
     }
 
-    pub fn increase_revision(&mut self) {
+    pub fn set_revision(&mut self, revision: usize) {
         for t in self.tags.iter_mut() {
             if t.name == "entry" {
                 for p in t.props.iter_mut() {
-                    if let (PropVal::Number(rev), "revision") = (&p.val, p.name.as_str()) {
-                        p.val = PropVal::Number(rev + 1_f32);
+                    if let (PropVal::Number(_), "revision") = (&p.val, p.name.as_str()) {
+                        p.val = PropVal::Number(revision as f32);
                         return;
                     }
                 }
@@ -64,7 +64,7 @@ impl Entry {
             "entry".to_string(),
             vec![Prop {
                 name: "revision".to_string(),
-                val: PropVal::Number(2.0),
+                val: PropVal::Number(revision as f32),
                 operator: PropOperator::Eq,
                 start_pos: 0,
             }],
@@ -297,7 +297,7 @@ mod tests {
         assert_eq!(entry.revision(), 1);
 
         // Increase default revision
-        entry.increase_revision();
+        entry.set_revision(2);
         assert_eq!(entry.revision(), 2);
 
         // Default entry revision is not serialized
@@ -306,23 +306,23 @@ mod tests {
         assert_eq!(entry_text, "2023-07-03 10:00 11:00 run distance=18");
 
         // Non default revisions is serialized
-        entry.increase_revision();
+        entry.set_revision(3);
         let entry_text = entry.serialize(true, true);
         assert_eq!(
             entry_text,
-            "2023-07-03 10:00 11:00 run distance=18. entry revision=2"
+            "2023-07-03 10:00 11:00 run distance=18. entry revision=3"
         );
 
         // Parsing entry revision
         let mut entry = Entry::parse(&entry_text).unwrap();
-        assert_eq!(entry.revision(), 2);
-
-        // Increasing parsed revision
-        entry.increase_revision();
         assert_eq!(entry.revision(), 3);
+
+        // Changing parsed revision
+        entry.set_revision(4);
+        assert_eq!(entry.revision(), 4);
         assert_eq!(
             entry.serialize(true, true),
-            "2023-07-03 10:00 11:00 run distance=18. entry revision=3"
+            "2023-07-03 10:00 11:00 run distance=18. entry revision=4"
         );
     }
 

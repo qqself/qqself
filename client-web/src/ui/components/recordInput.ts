@@ -37,7 +37,9 @@ export class RecordInput extends LitElement {
   `
 
   onSave() {
-    const record: UiRecord = UiRecord.parse(this.input, true) as never // Save button enabled only when record was created, so cast is safe
+    const revision = this.initialRecord ? this.initialRecord.revision() + 1 : 1
+    const record: UiRecord = UiRecord.parse(this.input, revision) as never // Save button enabled only when record was created, so cast is safe
+    console.log(`Record`, record.to_string(true, true))
     const event: RecordSaveEvent = new CustomEvent("save", { detail: { record: record } })
     this.dispatchEvent(event)
   }
@@ -54,7 +56,7 @@ export class RecordInput extends LitElement {
 
   validate() {
     try {
-      UiRecord.parse(this.input, true)
+      UiRecord.parse(this.input)
       return null
     } catch (ex) {
       return String(ex)
