@@ -211,7 +211,7 @@ impl UiRecord {
 
     pub fn created_deleted_record(&self) -> UiRecord {
         let input = self.record.to_deleted_string();
-        UiRecord::parse(input, false).expect("deleted string should always be parsable")
+        UiRecord::parse(input, None).expect("deleted string should always be parsable")
     }
 
     pub fn day(&self) -> String {
@@ -222,16 +222,13 @@ impl UiRecord {
         self.record.revision()
     }
 
-    pub fn parse(input: String, increaseRevision: bool) -> Result<UiRecord, String> {
-        if increaseRevision {
-            let record = Record::parse(&input)?;
-            Ok(UiRecord {
-                record: record.next_revision(),
-            })
-        } else {
-            let record = Record::parse(&input)?;
-            Ok(UiRecord { record })
-        }
+    pub fn parse(input: String, override_revision: Option<usize>) -> Result<UiRecord, String> {
+        let record = Record::parse(&input)?;
+        let record = match override_revision {
+            Some(revision) => record.with_updated_revision(revision),
+            None => record,
+        };
+        Ok(UiRecord { record })
     }
 }
 
