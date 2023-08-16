@@ -25,19 +25,19 @@ There are numerous books and reports from the best masters that we can learn fro
 
 ## Progress
 
-Feeling of a progress is the main motivator in a skill learning: You become better, you unlock things that were not possible before and see the results of your practice and training. When progress is invisible it's hard to continue to put an effort into learning.
+Feeling of progress is the main motivator in skill learning. You become better, unlock things that were not possible before, and see the results of your practice and training. When progress is invisible, it's hard to continue putting effort into learning.
 
-In some skills the hardest part is the beginning - with musical instruments at first you'll be doing sounds, instead of music; going to the gym first few months will result only in muscle pain, rather than it's grow; doing art will results with ugliness, instead of the beauty. 
+In some skills, the hardest part is the beginning. With musical instruments, at first, you'll be making sounds instead of music. Going to the gym in the first few months will result in muscle pain rather than muscle growth. Pursuing art will yield ugliness, rather than beauty.
 
-The could be no deliveries which could be used as markers of your progress. It's a main reason why newcomers give up so often in the beginning - they see no results of their effort. It's also a reason why people who have been practiced skill for many years can hardly understand why newcomers give up. When you've reached advanced levels of the skill it's keep delivering the results: You collect medals for race participations, have new sculptures on a shelf or add learned songs to your repertoire. 
+There might be no clear markers of progress. This is a main reason why newcomers often give up in the beginning—they see no results from their efforts. It's also why people who have been practicing a skill for many years can hardly understand why newcomers quit. When you've reached advanced levels of the skill, it continues to deliver results: you earn medals for race participations, have new sculptures on a shelf, or add learned songs to your repertoire.
 
-There is one metric exists that is keep progressing no matter what your skill level is or what kind of skill you are practicing - it is time. Time spent on skill practice is a best indicator for the beginners to have a sense of the progress. Having arbitrary goal like spent 5 hours a week in a gym; achieve 50 hours of total time in there; reach 200 hours of running per year will create a great sense of progress and could be playing role of deliveries, until the skill itself will start doing it. 
+There is one metric that keeps progressing, regardless of your skill level or the type of skill you're practicing: time. Time spent on skill practice is the best indicator for beginners to have a sense of progress. Setting arbitrary goals like spending 5 hours a week in the gym, achieving a total of 50 hours there, or reaching 200 hours of running per year can create a strong sense of progress until the skill itself starts showing it.
 
-Not all time spent is equal and time spent is not a perfect indicator - optimising this metric may result with a lot of time spent in a gym doing nothing. It's not a KPI that your company needs to optimise. It's a number that you measure, not optimise. It's a number only for yourself, not a public number that your share in social networks.
+Not all time spent is equal, and time spent is not a perfect indicator—optimizing this metric might lead to spending a lot of time in the gym doing nothing. It's not a Key Performance Indicator (KPI) that your company needs to optimize. It's a number that you measure, not one you optimize. It's a number for yourself alone, not a public figure you share on social networks.
 
-The lack of a feeling of progress may affect not only newcomers. In fact, when you've reached more advanced levels, most of the time is spent on a plateau. It feels even more frustrating than for new-comers as you put more effort, you work hard on reaching new limits and yet masters may look further and further from what you can achieve. One way to fight through such plateau is patience, time and deliberate practice.
+The lack of a feeling of progress can affect not only newcomers. In fact, when you've reached more advanced levels, most of the time is spent on a plateau. This can be even more frustrating than for newcomers, as you put more effort into pushing your limits, yet mastery might seem farther away than you can achieve. One way to break through such plateaus is patience, time, and deliberate practice.
 
-Deliberate practice assumes focusing on your weakest point and work towards improving it. 
+Deliberate practice involves focusing on your weakest points and working towards improving them.
 
 ## Recovery
 
@@ -56,6 +56,21 @@ Sleep is the most effective way to recover, and a full night of sleep have the g
 Activities like meditation, taking a walk outside, reading a book, taking shower or even simply sitting quietly can provide an effective recovery. Being lost in doing music or art can provide an effective way to recover as well.
 
 When feeling tired don't rest - recover. 
+
+## Consumption
+
+If you decide to watch all "getting started for runners" videos, you'll die before you go for a first run. You can find an answer on any question you have and this is what we, as a humanity, have gifted to ourselves. You can explore new skills, get inspired, find instructions, training plans or race reports. Lack of information is not a problem anymore - we can find information about any skill and start learning it from any point in the world.
+
+We can watch races and competitions, see interviews with masters and sometimes get so close to them and observe how they work and live in real time. 
+
+Watching others may inspire us, we can learn from it and we can become better at doing. But sometimes watching others makes us do less. You may have a need, a desire to satisfy: willingness to move, to go for a run, idea of a new project or emotion that you want to express yourself in art. Watch a video how others do that and your brain will be satisfied, the need will become less strong or disappear completely. Watching how others do sports decreases a willingness to do it yourself.
+
+Watch an adventure movie, all the emotions: desire to explore the unknowns, curiosity, novelty, fear and excitement, satisfaction in the end, will be real, but actually you've been laying down on a sofa without moving for 2 hours. 
+
+Watching how others are doing things makes us compare. You watch how people running in a desert, on top on volcano or in Amazon jungles and then having a run in the forest close to you become boring. You want to make a sculpture, to express yourselves, to capture your emotions in clay, but after watching few videos of other better sculptors, you see clearly that you are not as good as them and motivation is shuttered. 
+
+Watching others doing things may have a negative impact on feeling our identities. Writing a book makes you feel more as a writer; feeling more as a writer makes you write more. But when we watch interviews with top writers about their new released book we may feel doubt about ourselves - maybe I am not a writer? 
+
 ## Identities
 
 If you Google "How to write a book?" you'll find a lot of great articles from established authors with many helpful advices. Before starting to write, you have to think about the main topic of your book, imagine your audience, create an outline, and then, even before you write an opening, the common advice is to start calling yourself a writer. It sounds silly and premature, but it actually helps.
@@ -90,6 +105,8 @@ Failures are just pointers to our weakest points: To some part of our skill that
 
 To learn the lesson, there is one thing we need to do: to reflect on it. What exactly had happened and what mistakes did we make? What exactly is the weakest point that surfaced and caused the failure? Write it all down, think about your failure and by doing it you'll grow.
 
+We make mistakes and recover in every skill all the time. In writing, it's more explicit than ever: the very first sentence we write is always ugly, and sometimes it's physically painful to observe how poorly we've expressed a thought on paper. It's surprising that we have ever written anything before; it's obvious that even a 2-year-old can express their thoughts in a clearer way. We delete the sentence and rewrite it, only to end up with a slightly better version of it. It's still embarrassing, but we keep going - deleting and rewriting, editing and making it clearer - until it becomes okay. By all literature standards, it's still bad, but something good starting to appear. The first version, which was nothing but a failure, transforms into something valuable and worthy.
+
 {% qqself() %}
 
 <div style="overflow: auto; display: flow-root">
@@ -111,3 +128,32 @@ The second plan accepts imperfections. There will be unpleasant surprises, unexp
 Third plan is when you left you luck at home. It's for situations when the weather is at its worst, the terrain is terrible, and your body refuses to cooperate. Generally, third plan is simply about crossing a finish line.
 
 Having three plans addresses the issue of a wrong expectations and overestimation. This approach keeps your goals more aligned with reality. When you fail to achieve your objectives according to the first plan, it doesn't mean total failure; you've just failed of executing it perfectly. You can then shift to the second plan and keep going. Often, things will align with the second plan. However, there are times when misfortune persists and mistakes continue to happen. This is when the third plan comes into play—when conditions are terrible, yet you persist in reaching the finish line no matter what.
+
+## Pacing
+
+If you begin running at a speed that you cannot maintain throughout the entire race, you will hit a wall before reaching the finish line. You'll feel a fire in your lungs, and your legs will be consumed by pain. In running, burning out is explicit and, in a sense, quite literal.
+
+Mastery takes decades to reach, and correct pacing protects us from burning out and stopping in the middle. We are all capable of sprinting—maintaining a high speed for a short time that is followed by a complete body collapse and the need for recovery. You uncover the beauty and novelty of a new skill; you dedicate every evening to it, only to grow tired and fed up with it after a few weeks or months.
+
+Correct pacing is difficult to find and only comes through the experience of failures resulting from choosing incorrectly. Opting for a pace that is too fast is a common mistake that can occur among both novice learners and more advanced scholars.
+
+If you're feeling demotivated and have lost interest in a skill - slow down or take a break. Reflect on the amount of time you've practiced that skill in the last week/month/year, and compare it to previous periods. If you've spent 30 hours on your favourite musical instrument this month, but typically it's 20 hours, it's not surprising that you're feeling tired. If you usually write for 1 hour per day, but suddenly find yourself immersed for 3 hours, the next day's writing might seem unappealing, and it's going to be hard to find the motivation to write even a few sentences. Instead of getting upset or feeling guilty about a sudden break, accept it – you've been moving too fast and need to slow down.
+
+Run too slow and guilt will be running along. You used to write 10 pages per day, but now found time to write 10 pages in a whole week. You've visited gym 3 times a week, this week you hit only once. In all those cases, we would feel guilt: not doing what we're supposed to, progressing slowly, and not giving our all.
+
+Accept it - it's part of the life and no one goes without such obstacles and drops. Every week is a new, and every Monday start it all over again. Start it from the scratch without weight of the past - it doesn't matter how little you do week before, you only have this week. 
+
+Allow yourself to start over.
+
+## Accountability
+
+Reaching mastery is your own personal journey—you are the only one who wants it, the only one who can achieve it, and the only one responsible for it. Be honest with yourself. If you dream of learning how to fly a plane but have done absolutely nothing towards it over a year, then it's a decision you've made. You are in charge of the entire process, and every decision (or lack thereof) is yours and yours alone. Don't lie to yourself - every day is filled with choices and you are the only one who is choosing.
+
+Accountability means honesty. If the plan was to hit the gym three times a week, but in reality, you hardly visit it weekly, then be honest—you visit the gym once a week. There are always obstacles; there's always a lack of time. Sometimes, however, you can certainly recall when you found a solution: you woke up earlier, you compromised, and you found a way through. Other times, you didn't even try and accepted whatever was given to you. In all those cases, you are the one who made these choices; you are the one who is responsible for the consequences.
+
+Accountability is also about measurement—how many times you went for a run, how many sculptures you've completed, how many words you wrote. The point of measurement is not to find a perfect metric but to reduce uncertainty—to have something to track that is close to reality. Following the time you've spent on skill practice is far from being ideal, but it's okay for indicating how well or poorly we were at learning.
+
+
+
+
+

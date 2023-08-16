@@ -4,6 +4,15 @@ template = "page_mastering.html"
 draft = true
 +++
 
+# Thoughts to be added
+- Feeling guilt - is a way to give up
+- Make yourself accountable - be honest with yourself, how much or little you do
+- First results are ugly, but they are results
+- Commitments, plans - what is the perfect week? Write every day VS write every day if everything is perfect
+- Some days are bad, no matter what how hard we were prepared
+- Allow yourself to dream - dreaming permits imagination without limits. Limits may exists and learning skill may be only about removing such limits, but dream is a first step to be able to set a goal
+- Discovery - how to find what to master?
+- 
 
 ## It's hard to become a master
 
