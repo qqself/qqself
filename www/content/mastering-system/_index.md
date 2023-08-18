@@ -23,6 +23,25 @@ Every skill, every master, and every scholar are unique, yet there are common re
 
 There are numerous books and reports from the best masters that we can learn from - what strategies musicians use to perfect their skill; what strategies writers use to focus on their work and avoid distraction of the daily life; what keeps us motivated and how to deal with the failures. All the is the `Mastering System`.
 
+## Dream
+
+At the start of the ultra running race, everyone is nervous and excited about the adventure that lies in front of them. You stand there in the crowd, feeling motivated to show your best, experiencing fear about what awaits you, and full of doubt about whether you can actually do it or not.
+
+Ultra running, in essence, is all about crossing a finish line - enduring 20, 30, or even 40 hours of suffering, experiencing ups and downs, feeling exhausted, pushing your physical limits, and being torn between two conflicting desires: the willingness to finish no matter what, and the urge to end the pain, give up, and return back to comfortable and easy life.
+
+Depending on the race's difficulty, ranging from 15% to up to 50%, runners will give up and never reach the finish line. It's almost impossible to become so exhausted, to reach such a physical state where you actually cannot take another step - our brains give up much sooner than that. When that happens, "I am a failure and not a runner" is the only thought that fills your mind; it's a crushing feeling that I've experienced myself many times.
+
+Time goes by, you rest for a few days, and you start to regret that you gave up too soon. You wish you could have held on a bit longer; maybe you could have recovered and finished the race. What you never have regrets about is the run itself. Regardless of how much suffering you went through, regardless of whether you gave up or crossed the finish line, you are glad that you tried.
+
+From all those who stand at a starting line, many are going to give up along the way, but there are many more who gave up before and never allowed themselves to start.
+
+We tend to underestimate what could be achieved in the long term. In 10-20 years, you could become a completely different person if you wish to be. You could become a musician, a writer, an athlete, an artist, or a scientist working to cure cancer. It might sound crazy right now to even think about it, but this thought is only crazy now. 
+
+Think about how much you've changed between the ages of 10 and 20. From 20 to 30? There are hardly any similarities between those two phases, and the same could happen again if you are willing to make it so.
+
+We all have our own limits, obstacles, and environments that don't allow us to make an immediate change, but these factors shouldn't limit what you dream about. Allow yourself to dream; forget about limits - if you want to terraform Mars, then let it be. There is no path to mastery without desire, and there is no desire without a dream. Allowing yourself to dream is like coming to the starting line of a race - it's giving yourself a chance to finish.
+
+Mastery takes decades to reach; it's a long journey in which very few succeed. The chances of crossing the finish line are low, but you will be glad that you tried.
 ## Progress
 
 Feeling of progress is the main motivator in skill learning. You become better, unlock things that were not possible before, and see the results of your practice and training. When progress is invisible, it's hard to continue putting effort into learning.
