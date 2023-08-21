@@ -12,7 +12,7 @@ futures = "0.3.28"
 lazy_static = "1.4.0"
 log = "0.4.20"
 qqself-core = { path = "../core", features = ["serde"] }
-serde = { version="1.0.183", features = ["derive"] }
+serde = { version="1.0.184", features = ["derive"] }
 tempdir = "0.3.7"
 tokio = { version = "1.31.0", features = ["rt", "macros", "time"] }
 thiserror = "1.0.44"
