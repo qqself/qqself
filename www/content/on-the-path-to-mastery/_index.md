@@ -5,23 +5,43 @@ template = "section_mastering.html"
 
 # <i>Unedited First Draft</i>
 
-## Mastering system
-
-`Mastering System` is a comprehensive overview of long-term skill development. It seeks to answer the main question: `Why do we give up?` and explores what helps us to keep going. There are numerous books about skill development and interviews with top-of-the-field masters, and this book incorporates wisdom from those. What sets this book apart, is not only the description of the system but also an app that utilizes all the information from the book.
-
-You can use this book on its own and simply apply advices and strategies in your daily life, or you can give [qqself](https://www.qqself.com/) a try.
+## On The Path To Mastery
 
 # Preface
 
-All my life, I've hated running because I was terrible at it, but here I am finishing my very first 100 kilometers ultra-running race. I can barely walk, and the whole event feels more like ultra-crawling. I didn't expect what it would be, and I made all the possible mistakes. If someone were to tell you that ultra-running is a fun adventure full of joy, then it's a lie - it's about discomfort, pain, and suffering.
+There are many books about mastery, but whenever I read a story about a gifted child who has been passionate about music since they were 5 years old, a part of me dies. When you read interviews with masters, it's as if they are from a different dimension: doing it their whole life, constantly motivated, always improving, willing to sacrifice everything not related to their craft.
 
-There is no joy in it. You can feel it only in the very first 10 minutes of the run when you start. And then after you cross the finish line. And then for about a week, even when you can still barely move, every moment of your existence is filled with a feeling of accomplishment and pure happiness. And then, any time you remember that race, you feel proud, knowing what you've achieved.
+Is there a path to mastery for others? For those without a particular talent, whose motivation is unstable, and who have started things many times but given up just as often?
 
-Reaching mastery in any skill is a long journey with thousands of hours of exhausting practice near your limits, which is far away from being called joyful. We are happy to do that because of what it brings us - a feeling of getting better, a feeling of accomplishment, and the ability to do what was impossible before.
+Saying "`either you are motivated to make it or not`" makes motivation seem like some sort of magic ability that only a few possess. But where exactly does motivation come from for those who wake up at 5 AM on a Saturday for a long run? And why do some people abandon their favorite hobby after years of pure joy?
 
-Every skill, every master, and every scholar are unique, yet there are common reasons why novices give up just after they've started. There is a common issue of plateau when you seem to be no longer progressing, and many more issues that arise in front of everyone on the way to mastery of every skill. 
+We don't lose motivation just because. Things that brought us joy yesterday don't suddenly become boring today by itself. There are reasons behind those changes, and understanding them can help us keep going.
 
-There are numerous books and reports from the best masters that we can learn from - what strategies musicians use to perfect their skill; what strategies writers use to focus on their work and avoid distraction of the daily life; what keeps us motivated and how to deal with the failures. All the is the `Mastering System`.
+Reaching mastery takes decades: many years of tough practice, learning, making mistakes, feeling embarrassments and self doubt. This book is about everything that keeps us going, that keeps us from giving up: From the explanation why things happen to the daily practices and strategies that may improve our motivation when we feel down, when we need all the support we can get to fight through. 
+
+You can read this book on it's own - you only need pen and paper to implement ideas from this book. There is also a more convenient way - <a href="https://www.qqself.com">qqself</a> app which uses all the practices and strategies from this book. 
+
+## Dream
+
+It was 5 minutes before the midnight, I was waiting on a start line on my very first 100 km ultra running marathon. At the start of the race, everyone is nervous and excited about the adventure that lies in front of them. I was standing there in the crowd, feeling motivated to show my best, experiencing fear about what awaits me, and full of doubt about whether I can actually do it or not.
+
+Ultra running, in essence, is all about crossing a finish line - enduring 20, 30, or even 40 hours of suffering, experiencing ups and downs, feeling exhausted, pushing your physical limits, and being torn between two conflicting desires: the willingness to finish no matter what, and the urge to end the pain, give up, and return back to comfortable and easy life.
+
+Depending on the race's difficulty, ranging from 15% to up to 50%, runners will give up and never reach the finish line. It's almost impossible to become so exhausted, to reach such a physical state where you actually cannot take another step - our brains give up much sooner than that. When that happens, "`I am a failure and not a runner`" is the only thought that fills the mind; it's a crushing feeling that I've experienced myself many times.
+
+After such failure, you rest for a few days, and then start to regret that you gave up too soon. You wish you could have held on a bit longer; maybe you could have recovered and finished the race. What you never have regrets about is the run itself. Regardless of how much suffering you went through, regardless of whether you gave up in the end - you are glad that you tried.
+
+From all those who stand at a starting line, many are going to give up along the way, but there are many more who gave up before and never allowed themselves to start.
+
+We cannot start a path to mastery if we never allowed ourselves to dream about it - to accept that it's possible. When we imagine how the future may look like, we limit our imagination based on what we have right now. We imagine slightly better version of ourselves - a 1 or 2 steps higher in the corporate ladder, a bit more money on our account, more muscles and a better hair. We dream based on who we are right now, rather than based on who we want to become.
+
+We tend to underestimate what could be achieved in the long term. In 10-20 years, you could become a completely different person if you wish to be. You could become a musician, a writer, an athlete, an artist, or a scientist working to cure cancer. It might sound crazy right now to even think about it, but this thought is only crazy now.
+
+Think about how much you've changed between the ages of 10 and 20. From 20 to 30? There are hardly any similarities between those phases, and the same could happen again if you are willing to make it so.
+
+We all have our own limits, obstacles, and environments that don't allow us to make an immediate change, but these factors shouldn't limit what we dream about. Allow yourself to dream; forget about limits - if you want to terraform Mars, then let it be your dream. There is no path to mastery without desire, and there is no desire without a dream. Allowing yourself to dream is like coming to the starting line of a race - it's giving yourself a chance to finish.
+
+Mastery takes decades to reach; it's a long journey in which very few succeed. The chances of crossing the finish line are low, but you will be glad that you tried.
 
 ## Dream
 
@@ -52,7 +72,7 @@ There might be no clear markers of progress. This is a main reason why newcomers
 
 There is one metric that keeps progressing, regardless of your skill level or the type of skill you're practicing: time. Time spent on skill practice is the best indicator for beginners to have a sense of progress. Setting arbitrary goals like spending 5 hours a week in the gym, achieving a total of 50 hours there, or reaching 200 hours of running per year can create a strong sense of progress until the skill itself starts showing it.
 
-Not all time spent is equal, and time spent is not a perfect indicator—optimizing this metric might lead to spending a lot of time in the gym doing nothing. It's not a Key Performance Indicator (KPI) that your company needs to optimize. It's a number that you measure, not one you optimize. It's a number for yourself alone, not a public figure you share on social networks.
+Not all time spent is equal, and time spent is not a perfect indicator - optimizing this metric might lead to spending a lot of time in the gym doing nothing. It's not a Key Performance Indicator (KPI) that your company needs to optimize. It's a number that you measure, not one you optimize. It's a number for yourself alone, not a public figure you share on social networks.
 
 The lack of a feeling of progress can affect not only newcomers. In fact, when you've reached more advanced levels, most of the time is spent on a plateau. This can be even more frustrating than for newcomers, as you put more effort into pushing your limits, yet mastery might seem farther away than you can achieve. One way to break through such plateaus is patience, time, and deliberate practice.
 
