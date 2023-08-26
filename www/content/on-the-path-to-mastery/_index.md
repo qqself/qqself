@@ -53,19 +53,59 @@ We are supposed to be bad at things we've never practiced. It should never be a 
 
 We all have our own limits, obstacles, and environments that don't allow us to make an immediate change, but these factors shouldn't limit what we dream about. Allow yourself to dream; forget about limits - if you want to terraform Mars, then let it be your dream. There is no path to mastery without desire, and there is no desire without a dream. Allowing yourself to dream is like coming to the starting line of a race - it's giving yourself a chance to finish.
 
+Allow yourself to dream - dreaming permits imagination without limits. Limits may exists and learning skill may be only about removing such limits, but dream is a first step to be able to set a goal. 
+
 Mastery takes decades to reach; it's a long journey in which very few succeed. The chances of crossing the finish line are low, but you will be glad that you tried.
+
+## What comes after dream?
+
+A dream is a vague idea, often lacking a clear first step and a concrete final destination. It's like a blurry vision where you see yourself in a spacesuit working on the Moon or sitting in a chair in your studio, writing a book. Dreams are expected to be unclear and idealistic views of the new you.
+
+`I want to become a sculptor` is a dream. It's fine that there is no clear way to start, and it's also okay that there is no concrete destination. Am I already a sculptor if I've made a goose from plasticine with my kid? Would I become one after taking a few courses or only after my first local exhibition? Clarity is not expected here.
+
+I remember reading a book about free diving and scientists who dedicated their lives to researching whales in the Gulf of Mexico, swimming alongside these creatures and sharks in the ocean. I was so immersed in the story, imagining myself there and then dream appeared - `whales`.
+
+It's not clear if that dream is about learning how to free dive, researching whales, or simply swimming in the ocean in general. However, since that day, I've started to spend more time in open water, and it has become an environment that draws me in.
+
+Don't dismiss a dream if it's unclear. If your friend showed you his new car, and you were fascinated by the way the engine looked, write it down: `car`, `engine`, `where is the engine in an electric car?` or any word, phrase, or question that will bring you back to that experience. It was something that created an emotional reaction; there is something interesting hidden there that's worth digging.
+
+Things will become clear afterward, often in unexpected ways. You may start with an abstract idea like `typewriter` and then, half a year later, find yourself spending your summer vacation in a distant mountain cabin, writing the first draft of your book.
+
+{% qqself() %}
+
+<div style="overflow: auto; display: flow-root">
+
+<img style="max-height: 300px; float: right; margin-left: 15px" src="/mastering-system/ideas.png" />
+Whenever you have an idea or a dream, regardless of how vague it may be, write it down. Keep one durable place for these notes, ensuring they can last for years because time is needed for ideas to grow and transform.
+
+In qqself, you can enter and store any kind of information, knowing it will persist across decades and remain searchable for years to come.
+
+qqself is designed to be your lifelong companion. Everything is open source, all data is encrypted, all data formats are standardized, and you own your data and can export it at any time.
+</div>
+
+{% end %}
+
+Ask any ultra runner in the race, and you'll find that no one actually runs the full distance. Experiencing the suffering and pain, which are constant companions in ultras, and keeping in mind that it will last for another 20 or 30 hours, is a crushing feeling that can break even the strongest.
+
+What athletes do instead is split the race into multiple smaller parts and concentrate their thoughts only on the current stage. When you reach a checkpoint, you pat yourself on the back, say `Great job I've done here!` and choose the next checkpoint and run towards that.
+
+There are two requirements that a checkpoint must satisfy to work:
+1. It has to be meaningful and require effort to reach. Setting the next checkpoint just 5 minutes from the last is too easy and wouldn't create a sense of achievement that gives us strength and a motivation boost
+2. It has to be clear when we reach it, but it's expected to be unclear how to reach it. A checkpoint could be on top of a mountain, but you have no idea how to climb there with such tired legs.
+
+Think what could be the next checkpoint for your dream? 
 
 ## Identities
 
 If you Google `How to write a book?` you'll find a lot of great articles from established authors with many helpful advices. Before starting to write, you have to think about the main topic of your book, imagine your audience, create an outline, and then, even before you write an opening, the common advice is to start calling yourself a writer. It sounds silly and premature, but it actually helps.
 
-Our daily life is full of choices, and having an identity helps us to choose. Being a sculptor is not only about spending time handling clay in your hands—it's also about learning how to see things, noticing beauty (or horrors and creepiness for some of us) in existing art. If you are a writer, then planning to spend a Friday evening in the library sounds great because that's what writers do. Being a drummer means listening to music becomes an active experience where you carefully listen to how drums are used in the song. Identities guide us in the right directions and keep us aligned with long-term goals.
+Our daily life is full of choices, and having an identity helps us to choose. Being a sculptor is not only about spending time handling clay in your hands—it's also about learning how to see things, noticing beauty (or horrors and creepiness for some of us) in life. If you are a writer, then planning to spend a Friday evening in the library sounds great because that's what writers do. Being a drummer means listening to music becomes an active experience where you carefully listen to how drums are used in the song. Identities guide us in the right directions and keep us aligned with long-term goals.
 
-It's almost impossible to fail at an identity. If you are a runner but didn't run for half of the year because of an injury, you are still a runner. If you just wrote your first 10 pages, you are a writer -not a good one yet, but a writer on the way to become better.
+It's almost impossible to fail at an identity. If you are a runner but didn't run for half of the year because of an injury, you are still a runner. If you just wrote your first 10 pages, you are a writer - not a good one yet, but a writer on the way to become better.
 
 Identities work much better in the long run. Compare it to the common New Year resolution: Some may decide to write one page every day, but then life happens, and one day is lost. The plan has failed; it's not every day anymore, and giving up on the whole idea becomes a possibility.
 
-Reaching mastery is always full of terrible mistakes and wrong turns. You may be playing the piano for a long time and one day realize that you have the wrong hand posture. Or doing sculpture and realizing that progress is impossible unless you spend a lot of time learning human anatomy. These may become the lowest points where you are demotivated, lost, and hopeless. Having an identity helps in such cases—it's like a compass that shows you a direction. You would still need time to bypass a sudden obstacle, but it will ensure you get back on track.
+Reaching mastery is always full of mistakes and wrong turns. You may be playing the piano for a long time and one day realize that you have the wrong hand posture. Or doing sculpture and realizing that progress is impossible unless you spend a lot of time learning human anatomy. These may become the lowest points where you are demotivated, lost, and hopeless. Having an identity helps in such cases - it's like a compass that shows you a direction. You would still need time to bypass a sudden obstacle, but it will ensure you get back on track.
 
 Decide who you want to become, write it down, and put it somewhere where you will see it many times a day. Sometimes it's best to put it somewhere where no one else can see it. It's hard to write `Iron Man Triathlete` if you've been a couch potato all your life and afraid that people may laugh at it. Hide it for now; it's temporary, and one day you'll wear those Iron Man cap, bag, and other swag on a daily basis, showing others who you've become.
 
