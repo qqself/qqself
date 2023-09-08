@@ -1,18 +1,17 @@
 use std::{io, path::Path, thread};
 
+use clap::Parser;
 use qqself_core::api::ApiRequest;
-
-use structopt::StructOpt;
 
 use tracing::{info, warn};
 
 use crate::{http::Http, key_file::KeyFile};
 
-#[derive(StructOpt, Debug)]
-#[structopt(about = "Delete all the records from the server")]
+#[derive(Parser, Debug)]
+#[command(about = "Delete all the records from the server")]
 pub struct DeleteOpts {
     /// Path to key file
-    #[structopt(short, long, default_value = "qqself_keys.txt")]
+    #[arg(short, long, default_value = "qqself_keys.txt")]
     keys_path: String,
 }
 
