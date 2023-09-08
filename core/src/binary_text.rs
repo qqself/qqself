@@ -79,7 +79,7 @@ mod tests {
     #[test]
     #[wasm_bindgen_test]
     fn binary_text_errors() {
-        let bad_characters = r#"C:\\Windows\cmd.exe"#;
+        let bad_characters = r"C:\\Windows\cmd.exe";
         assert!(BinaryToText::new_from_encoded(bad_characters.to_string()).is_none());
     }
 }

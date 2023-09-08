@@ -1,3 +1,4 @@
+use clap::{self, Parser};
 use operations::{
     delete::{delete, DeleteOpts},
     download::{download, DownloadOpts},
@@ -5,14 +6,13 @@ use operations::{
     report::{report, ReportOpts},
     upload::{upload, UploadOpts},
 };
-use structopt::StructOpt;
 use tracing::metadata::LevelFilter;
 use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter};
 mod http;
 mod key_file;
 mod operations;
 
-#[derive(StructOpt, Debug)]
+#[derive(Parser, Debug)]
 enum Opts {
     Init(InitOpts),
     Upload(UploadOpts),
@@ -32,7 +32,7 @@ fn main() {
                 .from_env_lossy(),
         )
         .init();
-    match Opts::from_args() {
+    match Opts::parse() {
         Opts::Init(opts) => init(opts),
         Opts::Upload(opts) => upload(opts),
         Opts::Report(opts) => report(opts),

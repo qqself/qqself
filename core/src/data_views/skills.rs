@@ -54,7 +54,9 @@ impl SkillsView {
         if let Some(mut skill) = Skill::from_record(entry) {
             // If it's a Skill - go back and re-read all previous record to accumulate duration
             for (_, record) in all.clone() {
-                let Record::Entry(entry) = record else { continue; };
+                let Record::Entry(entry) = record else {
+                    continue;
+                };
                 if skill.selector().matches(entry) {
                     skill.add_duration(entry.date_range.duration());
                 }
@@ -181,7 +183,9 @@ impl SkillsView {
             Checkpoint::by_skill(now, Period::Week, &[1, 3, 5], 5, skill.title().to_string()),
         ];
         for (_, rec) in all {
-            let Record::Entry(entry) = rec else { continue; };
+            let Record::Entry(entry) = rec else {
+                continue;
+            };
             for checkpoint in checkpoints_total.iter_mut() {
                 // If entry belongs to any skill then it's added to total notification calculations
                 if self.data.iter().any(|(_, s)| s.selector().matches(entry)) {
