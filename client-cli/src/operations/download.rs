@@ -4,6 +4,7 @@ use std::{
     thread::{self},
 };
 
+use clap::Parser;
 use qqself_core::{
     api::ApiRequest,
     binary_text::BinaryToText,
@@ -13,21 +14,20 @@ use qqself_core::{
 };
 use rayon::prelude::*;
 use rayon::str::ParallelString;
-use structopt::StructOpt;
 use tokio::sync::mpsc;
 use tracing::info;
 
 use crate::{http::Http, key_file::KeyFile};
 
-#[derive(StructOpt, Debug)]
-#[structopt(about = "Download all the entries from the server to the file")]
+#[derive(Parser, Debug)]
+#[command(about = "Download all the entries from the server to the file")]
 pub struct DownloadOpts {
     /// Path to folder where journal will be created with the name format of `qqself_journal_[TODAY].txt`
-    #[structopt(short, long, default_value = ".")]
+    #[arg(short, long, default_value = ".")]
     output_folder: String,
 
     /// Path to key file
-    #[structopt(short, long, default_value = "qqself_keys.txt")]
+    #[arg(short, long, default_value = "qqself_keys.txt")]
     keys_path: String,
 }
 

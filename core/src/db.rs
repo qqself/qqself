@@ -47,7 +47,9 @@ impl Record {
     }
 
     pub fn is_deleted_record(&self) -> bool {
-        let Record::Entry(entry) = self else { return false };
+        let Record::Entry(entry) = self else {
+            return false;
+        };
         for tag in &entry.tags {
             if tag.name == "entry" {
                 for prop in &tag.props {
