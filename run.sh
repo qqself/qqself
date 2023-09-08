@@ -22,7 +22,8 @@ usage() {
 
 # Install dependencies and required tooling for the development
 deps() {
-  rustup default 1.72.0
+  ver="1.72.0"
+  rustup install "$ver" && rustup default "$ver"
   cargo fetch
   (cd client-web && yarn install) 
 }
