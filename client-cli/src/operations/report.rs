@@ -5,32 +5,30 @@ use std::{
     process::exit,
 };
 
+use clap::{Parser, ValueEnum};
 use qqself_core::{
     date_time::datetime::DateDay,
     db::{Query, Record, DB},
 };
-use structopt::{clap::arg_enum, StructOpt};
 use tracing::error;
 
-arg_enum! {
-    #[derive(Debug)]
-    enum TimePeriod {
-        Day,
-        Week,
-        Month,
-        Year,
-    }
+#[derive(Debug, Clone, ValueEnum)]
+enum TimePeriod {
+    Day,
+    Week,
+    Month,
+    Year,
 }
 
-#[derive(StructOpt, Debug)]
-#[structopt(about = "Read the journal and report current state of things")]
+#[derive(Parser, Debug)]
+#[command(about = "Read the journal and report current state of things")]
 pub struct ReportOpts {
     /// Path to journal file with all the entries
-    #[structopt(short, long, default_value = "journal.txt")]
+    #[arg(short, long, default_value = "journal.txt")]
     journal_path: String,
 
     /// Period of time to make a report for
-    #[structopt(short, long, possible_values = &TimePeriod::variants(), case_insensitive = true, default_value = "day")]
+    #[arg(short, long, value_enum, default_value = "day")]
     period: TimePeriod,
 }
 

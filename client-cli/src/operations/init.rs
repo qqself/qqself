@@ -1,19 +1,19 @@
 use std::{path::Path, process::exit};
 
 use crate::key_file::KeyFile;
+use clap::Parser;
 use qqself_core::encryption::keys::Keys;
-use structopt::StructOpt;
 use tracing::{error, info};
 
-#[derive(StructOpt, Debug)]
-#[structopt(about = "Creates new key file")]
+#[derive(Parser, Debug)]
+#[command(about = "Creates new key file")]
 pub struct InitOpts {
     /// Where new generated keys will be stored
-    #[structopt(short, long, default_value = "qqself_keys.txt")]
+    #[arg(short, long, default_value = "qqself_keys.txt")]
     keys_path: String,
 
     /// If existing config file should be ignored and overwritten
-    #[structopt(short, long)]
+    #[arg(short, long)]
     overwrite: bool,
 }
 

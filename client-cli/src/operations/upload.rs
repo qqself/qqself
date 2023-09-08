@@ -6,23 +6,23 @@ use std::{
     thread::{self, JoinHandle},
 };
 
+use clap::Parser;
 use qqself_core::{api::ApiRequest, record::Entry};
 use rayon::prelude::{ParallelBridge, ParallelIterator};
-use structopt::StructOpt;
 use tokio::sync::mpsc;
 use tracing::{error, info};
 
 use crate::{http::Http, key_file::KeyFile};
 
-#[derive(StructOpt, Debug)]
-#[structopt(about = "Uploads all the records from journal file to the server")]
+#[derive(Parser, Debug)]
+#[command(about = "Uploads all the records from journal file to the server")]
 pub struct UploadOpts {
     /// Path to journal file with all the entries
-    #[structopt(short, long, default_value = "journal.txt")]
+    #[arg(short, long, default_value = "journal.txt")]
     journal_path: String,
 
     /// Path to key file
-    #[structopt(short, long, default_value = "qqself_keys.txt")]
+    #[arg(short, long, default_value = "qqself_keys.txt")]
     keys_path: String,
 }
 
