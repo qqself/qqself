@@ -241,3 +241,22 @@ When you set a goal for the week, make it explicit: what would be a perfect week
 At the end of the week, see how close you are to reaching your goal. Did you achieve it? That's awesome - you've reached perfection. If you reached only 80% of it, that's a great result as perfection is hardly achievable and life can interfere, so it's perfectly fine. Made it only to 10%? 10% of perfection sounds not that bad, next week there would be another attempt.
 
 Reaching a perfect goal shouldn't be easy. If you're achieving it every week, your aim may be set too low. However, it should be attainable with hard effort. Start with an educated guess and see if you can reach it. Don't hesitate to adjust it as you go along. We grow, our lives and environments change constantly, and so does our image of a perfect goal.
+
+# Treats
+
+Ultra running is physically tough, but the main battle is mental - you need to keep going no matter how bad you feel. Anything that can ease the mental pressure is worth using. One such thing is to carry a treat - something that you enjoy eating - and use it at the right moment. It may sound like a small and unimportant detail, but sometimes even the slightest support is what we need to be able to continue.
+
+Treat yourself - buy the signature drumsticks of your favorite drummer, get a new running cap because it looks beautiful, or find a 100-year-old typewriter to place on a table where you write. These things are not going to affect your skill level in any way, but they will support your new identity and make you feel better.
+
+Buying new things should never become your goal, and by all means, avoid setting a prize for your effort. `If I run 100km in a week, then I'll buy myself new sneakers` may sound like a good motivation boost, but in reality, it will crush your desire for running. If we love running, then how can an additional prize on top can demotivate us?
+
+When you go for a run, you do it because it makes you feel good and happy. When there is a prize at the end, your focus shifts to earning it, and you start running for that prize. Rarely does a pair of new sneakers motivate us more than the feeling of happiness and joy.
+
+You may be sitting and enjoying solving a puzzle, and someone offers you a dollar to solve it, and suddenly the fun is gone. Don't take the fun away from yourself. Go and buy an ice cream after the training because you want to treat yourself, but never do the training for the ice cream. And don't overuse it - it's not a treat anymore if you use it every day.
+
+
+
+
+
+
+
