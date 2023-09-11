@@ -254,6 +254,25 @@ When you go for a run, you do it because it makes you feel good and happy. When 
 
 You may be sitting and enjoying solving a puzzle, and someone offers you a dollar to solve it, and suddenly the fun is gone. Don't take the fun away from yourself. Go and buy an ice cream after the training because you want to treat yourself, but never do the training for the ice cream. And don't overuse it - it's not a treat anymore if you use it every day.
 
+## Getting back
+
+Before my first ultramarathon, I thought the main thing was to keep running and reach the finish line as fast as I could. It turns out that on longer distances and complex terrains, it's impossible to run all the time. People switch to walking, and some spend most of their time slowly but steadily moving toward the finish line.
+
+On my first 100km race, I was able to run for only 5 hours, followed by another 19 hours of slow walking until I reached the finish line. That day, I became convinced that the key is to keep walking - as long as I keep moving, I can reach the finish line.
+
+It took a year and another unfinished, given-up race to realize what the key thing actually is. It's not about how fast we go, whether running or walking. It's not even about constantly moving forward because there will come a time when we stop, exhausted and unable to move. The main thing is to get back on track and continue.
+
+It doesn't matter that much how fast you are progressing with the skill you are trying to master. It's such a long journey that another year means little. If you decide to master quantum physics and contribute to humanity's knowledge about it, then it hardly matters if it takes 20 or 25 years — what matters is that you will do it one day.
+
+It's unfortunate, but expected if you stop in the middle. Ask anyone with a Ph.D. about their lowest point, and you will hear stories of desperation in moments when hope was lost. Well-known books were in the garbage bin when disappointed writers thought there was no point in continuing. 
+
+It's not the moment when we stop that we give up, but we give up by not getting back afterwards. All the abandoned places and dreams were not created in the moment when people left them; they continue to exist because people didn't come back.
+
+It's not important that you stopped playing the piano ten years ago; what matters is your decision to start doing it again.
+
+
+
+
 
 
 
