@@ -270,6 +270,40 @@ It's not the moment when we stop that we give up, but we give up by not getting 
 
 It's not important that you stopped playing the piano ten years ago; what matters is your decision to start doing it again.
 
+## Boredom
+
+Non-runners have trouble understanding how someone can enjoy a 3-hour run without getting bored. Those who don't read cannot comprehend how someone can be excited about holding a new 800-page book; it may appear rather dull and intimidating. Classical music is simply uninteresting, and it's challenging to grasp how others can enjoy it.
+
+Interest comes from understanding nuances - from the little details that are invisible to outsiders but bring joy to those who can see them.
+
+Every sculpture begins with a piece of clay in your hand, but you may find yourself delving deep into human anatomy, holding a human atlas, and discovering the complexity of our ears. Drumming might start as a fun way to hit things with sticks, then learning about double pedal techniques and realising that legs has to be developed as well as your arms.
+
+In learning new skills, we constantly discover these nuances and can learn and practice them. This makes each practice session different and interesting. It slightly shifts the direction of our learning and creates novelty. To outsiders, it may seem like we're doing the same thing, but for us, it's an entirely new world where everything is new and exciting. To stay engaged, embrace the nuances of your craft and dive deep into every small detail.
+
+Change direction and explore new possibilities. Do crazy things because they're incredibly fun. Read about how the old masters practiced their crafts and do it like in ancient times - run barefoot, sculpt with clay by the lake's shore, play drums using only your hands. Or embrace the future by trying out air drumming, digital sculpture, or indoor virtual running.
+
+Maintain novelty by going outside your craft to gain better support for it. Learn music theory if you're a drummer, learn painting if you're a sculptor, or learn sculpture if you're an artist. This enables you to gain a different perspective, view your craft from a new angle, and discover previously invisible nuances.
+
+Many ultra running races take place in beautiful locations, where runners enjoy the sights of forests, mountains, waterfalls or deserts. One day I discovered a different kind of challenge: the 24-hour races that happens on a 400-meter running track. In these races, runners complete hundreds of loops, over and over again, beginning in the morning, running throughout the day, and continuing through the night until the sun rises again.
+
+I decided to run a 50 km race on a running track to see if I get insane or dizzy because of all this circular motion. I spent a month training on the track to get used to that. To make it more fun, I chose to do the run at midnight on a Friday. The run went well, expectedly I was completely exhausted by the end and could barely walk. When I was coming back home I realised that it feels like I'm 20 years again - coming home after a Friday night party and having troubles walking straight. This unique experience will stay with me forever and so as love for running.
+
+Embrace the nuances, learn and change every small detail of your craft and you will never be bored.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
