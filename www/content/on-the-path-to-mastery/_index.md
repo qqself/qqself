@@ -95,6 +95,30 @@ There are two requirements that a checkpoint must satisfy to work:
 
 Think what could be the next checkpoint for your dream? 
 
+## Starting
+
+When you start a new endeavor, like learning to play the piano, you are only truly learning when you practice. It's only when you run that you become better at it. It's only when you sculpt that you become a sculptor.
+
+Listening to how other people play, watching others explain how to sculpt, or reading articles on getting started with running has no effect on your skill. You only make progress when you practice. All tutorials, lectures, books, and learning videos have no direct effect on your skill until you start applying them and practicing. Watching getting-started videos on YouTube creates an illusion that we are learning and becoming better, while in reality, we are lying down on a coach for an hour, not moving.
+
+It's entertaining to watch other people's stories; it's safe because you cannot make a mistake while others are doing it, and it's easy to drink tea while sitting on a couch and watching other people suffer while climbing a mountain. Don't fall into the trap of infinite preparation. `I need to know what to expect` is an excuse to delay a discomforting and scary moment when you need to step out of your comfort home and get your shoes dirty on your first run.
+
+Some minimum preparation is always needed – by all means, check how to do a proper deadlift before you hit the gym. Watch one or two videos, get to know the exercises for the proper technique, but keep in mind that you cannot learn it while lying down on the sofa. It's a waste of time to keep watching big guys on YouTube, waiting for full understanding – it will never come, as understanding comes from practice. It's a waste of time to wait until you feel confident, as confidence comes only from doing.
+
+Don't get paralysed by the choice. Searching for `best violin for beginners` will yield millions of pages, and it's tempting to search for `best page with the best violins for beginners` to find the best rank first. Choose whatever, or even better, visit your local music store, ask for beginner options, get one that they have in stock and have your first practice session already this evening.
+
+When you begin with new skills, the focus should be on starting to do it. Reading or watching videos doesn't count; finding a perfect course is a waste of time – any would do. Go for a run with whatever shoes and clothes you use for work; for sculpting, take plasticine from your kids or mud from the street. Instead of searching for a gym, start doing pushups and ab crunches in your living room.
+
+When we start learning a new skill, any kind of choice will be wrong and, at the same time, irrelevant. Which is better, electronic drums or acoustic? Is a course about colour theory any good? Should I get oil clay, polymer one, or a water-based? At the beginning, we are least qualified to make a choice.
+
+Anything you choose is wrong because, in the beginning, we don't know what we actually want. `I want to run` is too abstract to choose the right pair of shoes - one for sprinting is different from one for marathon on a trail. `I want to play drums` is too vague, as a drum kit for metal differs from one for jazz. You need to make a choice now, but you will understand what you actually prefer long after.
+
+At the same time, anything you choose is irrelevant, as you will not feel the difference between a metal or jazz drum set just yet. The quality of your sculptures will not be affected by what type of clay you choose or what kind of paints or brushes you select for your painting.
+
+When you start learning a new skill, choose whatever can get you to practice as soon as possible. Select the course that begins tomorrow, pick shoes that the shop near you has in stock. Focus on practice, learn the nuances of your craft, and then you will be able to understand which choices are essential and how to make the right ones.
+
+Don't become better at preparation for running, but become better in running itself.
+
 ## Identities
 
 If you Google `How to write a book?` you'll find a lot of great articles from established authors with many helpful advices. Before starting to write, you have to think about the main topic of your book, imagine your audience, create an outline, and then, even before you write an opening, the common advice is to start calling yourself a writer. It sounds silly and premature, but it actually helps.
