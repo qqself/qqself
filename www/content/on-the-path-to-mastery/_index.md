@@ -119,6 +119,28 @@ When you start learning a new skill, choose whatever can get you to practice as 
 
 Don't become better at preparation for running, but become better in running itself.
 
+## Expectations
+
+There is an adrenaline rush when you first go through the doors of the gym or a painting studio. The excitement before leaving home for your first run, or that majestic feeling when you unbox your first guitar. The very first drum set I received was for Christmas, and I spent the whole night assembling it. When I was finished at 2 AM, even though I was afraid of waking up my wife and kids, I couldn't resist making a gentle hit. I heard a sound, and it felt magical.
+
+Then you get back to reality. On my very first run, I collapsed after 1.7 km and had to take the walk of shame back home. With the guitar, I forgot about its existence after a couple of hours of practice. With some skills, the excitement period may be as short as the unboxing time. You may dream of making music, but with many musical instruments, you will not make any for a very long time - you will be making sounds.
+
+Those are the moments when our expectations are crushed - our views of different skills are based on watching masters performing at their best: those beautiful videos of people running across the Mont Blanc mountain, musicians performing in Carnegie Hall, or seeing magnificent sculptures in Florence. It was our source of inspiration and the reason why we started, but what we've got instead is an experience that looks nothing like that.
+
+Ultra running will mostly involve walking. You won't be able to play drums fast enough for metal; instead, you'll have to start with common and slower pop music beats. Your first sculptures will be manifestations of ugliness rather than beauty and perfection. Your writing will be sloppy, and you'll wonder how you actually survived when you clearly aren't capable of expressing what you think.
+
+It's not enough to say that everyone struggles. There is a difference when your friend complains that he cannot complete a sub-3-hour marathon run, when you've never been able to run for longer than 15 minutes. It's different when an experienced sculptor fails to capture all the details to make a bust resemble a real person, and when you constantly fail to create a sculpture that looks like a man and keep getting monsters from zombie movies instead.
+
+Or is there any difference?
+
+Who is an ultra runner? It's an endurance athlete who goes for great distances, pushing mental and physical limits, enduring suffering and pain to the point where it seems impossible to tolerate but keeps going anyway.
+
+If your running limit is 10 minutes, then go for 1 hour and don't give up, no matter what, until you reach the finish line. Run, walk, fall down, crawl, but keep getting up. During this hour, you'll be no different from the ultra runners - reaching your own limit where you cannot move but keep going anyway. Ultra running is not about the distances; it's about being an ultra runner.
+
+Who is a drummer? It's someone who practices relentlessly to improve their technique, control, and speed, constantly working to enhance their playing. In those moments when you are practicing simple beats, when you hear the metronome ticking away, when you close your eyes to better hear the nuances of the simple sounds you create, when you get lost in the melody you are playing – that's when you are the drummer. Drumming is not just about speed or complex songs; it's about being a drummer.
+
+You come for the dream not because you want to run a certain distance or play one particular song and then say you're done. You come for the dream to become someone - a runner, a sculptor, a drummer, or a writer. You come for the dream to become a master.
+
 ## Identities
 
 If you Google `How to write a book?` you'll find a lot of great articles from established authors with many helpful advices. Before starting to write, you have to think about the main topic of your book, imagine your audience, create an outline, and then, even before you write an opening, the common advice is to start calling yourself a writer. It sounds silly and premature, but it actually helps.
