@@ -135,17 +135,19 @@ export class QueryResults extends LitElement {
     this.dispatchEvent(event)
   }
 
-  renderDay(day: string, records: UiRecord[]) {
-    const datePrefix = 11 // Length of date prefix `2023-02-24 `
+  renderDay(records: UiRecord[]) {
+    // First entry of the day render with date prefix, others without a date, but with space offset
+    // equal to date prefix length. We are using monospace font, so number of spaces is fine
+    const dateLength = 11
+    const renderRecord = (v: UiRecord, i: number) =>
+      " ".repeat(i == 0 ? 0 : dateLength) + v.to_string(i == 0, false)
     return html`
       <div>
         <div class="entries">
           ${records.map(
             (v, i) =>
               html`<div class="result">
-                <div class="text">
-                  ${" ".repeat(i == 0 ? 0 : datePrefix) + v.to_string(i == 0, false)}
-                </div>
+                <div class="text">${renderRecord(v, i)}</div>
                 <div class="result-buttons">
                   <q-button
                     class="edit"
@@ -172,7 +174,7 @@ export class QueryResults extends LitElement {
       }" @input=${this.onQueryUpdated.bind(this)}></input>
       <div class="error">${this.queryValidationError}</div>
       <div class="results">
-        ${Object.entries(this.data ?? {}).map(([day, entry]) => this.renderDay(day, entry))}
+        ${Object.entries(this.data ?? {}).map(([, entry]) => this.renderDay(entry))}
       </div>
       <q-record-input class="newEntry" .initialRecord=${this.currentRecord} .input=${
         this.currentRecordString
