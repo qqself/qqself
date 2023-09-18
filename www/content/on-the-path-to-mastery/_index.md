@@ -165,6 +165,30 @@ In qqself identities are one of the most important things and always visible for
 
 {% end %}
 
+## Difficulty
+
+Training plans for runners consist of microcycles. You start with low intensity and smaller volumes, then the following week is slightly harder, and in the third week, you have to do a lot of high-intensity training with high volumes. The week after is for recovery, where intensity is very low, and volumes are smaller. Such cycles allow your body to adapt to the stress and slowly build up fitness. They also allow you to mix easy and difficult training sessions.
+
+Training when you are close to your physical limits; musical practice when you are completely focused, trying to play the hardest part of the song perfectly; sculpting sessions when you work on hands, striving to get the right impression of the sculpture's palm and its fingers – those are the moments of the greatest effort.
+
+It's tempting to do that every time - always challenge yourself and work as hard as you can, focusing on the most difficult parts. Such bursts are very effective and have the greatest impact on your skill development, but they are impossible to maintain for a long time.
+
+There is a physical aspect to it: the stress of training may improve our capabilities, but only with sufficient recovery. Our bodies need time to adapt, and they do so when there is enough rest. That's why you see microcycles across all kinds of sports.
+
+There is also a mental aspect to mixing difficulties. Running short intervals where muscles and lungs are burning, when we gasp desperately trying to get more oxygen - those are moments of great suffering. If every training session is like that, then it's only a matter of time before you start skipping them.
+
+When you are at home, drinking tea while sitting on your fauvorite couch, it takes a lot of effort to stand up and go for a run. This is a moment when anticipation plays a significant role: You imagine the discomfort, wet socks after stepping in a puddle, the pain in your calves, and the hills that leave you gasping for breath. 
+
+When we know that music practice is going to push us close to our limits and consist of a constant flow of mistakes while striving for the perfect play, our brain starts to become very creative in finding excuses for skipping the practice — `I don't feel well. I had a tough day at work. I'll skip, but catch up on Sunday`. It requires a great amount of mental energy to leave the comfort of your home and go for practice, knowing that it will not be comforting and fun, but rather an intimidating and challenging session that will demand all possible effort and total focus.
+
+Make some training or lessons easy (relative to your skill level) - practice songs that you've already mastered before, learn new ones which are the joke for your current level. Have fun with these sessions, introduce new elements, improvise, and change them in a way that feels enjoyable to you. When sculpting, create a smaller-scale piece that you can finish in one hour, create small Pokemon for your kids or clay copy of the fork just for fun.
+
+Avoid situations when you start associating practise with challenge. You need hard sessions to progress and making every lesson easy is not a solution either - you'll grow bored soon and abandon training completely. By mixing learning of different difficulty aim to create an impression that on average practise sessions requires effort, but you can sustain it every time.
+
+You can mix difficulty even within one session. With drums you can start by playing along your favourite songs just for fun, then switch to the lesson and do the hardest part. In the end when you are exhausted do a few easy exercises or songs.
+
+When we see ourselves doing things with ease it reminds us how far we've went with the skill development. Learning is a constant struggle where we strive for better, but easy sessions reminds us of the things we've learned and mastered. Easy sessions is about reminding us how good we are.
+
 ## Progress
 
 Feeling of progress is the main motivator in skill learning. You become better, unlock things that were not possible before, and see the results of your practice and training. When progress is invisible, it's hard to continue putting effort into learning.
