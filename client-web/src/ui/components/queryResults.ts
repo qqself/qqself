@@ -57,10 +57,6 @@ export class QueryResults extends LitElement {
     .queryResults .error {
       color: red;
     }
-    .queryResults .results .day {
-      margin-top: 15px;
-      color: ${colors.highlight.dark};
-    }
     .queryResults .results .entries {
       background-color: ${colors.background.light};
       font-family: "Monaco", "Courier", "Courier New";
@@ -75,6 +71,9 @@ export class QueryResults extends LitElement {
       display: flex;
       justify-content: space-between;
     }
+    .entries .result .text {
+      white-space: pre;
+    }
     .entries .result .edit,
     .entries .result .delete {
       display: none;
@@ -82,6 +81,9 @@ export class QueryResults extends LitElement {
     .entries .result:hover .edit,
     .entries .result:hover .delete {
       display: block;
+    }
+    .result-buttons {
+      display: flex;
     }
   `
 
@@ -134,24 +136,28 @@ export class QueryResults extends LitElement {
   }
 
   renderDay(day: string, records: UiRecord[]) {
+    const datePrefix = 11 // Length of date prefix `2023-02-24 `
     return html`
       <div>
-        <div class="day">${day}</div>
         <div class="entries">
           ${records.map(
-            (v) =>
+            (v, i) =>
               html`<div class="result">
-                <div class="text">${v.to_string(false, false)}</div>
-                <q-button
-                  class="edit"
-                  @clicked=${this.onEditClicked.bind(this, v)}
-                  icon="edit"
-                ></q-button>
-                <q-button
-                  class="delete"
-                  @clicked=${this.onDeleteClicked.bind(this, v)}
-                  icon="delete"
-                ></q-button>
+                <div class="text">
+                  ${" ".repeat(i == 0 ? 0 : datePrefix) + v.to_string(i == 0, false)}
+                </div>
+                <div class="result-buttons">
+                  <q-button
+                    class="edit"
+                    @clicked=${this.onEditClicked.bind(this, v)}
+                    icon="edit"
+                  ></q-button>
+                  <q-button
+                    class="delete"
+                    @clicked=${this.onDeleteClicked.bind(this, v)}
+                    icon="delete"
+                  ></q-button>
+                </div>
               </div>`,
           )}
         </div>
