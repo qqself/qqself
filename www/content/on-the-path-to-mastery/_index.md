@@ -360,11 +360,23 @@ I decided to run a 50 km race on a running track to see if I get insane or dizzy
 
 Embrace the nuances, learn and change every small detail of your craft and you will never be bored.
 
+## Comparison
 
+I had lunch with two of my new colleagues, and it turns out both of them are into triathlon. As a runner myself, I became curious about how they train. Turns out neither of them has a training plan and they exercise in a rather chaotic manner, squeezing training into their hectic daily lives with a few hours of training per week. Later on, I realised that both of them are much faster at running than me. Considering that the running stage comes last after hours of swimming and biking, my endurance is also a joke compared to theirs.
 
+Another day, I was reading a book, and the author told a story about how, at 62 years old, he decided to run a half-marathon without any prior experience in running. I love hearing stories like that; they give me hope that when I reach such an age, I will still be able to start new endeavors and live a rich life full of adventures. Then I read that the author achieved a sub-1-hour 10km run after just 2 months of training, something that took me a year to accomplish, and it felt devastating.
 
+Sometimes, we can get motivated when we compare ourselves with others. You see someone performing, and then think, `I can do better` and practice for hours to prove to yourself that you actually can. Your friend has joined an athletic club and is in great shape now, which inspires you to follow the same path. You may see a marathon race with thousands of participants, some younger than you, others much older, and many slimmer, but not everyone and so your own marathon journey begins.
 
+More often, though, comparisons with others demotivate us. It feels like we don't have a natural gift for this skill because others are clearly better and also progressing much faster. We start to think that we will never reach such level and begin to doubt whether it's worth continuing to practice. Things that we've accomplished, our progress that we have been proud of, suddenly seem worthless in comparison. Others may have achieved the same things sooner and more easily, and they may not even consider it as a big deal.
 
+Notice how rarely we compare ourselves with those who have a lower skill level. If you are a sculptor, it makes no sense to compare yourself with non-sculptors; it's pointless. If you've been drumming for a year and see a kid having their first lessons, you smile, remembering your own first steps, wish them all the best but don't even consider comparing yourself, as it's nonsense. If your goal is to complete a marathon in 4 hours, but your friend's target is 5 hours, you consider yourselves and your friend to be in different leagues which cannot be compared, as it's simply not fair.
+
+But we think it's fair to compare ourselves with those who are better. To make it worser, we compare our singular `I` to many others - this person is a faster runner than me, another runs longer distances, friend A is a better drummer, and friend B has a bigger house. Regardless of how hard we try, as we compare ourselves to those who are better, the comparison is never in our favour. This holds true whether we've just started, are experienced, or have mastered our craft – there is always someone, living or dead, who are better than us.
+
+We actually can't compare ourselves to others in a fair way. Some may practice twice as many hours as you do, while others may have been doing it for more years. A novice runner may have competed in skiing in the past and will progress with amazing speed. Lucky ones have more free time and money that they can invest into becoming better. Your friend may excel in drumming faster because her mother played the piano, and growing up in such a environment as a child became her inspiration, which may help her when she struggles. Everyone has their own unique journey that cannot be compared in a fair way.
+
+There is only one person who you can compare yourselves with and expect fair comparison - it is you.
 
 
 
