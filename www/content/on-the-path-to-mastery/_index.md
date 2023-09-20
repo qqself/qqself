@@ -378,20 +378,18 @@ We actually can't compare ourselves to others in a fair way. Some may practice t
 
 There is only one person who you can compare yourselves with and expect fair comparison - it is you.
 
+## Lack of time
 
+I'm in the cafe. In front of me, there is an old gentleman reading a newspaper; he doesn't seem to be in a hurry. Besides me, there are a bunch of young girls laughing loudly and enjoying their time together - they also don't seem worried about the passing time. I'm sitting here, writing these lines, simultaneously stressed about the lack of time and anxious that the time I was given is going to waste.
 
+I desperately need more time - for writing, for music, for running, and for all other endeavors that I haven't even had time to start. I'm way behind schedule in my training, in music, and haven't held clay in my hands for a few months
 
+Lack of time is something from which we all suffer. We wish for it to disappear so that we would have enough time for everything, enough time to realize every single wish we have. If only we could have more time, then we could complete everything.
 
+I hope this never happens to you.
 
+On those days when you wake up at 6 in the morning to squeeze in a run, followed by breakfast with the kids, rushing to drive them to school, going to the office to solve urgent work issues, catching up with past colleagues about their lives during a quick lunch, going back home to spend time with your family, and being able to read just a few pages before falling asleep, such a lack of time is not a curse but a gift.
 
+Lack of time is a sign that we have so many opportunities lying in front of us that we have to choose which ones to pursue. Being healthy presents dozens of opportunities across many kinds of sports. Being educated and knowledgeable opens up thousands of new skills that we can learn. Being intelligent allows us to see the problems that surround us and solve them. Lack of time is a sign that we have a choice, that we have so many doors open for us.
 
-
-
-
-
-
-
-
-
-
-
+It's not a lack of time that needs to be solved, but the problem that sometimes we choose the wrong door. Every minute that we live, we make a choice on how to spend that minute. It's not about making every minute count; it's about realising that you are the one who is making that choice. Every. Single. Minute.
