@@ -49,6 +49,10 @@ impl Entry {
     }
 
     pub fn set_revision(&mut self, revision: usize) {
+        if revision == 0 {
+            // TODO We actually should make 0 as a default revision
+            panic!("Minimum revision is 1")
+        }
         for t in self.tags.iter_mut() {
             if t.name == "entry" {
                 for p in t.props.iter_mut() {
@@ -58,6 +62,9 @@ impl Entry {
                     }
                 }
             }
+        }
+        if revision == 1 {
+            return; // Revision is 1 by the default, no need to create an extra tag
         }
         // No revision exists, create a new tag
         self.tags.push(Tag::new(
@@ -324,6 +331,13 @@ mod tests {
             entry.serialize(true, true),
             "2023-07-03 10:00 11:00 run distance=18. entry revision=4"
         );
+
+        // Setting default revision is noop
+        let mut entry = Entry::parse("2023-07-03 10:00 11:00 run").unwrap();
+        assert_eq!(entry.revision(), 1);
+        entry.set_revision(1);
+        assert_eq!(entry.revision(), 1);
+        assert_eq!(entry.serialize(true, true), "2023-07-03 10:00 11:00 run");
     }
 
     #[test]
