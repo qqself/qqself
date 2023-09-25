@@ -9,7 +9,7 @@ use qqself_core::{
     api::ApiRequest,
     binary_text::BinaryToText,
     date_time::datetime::DateDay,
-    db::{Record, DB},
+    db::Record,
     encryption::{keys::PrivateKey, payload::PayloadBytes},
 };
 use rayon::prelude::*;
@@ -64,19 +64,15 @@ fn download_journal(journal_path: &Path, keys: KeyFile) -> PathBuf {
         .collect::<Vec<_>>();
 
     info!("Processing entries...");
-    let mut db = DB::default();
-    for record in entries {
-        db.add(record, false, None);
-    }
     let mut output = String::new();
     let mut prev_day = None;
-    db.query_results().iter().for_each(|entry| {
+    for entry in entries {
         if !prev_day.is_some_and(|v| v == entry.date_range().start().date()) {
             prev_day.replace(entry.date_range().start().date());
             output.push('\n');
         }
         output.push_str(&format!("{}\n", entry.to_string(true, true)));
-    });
+    }
     info!("Writing entries to journal {:?} ...", journal_path);
     fs::write(journal_path, output).expect("Failed to write journal file");
     journal_path.to_owned()
@@ -152,6 +148,11 @@ mod tests {
                         let resp = http.send(req).await.unwrap();
                         assert_eq!(resp.status(), 200);
                     }
+                    // Overwrite last message to ensure both previous and new record are preserved
+                    let msg = "2022-10-04 00:00 05:00 updated. entry revision=2";
+                    let req = ApiRequest::new_set_request(keys.keys(), msg.to_string()).unwrap();
+                    let resp = http.send(req).await.unwrap();
+                    assert_eq!(resp.status(), 200);
                 })
         });
         handle.join().unwrap();
@@ -171,6 +172,7 @@ mod tests {
 
 2022-10-04 00:00 04:00 foo4
 2022-10-04 00:00 05:00 foo5
+2022-10-04 00:00 05:00 updated. entry revision=2
 "
         );
     }
