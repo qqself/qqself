@@ -13,7 +13,7 @@ regex = "1.9.5"
 rsa = "0.9.2"
 serde = { version = "1.0.188", optional = true, features = ["derive"] }
 thiserror = "1.0.48"
-time = { version = "0.3.28", features = ["wasm-bindgen", "local-offset"] }
+time = { version = "0.3.29", features = ["wasm-bindgen", "local-offset"] }
 wasm-bindgen = { version = "0.2.86", optional = true }
 js-sys = {version = "0.3.64", optional = true }
 
