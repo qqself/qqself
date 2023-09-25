@@ -1,5 +1,21 @@
-# Achieving mastery takes decades - how to keep going?
+# qqself
 
-qqself is a `Mastering System`: a comprehensive overview of long-term skill development. It seeks to answer the main question, "Why do we give up?" and explores what helps us to keep going. There are numerous books about skill development and interviews with top-of-the-field masters, and this book incorporates wisdom from those sources.
+Reaching mastery takes decades, and only a few succeed. Why do people give up, and what can we do to solve it?
 
-qqself is also an app, interactive journal that uses all the techniques and strategies from the `Mastering System`.
+- qqself is a book `On The Path To Mastery`, which analyses why only a few succeed in becoming masters, what common failures occur, and how to solve these common issues. Why do a few keep their motivation all the way, but most lose it eventually? What helps us to keep going, and what prevents us from succeeding?
+- qqself is also an app, an interactive journal that incorporates all the ideas from the book to mitigate the reasons why people give up and provides the motivation boost to persist in practical learning.
+
+## core
+A shared Rust core handles journal entry parsing, encryption, all metric and identity calculations. All other services and apps heavily use it either directly or through WebAssembly.
+
+## api-sync
+A Rust web service based on `actix-web` persists journal entries in AWS DynamoDB and allows multiple clients to synchronize. It operates with already encrypted payloads and cannot access user data.
+
+## client-cli
+A Rust command-line client works with plain text journal files and allows you to have full control of the data. It also supports importing all data from `api-sync` to the plain text journal file and exporting the journal file back to the cloud. You are free to move from or to the synchronization server at any time.
+
+## client-web
+A TypeScript/LitElement/WebAssembly web version of the journal app is served on [app.qqself.com](https://app.qqself.com). It supports most of the interactive features and handles synchronization with the cloud automatically.
+
+## www
+This contains [www.qqself.com](https://www.qqself.com) landing page and also includes a working draft of `On The Path To Mastery`, which serves as the basis for all the features in the journaling apps.
