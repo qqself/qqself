@@ -19,14 +19,14 @@
     "@typescript-eslint/parser": "5.62.0",
     "eslint-plugin-simple-import-sort": "10.0.0",
     "eslint-plugin-unused-imports": "3.0.0",
-    "eslint": "8.49.0",
+    "eslint": "8.50.0",
     "jsdom": "22.1.0",
     "lit-analyzer": "2.0.0-pre.3",
     "prettier": "3.0.3",
     "typescript": "5.2.2",
     "vite-plugin-rsw": "2.0.11",
     "vite": "4.4.9",
-    "vitest": "0.34.4",
+    "vitest": "0.34.5",
     "wasm-pack": "0.12.1"
   }
 }
