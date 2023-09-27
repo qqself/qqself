@@ -393,3 +393,19 @@ On those days when you wake up at 6 in the morning to squeeze in a run, followed
 Lack of time is a sign that we have so many opportunities lying in front of us that we have to choose which ones to pursue. Being healthy presents dozens of opportunities across many kinds of sports. Being educated and knowledgeable opens up thousands of new skills that we can learn. Being intelligent allows us to see the problems that surround us and solve them. Lack of time is a sign that we have a choice, that we have so many doors open for us.
 
 It's not a lack of time that needs to be solved, but the problem that sometimes we choose the wrong door. Every minute that we live, we make a choice on how to spend that minute. It's not about making every minute count; it's about realising that you are the one who is making that choice. Every. Single. Minute.
+
+## Capabilities
+
+The goal of learning and practicing is to expand our capabilities, allowing us to do something we cannot do now. It's a transformation we undergo: we choose something that seems impossible, and then, through hard work, we make it achievable. Every time we become capable of something new, we open a door that leads us to a world that was previously locked.
+
+By practicing running uphill, you make it possible to participate in ultrarunning races happening in the Alps, Andes, and Himalayas mountain ranges. Learning how to free dive unlocks the experience of swimming with whales in the deep ocean. Learning to play the drums for old rock songs allows you to join a cover band and spend Friday evenings playing live in a local bar. By learning how to create concrete sculptures using cement, you would have a chance to participate in a city contest for the opportunity to place your sculpture in a local park. Winning is not the point; you've already won by making yourself capable of competing with other sculptors.
+
+Not all capabilities are directly related to a certain skill but can provide great support for it. If you develop the habit of waking up at 6 AM, you'll be able to fit in a training or a learning session in the morning while the whole world is still asleep. By eliminating the main sources of distraction in your life, you'll lead a more focused life, and your learning sessions will be more effective.
+
+We can acquire new capabilities by buying it. Getting a backpack with a tent and sleeping bag unlocks the ability to spend a night in the wilderness, enabling us to undertake multi-day runs. Purchasing a drum set unlocks the capability of becoming a drummer. Obtaining a human anatomy atlas provides you with the ability to create a more accurate representation of the human body in your sculptures.
+
+Through practice and skill development, we build confidence and courage, which are capabilities in their own. They enables us to take on more significant challenges and set targets beyond our current limits, ultimately leading to even greater progress in our skills.
+
+Expanding capabilities through skill practice is an infinite process of turning the impossible into the possible. If you continue for long enough, the word `impossible` will lose its meaning and become synonymous with word `hard`.
+
+
