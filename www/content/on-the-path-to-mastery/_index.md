@@ -408,4 +408,20 @@ Through practice and skill development, we build confidence and courage, which a
 
 Expanding capabilities through skill practice is an infinite process of turning the impossible into the possible. If you continue for long enough, the word `impossible` will lose its meaning and become synonymous with word `hard`.
 
+## Learning
+
+When we start learning a new skill, we struggle with everything: in writing, words don't come out; in running, we can't keep our breath; in drumming, we fail to use our hands and legs independently. Even though it feels tough, such discomfort and struggle are indicators of learning.
+
+In the beginning, every minute you spend practicing a skill will make you better. The body responds to training by adapting to the stress placed on it; your brain forms new neural connections. When we take our first steps, every learning and practice session is efficient.
+
+As we progress and become better, the same things become easier for us, the struggle fades away, and we feel great in such comforting environments where we can relax and perform what we've learned before. This is also the moment when learning stops.
+
+There are many musicians who have played for thousands of hours but remain at a rather average level. There are numerous artists who have been painting for decades but have yet to reach the level of technique that leaves viewers breathless. They stopped progressing because their focus shifted from learning to performing what they've already learned.
+
+At the beginning, for runners, the most effective thing you can do is to run - just go out and jog. As you advance in this skill, such training becomes less and less efficient until one day you realize that you hardly progress even though you run for 5 hours a week. As you advance in the skill, the efficiency of your learning and practice sessions will eventually start to drop if you don't pay attention to it.
+
+To progress, we need to learn, and learning cannot happen when things are easy. Throw yourself into challenges, pick targets from more advanced levels, and strive for the impossible.
+
+Remember the feeling when you took your first steps into a new skill, and keep that struggling feeling close to you forever.
+
 
