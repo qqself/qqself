@@ -3,11 +3,7 @@ title = "How to become a master?"
 template = "section_mastering.html"
 +++
 
-# <i>Unedited First Draft</i>
-
-## On The Path To Mastery
-
-# Preface
+## Preface
 
 There are many books about mastery, but whenever I read a story about a gifted child who has been passionate about music since they were 5 years old, a part of me dies. When you read interviews with masters, it's as if they are from a different dimension: doing it their whole life, constantly motivated, always improving, willing to sacrifice everything not related to their craft.
 
@@ -20,7 +16,6 @@ We don't lose motivation just because. Things that brought us joy yesterday don'
 Reaching mastery takes decades: many years of tough practice, learning, making mistakes, feeling embarrassments and self doubt. This book is about everything that keeps us going, that keeps us from giving up: From the explanation why things happen to the daily practices and strategies that may improve our motivation when we feel down, when we need all the support we can get to fight through. 
 
 You can read this book on it's own - you only need pen and paper to implement ideas from this book. There is also a more convenient way - <a href="https://www.qqself.com">qqself</a> app which uses all the practices and strategies from this book. 
-
 ## Dream
 
 It was 5 minutes before the midnight, I was waiting on a start line on my very first 100 km ultra running marathon. At the start of the race, everyone is nervous and excited about the adventure that lies in front of them. I was standing there in the crowd, feeling motivated to show my best, experiencing fear about what awaits me, and full of doubt about whether I can actually do it or not.
@@ -75,7 +70,7 @@ Things will become clear afterward, often in unexpected ways. You may start with
 
 <div style="overflow: auto; display: flow-root">
 
-<img style="max-height: 300px; float: right; margin-left: 15px" src="/mastering-system/ideas.png" />
+<img style="max-height: 300px; float: right; margin-left: 15px" src="/on-the-path-to-mastery/ideas.png" />
 Whenever you have an idea or a dream, regardless of how vague it may be, write it down. Keep one durable place for these notes, ensuring they can last for years because time is needed for ideas to grow and transform.
 
 In qqself, you can enter and store any kind of information, knowing it will persist across decades and remain searchable for years to come.
@@ -159,7 +154,7 @@ Decide who you want to become, write it down, and put it somewhere where you wil
 
 <div style="overflow: auto; display: flow-root">
 
-<img style="max-height: 300px; float: right; margin-left: 15px" src="/mastering-system/identities.png" />
+<img style="max-height: 300px; float: right; margin-left: 15px" src="/on-the-path-to-mastery/identities.png" />
 In qqself identities are one of the most important things and always visible for you and only for you. All the data is encrypted and even we don't have an access to that.
 </div>
 
@@ -252,7 +247,7 @@ We make mistakes and recover in every skill all the time. In writing, it's more 
 
 <div style="overflow: auto; display: flow-root">
 
-<img style="max-width: 550px; float: right; margin-left: 20px; margin-top: 10px" src="/mastering-system/journal.png" />
+<img style="max-width: 550px; float: right; margin-left: 20px; margin-top: 10px" src="/on-the-path-to-mastery/journal.png" />
 In qqself you have a journal where you write about you skill practices and can reflect about it: Comment how did you feel during a training, what exactly you've practiced or analyse what kind of mistakes did you do which requires attention.
 </div>
 
@@ -312,7 +307,7 @@ At the end of the week, see how close you are to reaching your goal. Did you ach
 
 Reaching a perfect goal shouldn't be easy. If you're achieving it every week, your aim may be set too low. However, it should be attainable with hard effort. Start with an educated guess and see if you can reach it. Don't hesitate to adjust it as you go along. We grow, our lives and environments change constantly, and so does our image of a perfect goal.
 
-# Treats
+## Treats
 
 Ultra running is physically tough, but the main battle is mental - you need to keep going no matter how bad you feel. Anything that can ease the mental pressure is worth using. One such thing is to carry a treat - something that you enjoy eating - and use it at the right moment. It may sound like a small and unimportant detail, but sometimes even the slightest support is what we need to be able to continue.
 
@@ -408,6 +403,7 @@ Through practice and skill development, we build confidence and courage, which a
 
 Expanding capabilities through skill practice is an infinite process of turning the impossible into the possible. If you continue for long enough, the word `impossible` will lose its meaning and become synonymous with word `hard`.
 
+{{ do(of="Focus on expanding your capabilities - the more we can, the more we do", last=true) }}
 ## Learning
 
 When we start learning a new skill, we struggle with everything: in writing, words don't come out; in running, we can't keep our breath; in drumming, we fail to use our hands and legs independently. Even though it feels tough, such discomfort and struggle are indicators of learning.
@@ -424,4 +420,5 @@ To progress, we need to learn, and learning cannot happen when things are easy. 
 
 Remember the feeling when you took your first steps into a new skill, and keep that struggling feeling close to you forever.
 
-
+{{ avoid(of="Avoid making practice too easy - we don't progress from those") }}
+{{ do(of="Struggling is a marker of learning - do practice hard things")}}
