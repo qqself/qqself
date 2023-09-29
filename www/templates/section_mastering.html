@@ -4,6 +4,20 @@
 
 <div class="mastering">
   <div class="description">
+    <h1>On The Path To Mastery</h1>
+    <h2><i>Unedited First Draft</i></h2>
+    <div class="contents">
+      {% if section.toc %} Table of contents:
+      <ul>
+        {% for chapter in section.toc %}
+        <li>
+          <a href="{{ chapter.permalink | safe }}">{{ chapter.title }}</a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+
     <div class="text">{{ section.content | safe }}</div>
   </div>
 </div>
