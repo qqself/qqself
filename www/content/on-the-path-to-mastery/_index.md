@@ -422,3 +422,30 @@ Remember the feeling when you took your first steps into a new skill, and keep t
 
 {{ avoid(of="Avoid making practice too easy - we don't progress from those") }}
 {{ do(of="Struggling is a marker of learning - do practice hard things")}}
+
+## Replan
+
+It works nicely in movies - you see a hero who is dedicated to winning no matter what: all the obstacles are ignored, all the promises are kept, and even a thunderstorm outside cannot prevent the hero from training. Above everything else, there is a plan that the main hero is following until success is reached.
+
+Ask any software engineer, and they will tell you: `The only permanent thing is change`. We don't live in isolation; we are surrounded by our environment. We have families, colleagues, pets, and plants to take care of. The world around us is constantly changing, and every person you know grows and becomes different over the years. We also change, and so do our understandings, beliefs, and desires.
+
+Having a plan and striving to follow it is a way to progress. Bad weather should never be an excuse to skip planned training. But we also have lives. If your child becomes sick and needs you, then following a training plan should not be your concern.
+
+We are also human; watching a movie until late at night can make waking up at 6 AM for a run impossible. Stress from a tough day at work may leave us too tired for an evening practice, and learning a difficult new concept the day before can leave us feeling weak and tired for another session today.
+
+If your plan is strict and solid like a stick, then any external change that requires bending will break it. Missing a training session means promises are broken, and there is a risk that the entire plan will be abandoned. What is the point of continuing if things don't go according to the plan?
+
+Make the plan fluid, adapt to changes, and replan relentlessly.
+
+Replanning doesn't mean giving yourself permission to skip practice sessions whenever obstacles appear. We plan to achieve a goal, and the goal should remain the same, but change the way you are going to achieve it. Move things around, reschedule, compromise - find a way to move forward even when circumstances are not in your favour.
+
+If a Saturday long run is not possible, go for a 1-hour run. Yes, it's not a sufficient substitute, but it's better than nothing. If you run out of clay, then switch to sketching for the next sculpture; work with what you have. If drumming practice gets canceled, and you have no access to the instrument, go for a run instead. Yes, running is not even related to the music, and yes, it's sad that drums are not available, and your plan was different, but that's what you have; work with that.
+
+{{ avoid(of="Avoid too strict plans - changes are unavoidable")  }}
+{{ do(of="Do keep plans fluid - adapt to changes and replan relentlessly") }}
+
+
+
+
+
+
