@@ -444,8 +444,12 @@ If a Saturday long run is not possible, go for a 1-hour run. Yes, it's not a suf
 {{ avoid(of="Avoid too strict plans - changes are unavoidable")  }}
 {{ do(of="Do keep plans fluid - adapt to changes and replan relentlessly") }}
 
+## References
 
+<ul>
+{{ ref(name="Endurance in Sport", authors="R. J. Shephard, P.-O. Astrand", link="https://www.amazon.com/Endurance-Sport-Encyclopedia-Sports-Medicine/dp/0632053488") }}
 
+{{ ref(name="Peak", authors="A. Ericsson, R. Pool", link="https://www.amazon.com/Peak-Secrets-New-Science-Expertise-ebook/dp/B011H56MKS") }}
 
-
-
+{{ ref(name="Boredom", authors="Sandi Mann", link="https://www.amazon.com/Science-Boredom-Why-Good-ebook/dp/B0117K9MXM") }}
+</ul>
