@@ -1,5 +1,5 @@
 +++
-title = "How to become a master?"
+title = "On The Path To Mastery"
 template = "section_mastering.html"
 +++
 
@@ -444,6 +444,54 @@ If a Saturday long run is not possible, go for a 1-hour run. Yes, it's not a suf
 {{ avoid(of="Avoid too strict plans - changes are unavoidable")  }}
 {{ do(of="Do keep plans fluid - adapt to changes and replan relentlessly") }}
 
+## Approaching challenges
+
+When the running race starts, it's straightforward. You've been training and practicing, preparing for this moment, and now it's time for the performance. It's a big show where you demonstrate to others and yourself everything that you've learned. Races are about execution; you put in all the effort in the hope of proving to yourself what you are capable of. But the challenge starts even before the race starts.
+
+All skills involve challenges: it could be races, auditions, live performances, or attempting to set a personal record in the gym. Difficult training can be challenging in itself; a giant limestone waiting for you to sculpt in your backyard is the one. Challenges can be short, like giving your first public speech, or large-scale, like writing a book. They can be something you need to do because your training plan says so, race day is approaching, or an art competition is starting. Or it can be wild ideas that suddenly occur to you, and now you're thinking whether you should accept such a challenge.
+
+Accepting the challenge is a challenge on its own. You sit at home, thinking whether you should go out, anticipating the suffering, fatigue, and discomfort that you would need to endure. You're filled with anxiety, fear of shame and embarrassment, and most importantly, fear of failure. These are the moments when things are so fragile that even a single negative thought or a recalled positive experience could affect the outcome.
+
+If you are sitting at home and trying to motivate yourself for a challenging training session, keep in mind the present-state bias. Regardless of the long-term benefits, we tend to make decisions based on our current physical state and mood. If we feel tired now, we might decline an offer from a friend to participate in a race a week later. If we feel cold now, it's more likely that we'll decide not to go for a winter run that evening. If you woke up at 5 AM and feel sleepy, you might decide not to go for the training in a gym today, even though it starts in one hour and you have plenty of time to allow your body to wake up and enjoy a couple of cups of coffee or some sugar if needed.
+
+The Missouri American Water MR340 is the world's longest ultra paddling race, covering 340 miles (547 km), and it takes up to 4 days to complete. It's a cruel race that pushes participants to their physical and mental limits. Bryan Hopkins, who has participated in this race five times, offers advice in [Ultra Marathon Paddling](https://www.youtube.com/watch?v=0H-cSZFZq_4): `Never quit while on the water`. He suggests taking a break on the shore and getting some rest before making any decisions. Many athletes have felt miserable while paddling and decided to quit, only to realize half an hour later in the parking lot that they could have continued.
+
+If you've just come home feeling tired, then don't make a decision just yet about your evening drum practice - the fragile balance may not be in your favour right now. Instead, take a nap, hop in the shower, go for a walk, or have a cup of tea with your relatives. Ten minutes of meditation can work wonders. Do anything that helps you recover. If recovery isn't possible, cheat - a cup of coffee and a piece of candy might be enough to give your brain the illusion of an energy boost. Full recovery is not needed; even a small one could make you feel better, and that's the point. Now, you can actually decide what you want to do.
+
+{{ avoid(of="Avoid making decisions while tired, be it about today or the future") }}
+{{ do(of="Make decisions only after you have recovered from the fatigue") }}
+
+Ultra runners never run the entire ultra marathon distance; instead, they split it into multiple parts in their minds and focus on only the current part. When you ask writers how they write, the common answer is `word by word`. Focus on the next step, which is always easier than the challenge itself. Even if you feel tired, it shouldn't be a problem to pack clothes, walk to the parking lot, and drive to the gym. Don't think about what will happen next; focus on what you need to do now. You'll figure out the next steps once you're there.
+
+Twyla Tharp describes her morning ritual in [The Creative Habit](https://www.amazon.com/gp/product/B000SEOWBG): she wakes up every day at 5:30 AM, takes a cab to the gym, and works out for two hours. The key to her ritual is not the gym itself, but the act of waking up and taking a taxi to the gym. By focusing on just the first steps, it becomes easier to start and reduces the risk of failure. Even if she wakes up feeling tired, it's still possible to take a taxi to the gym, and she figures out what to do along the way.
+
+{{ do(of="Focus on the very next step - you'll think about the rest when you get there", last=true)}}
+
+Endurance athletes need to spend hours performing near their limit, experiencing mental and physical fatigue and pain. How do they tolerate so many hours of suffering? Top performers focus on their bodies: how they breathe, how they run, and they pay attention to the pain they experience. Their whole mind is dedicated to only one thing - how they are performing right now. They lock themselves in the moment, and in that particular moment, only their body exists. This technique is called internal focus and is considered the best approach if you want to set a personal record.
+
+If you want to maintain a certain pace for as long as possible, then dissociation is the best coping strategy. Rather than focusing on what is happening right now with your body, you dissociate from it and force your mind to focus on something else: solving math problems, singing a song, thinking about past experiences or planning the future, engaging in internal dialogs, repeating mental mantras, or simply counting 1-2-3-4 with every step. My friend, who is a marathon runner, once told me that during races, he listens to only one song, which constantly repeats.
+
+Whenever you are struggling to go out for the tough run or thinking if you should do a challenging practice or not - dissociate yourself from it.
+
+{{ do(of="Dissociate yourself from the activity - let your body do what it needs to do while you focus on something else",last=true) }}
+
+As humans, we are often better at giving advice to others than to ourselves. This is because when advising others, we tend to be more rational, benefiting from emotional detachment and an outside perspective. When giving advice to others, we consider the bigger picture, taking into account long-term consequences and the person's goals. This is something that can be more challenging to do when we think about ourselves. To overcome this challenge, we can employ a technique called self-distancing - talking about ourselves from a third-person perspective. You can use `he/she/they` to refer to yourselves or use your name, avoiding the use of `you` as it's not as effective.
+
+When you struggle to start writing, cannot begin a difficult learning session, or go out for a hard training, stop and think about it. What if you've been a coach - what kind of advice would you give to this struggling person who is tired and needs your support? You are the perfect coach who knows exactly what this person needs right now, so go and tell it:
+
+<div class="quote">
+John, I agree that you are tired, but today is a very important hill training session that will make you better in the mountains. You need it for the race, and it will bring you closer to your dream of finishing it. So, once you're at home, change your clothes, make a cup of coffee, turn on some hardcore metal music - I know you love it - rest for 15 minutes, and then jump in the car to drive to the hills. You've done it before, and I believe you can do it today.
+</div>
+<br>
+
+Your coach knows the best and believes in you, so should you.
+
+{{ do(of="Self-distance - be a coach and support the struggling person who needs your advice", last=true)}}
+
+What is your goal? Why did you start it? Whenever you struggle, remind yourself of your dream - what you want to achieve. Every time you say yes to the challenge, you bring yourself closer to your dream. Every time you say no, you push your dream further away. Yes, it's hard, and yes, the performance for the challenge you are after may not be pleasant - you're going to suffer. But you are going to suffer for a purpose and your dream is bigger than any kind of suffering.
+
+{{ do(of="Remind yourself of your dream and take a step towards it", last=true)}}
+
 ## References
 
 <ul>
@@ -451,5 +499,9 @@ If a Saturday long run is not possible, go for a 1-hour run. Yes, it's not a suf
 
 {{ ref(name="Peak", authors="A. Ericsson, R. Pool", link="https://www.amazon.com/Peak-Secrets-New-Science-Expertise-ebook/dp/B011H56MKS") }}
 
-{{ ref(name="Boredom", authors="Sandi Mann", link="https://www.amazon.com/Science-Boredom-Why-Good-ebook/dp/B0117K9MXM") }}
+{{ ref(name="Boredom", authors="S. Mann", link="https://www.amazon.com/Science-Boredom-Why-Good-ebook/dp/B0117K9MXM") }}
+
+{{ ref(name="Ultra Marathon Paddling", authors="B. Hopkins", link="https://www.youtube.com/watch?v=0H-cSZFZq_4") }}
+
+{{ ref(name="The Creative Habit", authors="T. Tharp", link="https://www.amazon.com/gp/product/B000SEOWBG/")}}
 </ul>
