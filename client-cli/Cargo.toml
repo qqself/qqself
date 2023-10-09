@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 qqself-core = {path = "../core", features = ["serde"] }
-reqwest = "0.11.20"
+reqwest = "0.11.22"
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1.32.0", features = ["full"] }
 tracing = "0.1.37"
