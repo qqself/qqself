@@ -13,7 +13,7 @@ lazy_static = "1.4.0"
 log = "0.4.20"
 qqself-core = { path = "../core", features = ["serde"] }
 serde = { version="1.0.188", features = ["derive"] }
-tokio = { version = "1.32.0", features = ["rt", "macros", "time"] }
+tokio = { version = "1.33.0", features = ["rt", "macros", "time"] }
 thiserror = "1.0.49"
 # storage-dynamodb
 aws-config = { version = "0.56.1", optional = true }
