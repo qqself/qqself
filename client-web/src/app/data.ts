@@ -35,12 +35,12 @@ export class DataEvents {
     let loadedLocal = 0
     for (const entry of await storage.values(KeyPrefixes.EntryRemote)) {
       const record = UiRecord.parse(entry.value)
-      this.store.userState.views.add_record(record, false)
+      this.store.userState.views.add_record(record, false, DateDay.fromDate(new Date()))
       loadedRemote++
     }
     for (const entry of await storage.values(KeyPrefixes.EntryLocal)) {
       const record = UiRecord.parse(entry.value)
-      this.store.userState.views.add_record(record, false)
+      this.store.userState.views.add_record(record, false, DateDay.fromDate(new Date()))
       loadedLocal++
     }
     trace(`DataEvents loaded cached data: remote=${loadedRemote}, local=${loadedLocal}`)
@@ -138,7 +138,7 @@ export class DataEvents {
     const decrypted = await this.store.userState.encryptionPool.decryptAll(remoteEntries)
     for (const entry of decrypted) {
       const record = UiRecord.parse(entry.text)
-      this.store.userState.views.add_record(record, false)
+      this.store.userState.views.add_record(record, false, DateDay.fromDate(new Date()))
       await this.addEntryToCache(entry.text, entry.id)
     }
     if (decrypted.length > 1) {

@@ -3,12 +3,13 @@ import "../controls/button"
 import "../controls/notification"
 import "../components/queryResults"
 import "../components/skills"
+import "../components/week"
 import "../components/statusBar"
 
 import { css, html, LitElement } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
 
-import { DateDay, SkillData, UiRecord } from "../../../bridge/pkg"
+import { DateDay, SkillData, SkillWeek, UiRecord } from "../../../bridge/pkg"
 import { Store } from "../../app/store"
 import { QueryUpdatedEvent } from "../components/queryResults"
 import { RecordSaveEvent } from "../components/recordInput"
@@ -34,6 +35,9 @@ export class ProgressPage extends LitElement {
   skillsData: SkillData[] = []
 
   @state()
+  skillsWeek: SkillWeek[] = []
+
+  @state()
   error = ""
 
   @state()
@@ -47,16 +51,17 @@ export class ProgressPage extends LitElement {
       display: flex;
       margin: 10px;
     }
+    .progress {
+      display: flex;
+      flex-direction: column;
+      flex-basis: 30%;
+      gap: 20px;
+    }
     .query-results {
       display: flex;
       flex-direction: column;
       flex-basis: 100%;
       margin-right: 15px;
-    }
-    .skills {
-      display: flex;
-      flex-direction: column;
-      flex-basis: 30%;
     }
     .status {
       position: fixed;
@@ -101,6 +106,10 @@ export class ProgressPage extends LitElement {
     this.skillsData = this.store.userState.views.view_skills()
   }
 
+  updateSkillWeek() {
+    this.skillsWeek = this.store.userState.views.view_week()
+  }
+
   connectedCallback() {
     super.connectedCallback()
     this.store.subscribe("views.update.queryResults", () => {
@@ -108,6 +117,9 @@ export class ProgressPage extends LitElement {
     })
     this.store.subscribe("views.update.skills", () => {
       this.updateSkills()
+    })
+    this.store.subscribe("views.update.week", () => {
+      this.updateSkillWeek()
     })
     this.store.subscribe("views.notification.skills", (notification) => {
       this.notifications = [...this.notifications, notification.update.message]
@@ -119,6 +131,7 @@ export class ProgressPage extends LitElement {
     )
     this.updateQueryResults()
     this.updateSkills()
+    this.updateSkillWeek()
     return this.store.dispatch("data.sync.init", null)
   }
 
@@ -152,7 +165,10 @@ export class ProgressPage extends LitElement {
           @queryUpdated=${this.onQueryUpdated.bind(this)}
           @save=${this.onEntryAdded.bind(this)}
         ></q-query-results>
-        <q-skills class="skills" .skills=${this.skillsData}></q-skills>
+        <div class="progress">
+          <q-skills class="skills" .skills=${this.skillsData}></q-skills>
+          <q-week-view .data=${this.skillsWeek}></q-week-view>
+        </div>
       </div>
       ${this.error && html`<p>Error ${this.error}</p>`} ${this.renderNotifications()}
       <q-status-bar

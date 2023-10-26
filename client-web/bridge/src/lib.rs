@@ -239,13 +239,24 @@ pub struct SkillData {
     pub level: usize,
 }
 
+#[wasm_bindgen(getter_with_clone)]
+pub struct SkillWeek {
+    pub name: String,
+    pub progress: usize,
+    pub target: usize,
+}
+
 #[wasm_bindgen]
 extern "C" {
+    // TODO We will get rid of all of those once new wasm-pack got release with array support
     #[wasm_bindgen(typescript_type = "Array<UiRecord>")]
     pub type QueryResultsRecordArray;
 
     #[wasm_bindgen(typescript_type = "Array<SkillData>")]
     pub type SkillDataArray;
+
+    #[wasm_bindgen(typescript_type = "Array<SkillWeek>")]
+    pub type SkillWeekArray;
 }
 
 #[wasm_bindgen]
@@ -261,6 +272,9 @@ impl Views {
                 ViewUpdate::Skills(update) => {
                     data.set(&"view".into(), &"Skills".into());
                     data.set(&"message".into(), &update.skill.into());
+                }
+                ViewUpdate::Week => {
+                    data.set(&"view".into(), &"Week".into());
                 }
             };
             if let Err(err) = onUpdate.call1(&JsValue::NULL, &data) {
@@ -331,6 +345,20 @@ impl Views {
             output.push(&JsValue::from(skill_data));
         }
         output.unchecked_into::<SkillDataArray>()
+    }
+
+    pub fn view_week(&self) -> SkillWeekArray {
+        let db = self.db.borrow();
+        let output = js_sys::Array::new();
+        for data in db.week().values() {
+            let data = SkillWeek {
+                name: data.skill().to_string(),
+                progress: data.progress() as usize,
+                target: data.target() as usize,
+            };
+            output.push(&JsValue::from(data));
+        }
+        output.unchecked_into::<SkillWeekArray>()
     }
 }
 

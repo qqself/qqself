@@ -14,7 +14,10 @@ export interface SkillsViewUpdate {
   view: "Skills"
   message: string
 }
-export type ViewUpdate = QueryResultsUpdate | SkillsViewUpdate
+export interface WeekUpdate {
+  view: "Week"
+}
+export type ViewUpdate = QueryResultsUpdate | SkillsViewUpdate | WeekUpdate
 export interface SkillsViewNotification {
   view: "Skills"
   message: string
@@ -50,6 +53,7 @@ export interface Events {
   // Views
   "views.update.queryResults": { update: QueryResultsUpdate } // QueryResults view updated
   "views.update.skills": { update: SkillsViewUpdate } // Skills view updated
+  "views.update.week": { update: WeekUpdate } // Week view updated
   "views.queryResults.queryUpdated": { query: string } // QueryResults query updated
   "views.notification.skills": { update: SkillsViewNotification } // Notification from Skills view
 }

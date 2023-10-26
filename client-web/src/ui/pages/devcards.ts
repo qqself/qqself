@@ -1,4 +1,5 @@
 import "../components/skills"
+import "../components/week"
 import "../components/recordInput"
 import "../components/queryResults"
 import "../components/statusBar"
@@ -10,7 +11,7 @@ import "../pages/progress"
 import { html, LitElement, TemplateResult } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
 
-import { DateDay, UiRecord } from "../../../bridge/pkg/qqself_client_web_bridge"
+import { DateDay, SkillWeek, UiRecord } from "../../../bridge/pkg/qqself_client_web_bridge"
 import { trace } from "../../logger"
 import { OfflineApi, TestStore } from "../../utilsTests"
 import { RecordSaveEvent } from "../components/recordInput"
@@ -25,6 +26,7 @@ declare global {
 export class Card extends LitElement {
   @property()
   name = ""
+
   render() {
     const filter = window.location.hash.slice(1).split(":")
     if (filter.length == 2 && !this.name.includes(decodeURI(filter[1]))) {
@@ -100,6 +102,18 @@ export class DevcardsPage extends LitElement {
         return acc
       }, {})
 
+    const weekProgress = [
+      { name: "Runner", progress: 20, target: 60 * 5 },
+      { name: "Reader", progress: 60 * 5 + 25, target: 60 * 5 },
+      { name: "Drummer", progress: 60, target: 60 },
+      { name: "Writer", progress: 5.5 * 60, target: 60 * 7 },
+      { name: "Entrepreneur", progress: 6.3 * 60, target: 60 * 10 },
+      { name: "Athlete", progress: 140, target: 60 * 7 },
+      { name: "Swimmer", progress: 0, target: 60 },
+      { name: "Sculptor", progress: 0, target: 60 },
+      { name: "Finnish speaker", progress: 0, target: 60 },
+    ] as SkillWeek[]
+
     // Render all the devcards. If page hash ends with `/devcards:[CARD_NAME]` then only the card with such name will be rendered
     this.cards = html`<div class="devcards">
       <!-- Controls -->
@@ -133,6 +147,10 @@ export class DevcardsPage extends LitElement {
 
       <q-card name="Skills">
         <q-skills .skills=${this.store.userState.views.view_skills()}></q-skills>
+      </q-card>
+
+      <q-card name="WeekView">
+        <q-week-view .data=${weekProgress}></q-week-view>
       </q-card>
 
       <q-card name="AddEntry - Valid">

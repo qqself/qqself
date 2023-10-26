@@ -1,5 +1,7 @@
 import "./logo"
 
+import square from "@fortawesome/fontawesome-free/svgs/regular/square.svg"
+import squareCheck from "@fortawesome/fontawesome-free/svgs/regular/square-check.svg"
 import brain from "@fortawesome/fontawesome-free/svgs/solid/brain.svg"
 import palette from "@fortawesome/fontawesome-free/svgs/solid/palette.svg"
 import personRunning from "@fortawesome/fontawesome-free/svgs/solid/person-running.svg"
@@ -22,6 +24,8 @@ export type IconName =
   | "delete"
   | "add"
   | "edit"
+  | "check"
+  | "unchecked"
 @customElement("q-icon")
 export class Icon extends LitElement {
   @property({ type: String })
@@ -42,6 +46,8 @@ export class Icon extends LitElement {
       delete: squareXmark,
       add: squarePlus,
       edit: squarePen,
+      check: squareCheck,
+      unchecked: square,
     }
     const icon = icons[this.name]
     if (icon) {
