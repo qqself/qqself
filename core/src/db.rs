@@ -2,6 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use crate::data_views::query_results::QueryResultsView;
 use crate::data_views::skills::{SkillsNotification, SkillsUpdate, SkillsView};
+use crate::data_views::week::{WeekProgress, WeekView};
 use crate::date_time::datetime::{DateDay, DateTimeRange};
 use crate::parsing::parser::{ParseError, Parser};
 use crate::progress::skill::Skill;
@@ -108,6 +109,7 @@ pub enum ChangeEvent {
 pub enum ViewUpdate {
     QueryResults,
     Skills(SkillsUpdate),
+    Week,
 }
 
 /// Emitter when user interactively added a new record and progress notification has
@@ -124,6 +126,7 @@ pub struct DB {
     on_view_update: Option<Box<dyn Fn(ViewUpdate)>>,
     view_query_results: QueryResultsView,
     view_skills: SkillsView,
+    view_week: WeekView,
 }
 
 impl DB {
@@ -132,6 +135,7 @@ impl DB {
             entries: BTreeMap::new(),
             view_skills: SkillsView::default(),
             view_query_results: QueryResultsView::default(),
+            view_week: WeekView::default(),
             on_view_update: None,
             on_notification: None,
         }
@@ -143,6 +147,10 @@ impl DB {
 
     pub fn query_results(&self) -> &BTreeSet<Record> {
         self.view_query_results.data()
+    }
+
+    pub fn week(&self) -> &BTreeMap<String, WeekProgress> {
+        self.view_week.data()
     }
 
     /// Adds new record to the DB. Interactively means user is adding a record right now. If records are restored from
@@ -165,6 +173,11 @@ impl DB {
                 &self.on_view_update,
                 &self.on_notification,
             );
+            if let Some(now) = now {
+                // TODO Why now is optional?
+                self.view_week
+                    .update(self.entries.iter(), event, now, &self.on_view_update);
+            }
         }
         event
     }
@@ -655,4 +668,24 @@ mod tests {
             ],
         )
     }
+
+    // #[test]
+    // TODO DB::add should return a record which will include incremented revision number of existing record
+    // TODO DB::remove should be used for deleting as otherwise it's not possible to update the views
+    // TODO Record::deleted_record should simply add `entry deleted` and leave all the rest to that views can update correctly
+    // TODO Record::deleted_record should be private
+
+    // fn foo() {
+    //     let mut db = TestDB::default();
+    //     db.add_entry("02:00 foo");
+    //     db.add_entry("02:00 entry revision=2 deleted");
+    //     db.add_entry("02:00 bar. entry revision=3");
+    //     db.assert_query_results("", vec!["02:00 bar. entry revision=3"]);
+
+    //     let mut db = TestDB::default();
+    //     db.add_entry("02:00 foo");
+    //     db.add_entry("02:00 bar. entry revision=2");
+    //     db.add_entry("02:00 entry revision=3 deleted");
+    //     db.assert_query_results("", vec![]);
+    // }
 }

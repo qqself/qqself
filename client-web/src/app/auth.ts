@@ -9,8 +9,10 @@ export const loginSucceeded = async (store: Store, keys: Keys): Promise<void> =>
     const update = Object.fromEntries(data) as unknown as ViewUpdate
     if (update.view == "QueryResults") {
       void store.dispatch("views.update.queryResults", { update })
-    } else {
+    } else if (update.view == "Skills") {
       void store.dispatch("views.update.skills", { update })
+    } else {
+      void store.dispatch("views.update.week", { update })
     }
   }
   const onViewNotification = (data: Map<string, string>) => {

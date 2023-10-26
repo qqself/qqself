@@ -3,7 +3,7 @@ use std::{fmt::Display, str::FromStr};
 use crate::{
     date_time::datetime::Duration,
     db::Selector,
-    record::{Entry, Tag},
+    record::{Entry, PropVal, Tag},
 };
 
 /*
@@ -26,16 +26,17 @@ pub struct Skill {
     kind: SkillKind,
     title: String,
     duration_minutes: u64,
+    perfect_week: u64,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Ord, PartialOrd)]
 pub enum SkillKind {
-    /// Activities that mainly target your body: running, strength training, pilates, dancing
-    Physical,
     /// Activities that challenges your brain: academic writing, solving problems, learning languages
-    Intelligent,
+    Intelligent = 0,
+    /// Activities that mainly target your body: running, strength training, pilates, dancing
+    Physical = 1,
     /// Activities where you express yourselves: art, music, novel writing, dancing
-    Creative,
+    Creative = 2,
 }
 
 #[derive(Default, Debug)]
@@ -98,6 +99,18 @@ impl Skill {
         }
         let skill_tag = skill_tag?;
         let symbol = skill_tag.props.iter().find(|v| v.name == "kind")?;
+        let mut perfect_week = 0;
+        for prop in &skill_tag.props {
+            if prop.name != "perfect" {
+                continue;
+            }
+            if let PropVal::Number(perfect) = prop.val {
+                perfect_week = perfect as u64;
+                break;
+            } else {
+                // TODO Can it happen? I don't think we have validation in place
+            }
+        }
         Some(Skill {
             title: record.comment.as_ref().cloned()?,
             kind: symbol.val.to_string().parse().ok()?,
@@ -106,6 +119,7 @@ impl Skill {
                 exclusive_tags: vec![Tag::new("skill".to_string(), vec![], 0)], // skills entries should be excluded
             },
             duration_minutes: 0,
+            perfect_week,
         })
     }
 
@@ -124,6 +138,10 @@ impl Skill {
 
     pub fn kind(&self) -> &SkillKind {
         &self.kind
+    }
+
+    pub fn perfect_week(&self) -> u64 {
+        self.perfect_week
     }
 
     pub fn add_duration(&mut self, duration: Duration) {
@@ -147,8 +165,7 @@ impl Ord for Skill {
         //      by kind, but sort depending on best skill within the group. So that main
         //      group (with biggest skill) will be always on top
         self.kind
-            .to_string()
-            .cmp(&other.kind.to_string())
+            .cmp(&other.kind)
             .then_with(|| self.duration_minutes.cmp(&other.duration_minutes).reverse())
             .then_with(|| self.title.cmp(&other.title))
     }
