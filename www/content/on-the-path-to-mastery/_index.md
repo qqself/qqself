@@ -574,6 +574,28 @@ The good thing is that it works the other way as well. To get my life together, 
 
 {{ do(of="Exercise control in different spheres of your life - it will have a positive effect on everything that you do") }}
 
+## Disappointment
+
+Software engineers know the feeling well. You work in a team on a complex app, open a source code file that's six months old, and are stunned by disgust - the source code is ugly, the choice of technologies is inappropriate, and assumptions about the business domain are wrong. You wonder who made such a mess, only to realize that it was written by you.
+
+This happens all the time. It doesn't matter if you're an experienced engineer or a junior who has just started a career. It's a crushing feeling of shame and disappointment, but only for the first few hundred times. It happens so often that eventually, you get used to it and accept that it's natural.
+
+It happens because we grow. We learn new best practices for using a programming language, gain more experience in understanding the nuances of how businesses operate, and when it's appropriate or not to use certain technologies. Half a year ago, you did your best, but now you are better, so the past results look unsatisfying.
+
+Looking back and seeing results that disappoint you is a sign of growth. It's a sign that you are better now.
+
+When working on the first draft of this book, I always move forward - I write a chapter and switch to the next one without looking back. Editing, rewriting, and restructuring will happen later, once most of the book is written. A few days ago, I opened one of the first pages that I've wrote, which is around half a year old. It looked so ugly that my first thought was to abandon writing completely and bury the memories of ever having done such a miserable thing.
+
+I'm glad that I didn't like those pages. In fact, if writing from half a year ago looked fine, it would mean that I hadn't grown as a writer since I started writing this book. It's my first book, I was not a writer when I began it. The feeling of disappointment when looking at the first pages gives me hope that I'm slowly becoming one.
+
+As we grow, our expectations of ourselves also grow. When you start sculpting, it's about form and mass - you create sculptures of humans, animals, monsters, or other objects and are satisfied if the result looks convincing enough. As you become better, you start to expect that your sculptures will convey a certain feeling, express an idea, or, even though static, represent a movement or a change. It's no longer just about sculpting a human, but creating a sculpture that represents greed, passion, despair, or something else. Growing expectations can lead to disappointment when we fail to achieve them.
+
+Remember that with growing expectations of yourself, you are going into uncharted territory, and it's expected to fail at first. With painting, you may learn how important contrast is, notice mistakes in your past works, and expect to improve them in new ones, but still fall to completely solving them. With sculpture, you now know that people look at the eyes first in a human sculpture and expect them to convey a certain mood, but fail to do so first few times.
+
+The disappointment of failing to meet your own expectations should not bring you down. Look back and see that you've increased the difficulty. You are expecting much more from yourself than before, and failing to meet these expectations is not exactly a failure but a sign of your striving to become better.
+
+Coming in last in a school race and then finishing last in country wide competitions may seem like two failures, but the expectations and so is difficulty are so different that it's hardly so.
+
 ## References
 
 <ul>
