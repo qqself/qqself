@@ -8,7 +8,7 @@ build = "build.rs"
 actix-web = "4.4.0"
 async-trait = "0.1.74"
 env_logger = "0.10.0"
-futures = "0.3.28"
+futures = "0.3.29"
 lazy_static = "1.4.0"
 log = "0.4.20"
 qqself-core = { path = "../core", features = ["serde"] }
