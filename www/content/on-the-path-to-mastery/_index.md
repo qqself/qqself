@@ -596,6 +596,46 @@ The disappointment of failing to meet your own expectations should not bring you
 
 Coming in last in a school race and then finishing last in country wide competitions may seem like two failures, but the expectations and so is difficulty are so different that it's hardly so.
 
+## Environment
+
+<!-- Mood follows the environment -->
+
+The environment defines our mood. If you've just woken up, lying in your bed and thinking you're not in the mood for the gym, remember that a warm bed environment is primarily for rest, and your mood would align with that.
+
+To get in the mood for working out, you need to change your environment first. Once you're in the right place, you'll start feeling energised and ready for a high-intensity training. Don't expect to be in the mood until you're in the right environment: first switch it, and the mood will follow.
+
+Keep in mind the environment you're in and be mindful of the mood it creates. If you primarily use your computer for games, don't be surprised when, with the intention of learning programming, you turn it on but end up playing instead. If you use your room mainly for rest and entertainment, it will be challenging to learn there. Take a moment to look around and ask yourself: `Does this environment create the mood I need?` If not - switch.
+
+<!-- Environment spoiling -->
+
+Be careful with the environment and avoid spoiling it. If you use the library for learning, then avoid watching Netflix there. If you have a working computer, don't play games on it. The gym should remain solely for working out. When the environment becomes spoiled with other things, the mood switching disappears. You may come to the library and not feel in the mood for learning anymore.
+
+When it happens - switch. Sometimes, choosing a different table may work, and sometimes switching to another library or gym may be needed. Don't be hard on yourself when it happens - in my home, there isn't a single corner that I haven't spoiled yet. Accept it and look for a new place; you'll greatly benefit from the switch. Sometimes, you just need a break, and after a while, a spoiled environment will become effective again.
+
+<!-- Environment defines ideas -->
+
+The environment defines which ideas come to our minds. Ideas don't appear randomly in our heads by themselves, but originate from our surroundings – from what we do and have done, from our friends or colleagues, from what we see happening around us, and from things we consume, like books or movies. Ideas are the product of our environments, constrained by our capabilities, and mixed with the ideas that surround us.
+
+What kind of ideas are flowing in your environment, and what ideas cannot appear there? You may sit in a library and see students surrounding you, one learning mechanical engineering, another studying gene modification, and another reading a quantum physics book. Later that evening, you may become curious and dive into one of those topics, but the idea of running 100 miles in the mountains will unlikely to appear there.
+
+If you're swimming in the pool and see a girl with an Iron Man cap, it may define what you're going to do next year, but the chances are rather low that you'll get the idea of creating a mobile game and dive into game development while being there.
+
+If your environment is primarily focused on watching Netflix and playing computer games, then the ideas that come to your head will likely revolve around new series and games to play. Perhaps, you might start to wonder what it takes to direct a movie or what makes games fun to play, potentially leading you to explore game design.
+
+If you want to reduce the number of ideas of a certain kind, then switch from the environment that creates those ideas. Go outside to reduce watching Netflix, and to avoid infinite Internet consumption, leave your phone in another room. If you want to have more ideas of a certain type, then switch the environment first, and the ideas will follow. Visit the craft store, even if you don't know what to craft. Go to the DIY hardware shop, and the idea of building a treehouse, crafting custom garden furniture, or embarking on a home renovation project will appear by itself.
+
+Switch the environment first, and ideas will follow. Don't expect to get ideas of one kind in an environment where they are unlikely to appear.
+
+<!-- Expanding and collapsing an environment -->
+
+We are surrounded by the environment, but we have the power to expand it and collapse it. Watching the news can suddenly make your neighbourhood expand to include the entire world, and a disaster on the other side of the planet becomes closer. You may have no writer friends, but finding an online writer's club can make you feel like you are a part of this group.
+
+You can include a nearby gym and a running track as part of your environment if you start going there often. A coffee house close to you could become your place if you spend every Sunday writing or reading there. The forest and the night stars will become yours if you start hiking and spending nights there.
+
+We are lucky to live in a world where accessing information is hardly a problem. You may have seen a map in a fantasy book and wondered how it was drawn, and the next moment, you discover the wonderful world of cartography, maps, and fantasy world-building. With libraries, you can get access to millions of books, and with the Internet, you can find information about anything, expanding your environment to include new, exciting, and unexplored area.
+
+We can expand our environment by our will, but we can also collapse it if we wish. If your friend is going deeper and deeper into bad behavior that negatively affects you, you can limit or cut your connection to reduce the exposure. If you have a problem with social networks or computer games, you can delete an account or throw away the phone. It's not necessary the best solution, but we have the power to use it if we wish.
+
 ## References
 
 <ul>
