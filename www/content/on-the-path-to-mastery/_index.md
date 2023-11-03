@@ -636,6 +636,32 @@ We are lucky to live in a world where accessing information is hardly a problem.
 
 We can expand our environment by our will, but we can also collapse it if we wish. If your friend is going deeper and deeper into bad behavior that negatively affects you, you can limit or cut your connection to reduce the exposure. If you have a problem with social networks or computer games, you can delete an account or throw away the phone. It's not necessary the best solution, but we have the power to use it if we wish.
 
+## Resilience
+
+Before we begin learning a new skill, we imagine the kind of challenges we will face and mentally prepare ourselves for them. When we start to write, we expect writer's block to come, but we are determined to push through it. When we decide to run a marathon, we assume that fatigue will be the biggest challenge and promise ourselves never to give up. As we start to learn sculpting, we anticipate that the hardest part will be paying attention to every small detail and prepare ourselves for the tedious yet undoubtedly rewarding work.
+
+When those challenges come our way, we are mentally prepared to face them. This doesn't make it easy, but expecting them and having time to prepare makes us feel that everything is under our control and goes according to the plan.
+
+The same applies to the challenges we've already encountered in the past. They might be tough, but we've solved them before and can tackle them today. If you've been running a specific trail many times with a challenging hill in the middle, past successful experiences will help you conquer it again. Confidence comes from past accomplishments. We know that even if it feels impossible to complete, we can overcome it, just as we've done before.
+
+Facing and completing a tough, but expected challenge is not resilience. Resilience is facing the unexpected and overcoming it.
+
+Running an ultra and feeling permanently fatigued after tens of hours is challenging and expected. But what would you do if the run starts with a huge mountain climb, and you feel crushed after just one hour in? Are you going to give up?
+
+When learning the drums, you start with easy beats, get used to struggling for a while, but then become able to play them after half an hour of practice. But how would you feel when learning a popular metal song and making no progress for days? Would you abandon your effort?
+
+Being a writer, writing a book, and dedicating months of your life to it, what would happen if one day you find an already written book similar to yours? Is this the end of it?
+
+Unexpected challenges are part of the journey, and it's not a question of if they will come, but rather when. Issues, failures, rejections, mistakes, and crushed hopes are a natural part of it - accept them as a part of the path. Acceptance enables us to move forward - to forget the past and embrace a new reality.
+
+Once you've accepted a new reality, analyze the situation and create a new plan by focusing on your end goal. Running an ultra is a manifestation of mind power over the body, and having crushed legs after one hour of running doesn't change much - you came for the challenge, and the mountain has indeed delivered one. If you want to become a writer, then finding a book similar to your draft is hardly the end of the world. Writers rewrite books, so you can too; writers write many books, so you're capable of doing it as well.
+
+Accepting the new unexpected challenges that your journey has presented to you is a way for us to grow.
+
+By accepting and embracing new unexpected challenges, we learn to become mentally tougher. Mental toughness is how we cope with crises; it's about regaining a sense of control and not allowing fear and anxiety to overwhelm us and take control of our lives. It enables us to remain functional in adverse situations. It's not a skill we are born with, but one that is developed whenever we face the unexpected.
+
+Mastery is a long journey filled with unexpected adverse events, and mental toughness is required to overcome the obstacles you will face. The irony is that mental toughness can only be developed by facing challenges. Every time you encounter an unexpected challenge, remember - it's your chance to become tougher, and being tougher means being more prepared for even bigger challenges.
+
 ## References
 
 <ul>
@@ -648,4 +674,7 @@ We can expand our environment by our will, but we can also collapse it if we wis
 {{ ref(name="Ultra Marathon Paddling", authors="B. Hopkins", link="https://www.youtube.com/watch?v=0H-cSZFZq_4") }}
 
 {{ ref(name="The Creative Habit", authors="T. Tharp", link="https://www.amazon.com/gp/product/B000SEOWBG/")}}
+
+{{ ref(name="How Bad Do You Want It", authors="M. Fitzgerald", link="https://www.amazon.com/How-Bad-You-Want-Psychology-ebook/dp/B017OE42OE/")}}
+
 </ul>
