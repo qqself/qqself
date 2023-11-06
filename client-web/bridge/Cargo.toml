@@ -11,7 +11,7 @@ crate-type = ["cdylib", "rlib"]
 wasm-bindgen = "0.2.88"
 qqself-core = { path = "../../core", features = ["wasm"] }
 console_error_panic_hook = "0.1.7"
-js-sys = { version = "0.3.64" }
+js-sys = { version = "0.3.65" }
 
 [build-dependencies]
 vergen = { version = "8.2.6", features = ["build", "cargo", "git", "git2", "rustc"] }
