@@ -14,7 +14,7 @@ rsa = "0.9.3"
 serde = { version = "1.0.190", optional = true, features = ["derive"] }
 thiserror = "1.0.50"
 time = { version = "0.3.30", features = ["wasm-bindgen", "local-offset"] }
-wasm-bindgen = { version = "0.2.86", optional = true }
+wasm-bindgen = { version = "0.2.88", optional = true }
 js-sys = {version = "0.3.64", optional = true }
 
 [dev-dependencies]
