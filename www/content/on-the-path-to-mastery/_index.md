@@ -662,6 +662,33 @@ By accepting and embracing new unexpected challenges, we learn to become mentall
 
 Mastery is a long journey filled with unexpected adverse events, and mental toughness is required to overcome the obstacles you will face. The irony is that mental toughness can only be developed by facing challenges. Every time you encounter an unexpected challenge, remember - it's your chance to become tougher, and being tougher means being more prepared for even bigger challenges.
 
+## Fear
+
+<!-- Fear of the physical pain -->
+
+For years, I've dreamt about the sky, yet every year, I convince myself that it's not the best time to take any action. There's no free time or money to enroll in a flying course. Deep down, though, it's a lie. The real reason that has prevented me from starting is fear. 
+
+A few years ago, to satisfy my longing for flying, I got a Microsoft Flight Simulator. As the name implies, it's not a game but a simulator with realistic physics and models of actual aircraft. I opted for a glider, an aircraft without an engine that takes off by being towed into the air by another plane. After detachment, it glides through the sky, supported by the natural air flows.
+
+I did it for fun and without reading or preparing myself, so I randomly began pressing buttons and somehow managed to lift off. It wasn't a big surprise that after a few seconds, I crashed, and the game ended. It was just a game, but a sudden realisation dawned on me that failure in real-life flying could result in death.
+
+In sports, art, music, writing, or even software engineering, mistakes are natural and part of the process. They cannot be fully prevented, and making mistakes and recovering from them is a way of improving. Failures may be discouraging, and despite how we feel about them, it's not the end of the world situation. However, that evening in flying, I understood that failure could actually mean the end of it.
+
+Being scared of getting hurt or dying can stop us from starting things like flying a plane, trying parachute jumping, doing combat sports, exploring free diving, or sailing alone across the ocean.
+
+Dealing with these fears is best approached through education and knowledge. Anything related to the sky, like piloting or skydiving, follows strict safety standards. Beginner combat courses concentrate on developing foundational skills and techniques in a fully controlled environment - don't be afraid of sparring on the very first day. Exploring information about your chosen activity will show that the real risks are low, and it might seem more intimidating than it actually is. The fears you have are well-known, so as solutions and workarounds that minimise your exposure to such risks.
+
+Don't let fear block your rational thinking. In Greco-Roman wrestling, a widely used move is the `german suplex` where a wrestler grabs their opponent around the waist from behind and throws them over their shoulder to the mat. I've wanted to try this sport for many years, but one day I read about a guy who broke his back after such a move. I decided that it's not worth the risk and gave up on my dream before even trying.
+
+Keep in mind that injuries are possible in any sport, and certain injuries can be quite serious and even fatal. But it's important to be sensible and remember that the chance of these things occurring is rather low - research your fears, and often you realize that they have no basis or reasons to exist.
+
+For some, the thought of swimming in the ocean causes fear, and many avoid anything related to it due to the fear of being eaten by sharks. Although sharks are real, this fear lacks a rational basis. On the entire planet, there are only around 10 deaths from shark attacks per year, making the likelihood of such an incident 10,000 times lower than the risks associated with everyday driving.
+
+Reducing the feeling of fear can be achieved through gradual exposure and training. In free diving, you hold your breath for minutes while descending deep into the water. One of the main fears is the risk of blackout—holding your breath for too long can lead to oxygen deprivation, causing unconsciousness, which can be fatal when you're in the water. Enroll in a free diving course in your swimming pool, surrounded by swimmers, lifeguards, and trainers. This provides a safe environment to explore the sport, understand your body's reactions, which is essential for this activity.
+
+Fear of physical harm is clear and explicit - we are all afraid of death, afraid of pain and suffering. There is nothing wrong with being afraid, but the next time you postpone realizing your dream because of such fear, just stop and learn about the actual risks and common solutions. Once you're educated, you'll find that slowly exposing yourself to the new exciting world isn't actually that scary. There are thousands or even millions of people in the world who are doing it, and so can you.
+
+It's much harder when fear is not about physical pain.
 ## References
 
 <ul>
