@@ -7,12 +7,12 @@ build = "build.rs"
 [dependencies]
 actix-web = "4.4.0"
 async-trait = "0.1.74"
-env_logger = "0.10.0"
+env_logger = "0.10.1"
 futures = "0.3.29"
 lazy_static = "1.4.0"
 log = "0.4.20"
 qqself-core = { path = "../core", features = ["serde"] }
-serde = { version="1.0.190", features = ["derive"] }
+serde = { version="1.0.192", features = ["derive"] }
 tokio = { version = "1.33.0", features = ["rt", "macros", "time"] }
 thiserror = "1.0.50"
 # storage-dynamodb
