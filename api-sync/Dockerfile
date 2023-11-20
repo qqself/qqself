@@ -1,5 +1,5 @@
 # Should be build from the root of the project because workspace, vendor, etc.
-FROM rust:1.73.0-slim-buster
+FROM rust:1.74.0-slim-buster
 WORKDIR /app
 COPY . .
 RUN cargo build --release --package qqself-api-sync --features storage-dynamodb
