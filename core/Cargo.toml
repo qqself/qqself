@@ -7,18 +7,18 @@ edition = "2021"
 aes-gcm = "0.10.3"
 blake2 = "0.10.6"
 bs58 = "0.5.0"
-getrandom = { version = "0.2.10", features = ["js"] }
+getrandom = { version = "0.2.11", features = ["js"] }
 lazy_static = "1.4.0"
 regex = "1.10.2"
 rsa = "0.9.3"
-serde = { version = "1.0.190", optional = true, features = ["derive"] }
+serde = { version = "1.0.192", optional = true, features = ["derive"] }
 thiserror = "1.0.50"
 time = { version = "0.3.30", features = ["wasm-bindgen", "local-offset"] }
 wasm-bindgen = { version = "0.2.88", optional = true }
 js-sys = {version = "0.3.65", optional = true }
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3.37"
+wasm-bindgen-test = "0.3.38"
 
 [features]
 default = []

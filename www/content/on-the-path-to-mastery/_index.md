@@ -662,6 +662,78 @@ By accepting and embracing new unexpected challenges, we learn to become mentall
 
 Mastery is a long journey filled with unexpected adverse events, and mental toughness is required to overcome the obstacles you will face. The irony is that mental toughness can only be developed by facing challenges. Every time you encounter an unexpected challenge, remember - it's your chance to become tougher, and being tougher means being more prepared for even bigger challenges.
 
+## Fear
+
+<!-- Fear of the physical pain -->
+
+For years, I've dreamt about the sky, yet every year, I convince myself that it's not the best time to take any action. There's no free time or money to enroll in a flying course. Deep down, though, it's a lie. The real reason that has prevented me from starting is fear. 
+
+A few years ago, to satisfy my longing for flying, I got a Microsoft Flight Simulator. As the name implies, it's not a game but a simulator with realistic physics and models of actual aircraft. I opted for a glider, an aircraft without an engine that takes off by being towed into the air by another plane. After detachment, it glides through the sky, supported by the natural air flows.
+
+I did it for fun and without reading or preparing myself, so I randomly began pressing buttons and somehow managed to lift off. It wasn't a big surprise that after a few seconds, I crashed, and the game ended. It was just a game, but a sudden realisation dawned on me that failure in real-life flying could result in death.
+
+In sports, art, music, writing, or even software engineering, mistakes are natural and part of the process. They cannot be fully prevented, and making mistakes and recovering from them is a way of improving. Failures may be discouraging, and despite how we feel about them, it's not the end of the world situation. However, that evening in flying, I understood that failure could actually mean the end of it.
+
+Being scared of getting hurt or dying can stop us from starting things like flying a plane, trying parachute jumping, doing combat sports, exploring free diving, or sailing alone across the ocean.
+
+Dealing with these fears is best approached through education and knowledge. Anything related to the sky, like piloting or skydiving, follows strict safety standards. Beginner combat courses concentrate on developing foundational skills and techniques in a fully controlled environment - don't be afraid of sparring on the very first day. Exploring information about your chosen activity will show that the real risks are low, and it might seem more intimidating than it actually is. The fears you have are well-known, so as solutions and workarounds that minimise your exposure to such risks.
+
+Don't let fear block your rational thinking. In Greco-Roman wrestling, a widely used move is the `german suplex` where a wrestler grabs their opponent around the waist from behind and throws them over their shoulder to the mat. I've wanted to try this sport for many years, but one day I read about a guy who broke his back after such a move. I decided that it's not worth the risk and gave up on my dream before even trying.
+
+Keep in mind that injuries are possible in any sport, and certain injuries can be quite serious and even fatal. But it's important to be sensible and remember that the chance of these things occurring is rather low - research your fears, and often you realize that they have no basis or reasons to exist.
+
+For some, the thought of swimming in the ocean causes fear, and many avoid anything related to it due to the fear of being eaten by sharks. Although sharks are real, this fear lacks a rational basis. On the entire planet, there are only around 10 deaths from shark attacks per year, making the likelihood of such an incident 10,000 times lower than the risks associated with everyday driving.
+
+Reducing the feeling of fear can be achieved through gradual exposure and training. In free diving, you hold your breath for minutes while descending deep into the water. One of the main fears is the risk of blackout - holding your breath for too long can lead to oxygen deprivation, causing unconsciousness, which can be fatal when you're in the water. Enrol in a free diving course in your swimming pool, surrounded by swimmers, lifeguards, and trainers. This provides a safe environment to explore the sport, understand your body's reactions, which is essential for this activity.
+
+Fear of physical harm is clear and explicit - we are all afraid of death, afraid of pain and suffering. There is nothing wrong with being afraid, but the next time you postpone realising your dream because of such fear, just stop and learn about the actual risks and common solutions. Once you're educated, you'll find that slowly exposing yourself to the new exciting world isn't actually that scary. There are thousands or even millions of people in the world who are doing it, and so can you.
+
+It's much harder to deal with fears that are not about physical pain.
+
+<!-- Fear of the failure -->
+
+Every day, life presents us with new opportunities - sometimes in the form of new problems that we need to solve; other times, we have multiple choices and need to make decisions; or sometimes, we are lucky to unexpectedly stumble upon a chance to change our lives. Frequently, we don't even notice new possibilities, but much more often, we choose to ignore them and pretend they don't exist. Life is constantly presenting us with new paths, but we keep deciding not to follow it. Deep down, we want to chase new opportunities, explore them, realize our desires, and change our lives, but we don't because of fear - fear of failure.
+
+How to fight such fear? First of all, by failing more. Start writing a book if you've never done it before - every sentence will be a disaster that will keep reminding you that starting to write a book was a mistake. Do sports, which is nothing but an infinite stream of wins and losses. With art or music, eventually, you'll start treating failures as happy accidents. Making mistakes while doing those activities will make you more failure-tolerant; it will help you realize that it's possible to make mistakes and move forward simultaneously. And one day, you'll realize that moving forward without making mistakes is not actually possible. It should be enough to make yourself not afraid of making mistakes in isolation; it's easy to mess up when no one is looking, but the fear of failing in front of others may still paralyse you. What to do about those?
+
+Many writers have a tradition of collecting rejection letters from publishers, often choosing to proudly display them by sticking them to a wall or affixing them to the fridge door. One might wonder why anyone would think it's a good idea to keep their own mistakes highlighted and visible in front of them all the time? Shouldn't we all try to forget our mistakes as soon as possible to avoid reliving the nightmare experience of shame and embarrassment all over again? Is this a kind of self-torture that writers sadistically enjoy?
+
+<!-- Normalisation of error -->
+
+In the publishing world, rejection is common, and even experienced writers continually receive rejections from publishers. It's a cruel reality where writers may invest years in writing a book, only to receive a collection of rejections from different publishers in return. Even the most dedicated and mentally tough writers may start considering abandoning their craft under the pressure of such failures. We are not empowered to change this reality, but we can make such failures less devastating by accepting them. And accepting them is to normalise them.
+
+Printing out all the failures and placing them where they are visible normalizes rejection. It's not the first time, and for sure, it's not the last time. It prompts us to acknowledge it openly and be ready for it. Knowing that there is a high chance of rejection makes us more resilient in the face of failure; it's not the end of the world, but simply means we didn't win this time.
+
+A collection of rejections wouldn't become a corner of depression and a graveyard of dead hopes. Instead, it may become your main motivator and a force that pulls you forward when you're feeling down. The only writers who don't have those are the ones who never send drafts to publishers - but you did. Every time you try something in your life, you have a chance to fail, and by trying more, you're going to fail more. All those rejections are signs of growth, signs of trying. Every rejection is attempt that you've embraced. 
+
+Having rejections in front of us makes it much easier to deal with new failures. A few days ago, I wrote a cover letter for an open position that I was really interested in. A few hours after sending the letter, I discovered that I had made 3 mistakes in the word `professional`. I haven't received any reply yet, probably because I failed to convince them of my professionalism. The only reason I didn't die from embarrassment that day is that a week before that, I failed on an even bigger scale in an interview with another company.
+
+Having a list of our failures makes us more humble. It cures the disease of perfectionism by reminding us that we are human beings. It helps us adopt a lighthearted perspective and not take things too personally. Having a list close by makes us more free to try new things - failure doesn't look so dramatic anymore, so why not dive deep into new opportunities and pursue the chances that life has given us? Yes, we may fail, so what? It's just another rejection letter to be stuck to the wall.
+
+<!-- Visualisation and fantasising -->
+
+Avoid focusing on the end result. Worst thing that I've ever did with sculpting was fixating my mind on the idea of what I'm trying to sculpt. There is a difference between visualisation, which is powerful mental technique that we can use to enhance your performance, and wishful thinking about the desired outcome.
+
+Athletes use visualisation, also known as imagery, to cultivate the right state of mind before the competition or a hard training. Idea is that you imagine how you going to perform with all the details, trying to sense the movement, the concrete steps. You imagine the feelings that you'll go through - feeling of an energy at the start, your muscles full of strength and then fatigue at the end, pain, shortness of breath and your mental toughness that will allow you to persist even in the case of great suffering.
+
+Even if you imagine things, idea is to stay realistic - you don't imagine that marathon running to be easy, but dive into thoughts about what you may encounter, what problems you are going to face and imagine how you'll respond to each of that. Main focus is the process itself, your feeling and reaction to that. It's a great technique that can help you with many things from public speaking to musical performance and sport, but make a few steps a side and instead of helping you'll summon a monster that will prevent you from achieving anything in life.
+
+Fantasising, although sounds harmless, is a dangerous practice. On a surface it has a lot of common with visualisation - both are about imagining future things, but fantasising is a wishful thinking with the focus on the result rather than a process. It's about immediate gratification - you are purchasing first running shoes and imagine yourself crossing a finish line of your first marathon. You see yourself excited, finishing strong with a great smile, you've done it, you are now a runner.
+
+Fantasies like that are about comfort, perfect and effortless execution and then when facing a real life, which is an opposite of our fantasies, we will feel crashed and give up. In fact with such fantasising we are unlikely to even start - in our mind we've crossed a marathon finish line already, so why bother to train for that? Fantasies are unrealistic and perfect. Striving for perfection is not a good quality that should be mentioned on the job interview, but a curse that can leave our life in ruins.
+
+<!-- Perfectionism -->
+
+We are afraid of failures because we want to be perfect. And we know that we are not.
+
+Sometimes it's socially prescribed perfectionism: others won't accept, value, or love us unless we are perfect. Other time it's a coping mechanism of how we deal with stress in other part of our life: Perfect execution in the training or practice session gives you the sense of control in life where control seems lost. 
+
+In modern time perfectionism caused by being under the pressure of the social perception. We are surrounded by high achievers, images of top performers and artificial and fake perfection. You can't spend a day without being exposed to accomplishment by others. It seems like everyone already become perfect in improving their life everyday and so we have to participate in this race as well. 
+
+<!-- Regrets -->
+
+When people are asked what they regret about their lives, seldom do their answers involve things they did. Instead, they regret things they didn't do - missing opportunities, hesitating, or being indecisive. Now, look at your choices, at the opportunities that surround you, at the paths that you hesitate to follow, and imagine yourself in 30 years. Imagine yourself much older, looking back on your life, remembering today as a day of the past when the younger you was afraid to make a change. Would you regret not following the opportunities lying in front of you? Would you regret that you never tried?
+
 ## References
 
 <ul>
