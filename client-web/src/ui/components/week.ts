@@ -67,8 +67,8 @@ export class WeekView extends LitElement {
       percent > 0 && percent < 100
         ? html`<progress class="progressBar" value=${percent} max="100"></progress>`
         : index != this.data.length - 1
-        ? html`<div class="noProgressBar" />`
-        : null
+          ? html`<div class="noProgressBar" />`
+          : null
     return html`<div
       class="skillRow"
       title=${`${toHours(skill.progress)} from ${toHours(skill.target)}`}
