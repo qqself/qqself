@@ -52,6 +52,46 @@ Allow yourself to dream - dreaming permits imagination without limits. Limits ma
 
 Mastery takes decades to reach; it's a long journey in which very few succeed. The chances of crossing the finish line are low, but you will be glad that you tried.
 
+## Discovery
+
+There are millions of fulfilling activities that you can start doing, which will bring passion and meaning to your life. It's there, waiting for you, but you cannot start doing it until you know that it exists first. Most likely, all the things you've already discovered in your life happened by themselves - a random video, book, or article that got you interested in a new hobby; a friend mentioned something, or parents drove you to try new things. Discovery is a product of chance and luck, but there are a few things we can do to improve our chances.
+
+<!-- Mindset -->
+
+We are surrounded by new opportunities that we hardly notice in our daily lives because of our mindset. To streamline discoveries, we need to adopt an experimentation mindset. It's all about trying new things, hoping that they will guide us somewhere, and being ready for the possibility that most will bring nothing. Experimentation assumes uncertainty and a lack of confidence that we will end up with success, and sometimes an experiment is simply a case of `let's try and see what happens`. Don't ignore opportunities to try something new just because you're not sure if you're going to like it - dive in and decide afterward.
+
+During a discovery, ignore pretty much all the limits that you can think of. You are not committing to spending the next 20 years doing it, but just trying things out. If flying a helicopter sounds interesting, then start exploring what it means - what courses are available, buy a book, watch a getting started video, and install a simulator. Ignore the fact that you have no talent, no experience, and no possibilities. The goal here is to discover what you like; multi-year planning on how to become a master at it is a task for later.
+
+Ignore social norms, your environment, your friends, and even your own beliefs - these will prevent you from trying things that deep down you are actually interested in. If you are a big guy who can bench press 300 kg and cannot believe you are attracted to doll dress crafting, then be a man and do what you actually want, not what society assumes or wants you to do.
+
+Ignore long-forgotten past experiences. If the last time you exercised was in school and the memories still hurt, consider that such experiences are outdated and should be set aside. If your parents forced you to play the piano 20 years ago and you still hate it, let this feeling go. Your environment is different now; no one is forcing you, and you can play whatever you want. Your passion for music might not have been present when you were a child, but it may have emerged within you by now. You are different now - your interests, knowledge, and past experiences have changed you. I was terrible at running in school, carrying a hate for it until I turned 33 when I gave it another try and fell in love with ultra marathons.
+
+Ignore outliers and pretty much the top 1% - those are not representative of what is common. If you watch heavyweight women weightlifting from the last Olympics or the winners of the Boston Marathon, you may be discouraged by how people look and assume that those sports are not for you. Top performers sacrifice everything not related to their main craft to achieve unbelievable results, but that doesn't mean you need to do the same. You can enjoy weightlifting without losing a feminine appearance and becoming bulky, and you can run marathons without becoming too slim.
+
+In fact, during a discovery, ignore everything that is negative. Very likely, being an outsider, you are wrong about it. Martial arts are not about aggression and violence, parkour is not only for fit teens, pole dancing is not only about entertainment, and trampolines are not just for kids.
+
+Avoid doing any cost-benefit analysis. If you start thinking that forging and becoming a blacksmith has less potential than costume design in terms of future profit, you're not going far with that. If the idea of working with liquid metal appeals to you, then go for it; it will drive you far. If you decide to do something only because of the potential future money, you are going to give up much sooner than you expect.
+
+<!-- Recommendations -->
+
+In our world, we live in a bubble surrounded by personalized recommendations. Social networks, YouTube, Netflix, and others show us things related to what we are already aware of. Most of the digital content we consume is uniquely tailored, selected, and prepared only for us. These recommendations are personalized based on what we have consumed in the past and what has a higher chance of being consumed. If you are interested in endurance sports, then YouTube will show you things related to that topic. It works great if we want to find good content, but it's completely opposite to discovery, where novelty plays the most important role.
+
+Friends' recommendations are also personalized and don't differ much from YouTube in this sense. I'll recommend something to my friend only if I assume she is going to like it, and my assumption of what she likes is based on past history and what I know about her. I'll show something to her only when I assume there is a high chance for her to like it, in another words, consume - not much different from how Twitter recommendations work.
+
+Recommendations remain a crucial tool. While the internet offers lists of countless hobbies, navigating through over a thousand items is unlikely to yield good results. What we need is to move away from personalised recommendations—those tailored specifically for you. We must break out of our own bubble.
+
+Personal recommendations function primarily in the digital realm, and everything outside of it works better for discovery. Libraries, offline exhibitions, bookstores, and nearly any other brick-and-mortar store, such as sports shops, musical instrument stores, hobby shops, knitting stores, building supply shops, second-hand stores, or anything in between, offer valuable opportunities. Books, magazines, places where you can rent equipment, and areas where numerous courses are available serve as excellent avenues for exploration.
+
+What you need to look for has to be real. In libraries, bookshops, movies, magazines, ignore the fiction department altogether and go directly to the non-fiction part. I love fantasy books with all my heart, but reading them has almost no chance of sparking the desire to learn archery or master a sword fight. This happens because, being fiction, the story is detached from reality, and even if things are part of our world, like archery, the context makes it difficult to recognise them in this way.
+
+On the other hand, reading a non-fiction historical book about Middle Age blacksmiths or learning about historical reenactment with a description of how to reconstruct the uniform and muskets from the Battle of Waterloo in 1815, including why there were drummers on the battlefield, may inspire you to try many different things that may not even be directly related to the topic you are reading about.
+
+![[waterloo.jpg]]
+
+The goal in consuming such content is to focus on your emotions. Look carefully at the following picture. Which parts create an emotional reaction? Is it the horse riding, the grass field, the armour, muskets, swords, the guy with the drums on the left, the fog from the cannon (want to create your own cannon?!), the beautiful costumes, or the amazing moustache? Which part of it sparks curiosity? Personally, the next book I'm going to borrow from the library will be about crafting hats.
+
+Discovery thrives when we can explore different perspectives. If you are interested in sports, read a book about a famous sports athlete, then one about a professional coach, and later have a look at what the Ministry of Sport thinks about it all. Read books about stadium construction and sports equipment design. Explore how to teach kids to do sports and what it takes to create a sports course for the elderly. The point here is not to choose which part you like the most, but to notice even the smallest details that spark interest. You may enjoy the coaching aspect but realize that complex human interaction is not for you, leading you to discover a passion for training dogs. Gaining a perspective on the lives of the elderly may prompt the thought that art could improve their lives better than sports, inspiring you to create a course for it.
+
 ## What comes after dream?
 
 A dream is a vague idea, often lacking a clear first step and a concrete final destination. It's like a blurry vision where you see yourself in a spacesuit working on the Moon or sitting in a chair in your studio, writing a book. Dreams are expected to be unclear and idealistic views of the new you.
