@@ -3,12 +3,14 @@ import "../components/week"
 import "../components/recordInput"
 import "../components/queryResults"
 import "../components/statusBar"
+import "../components/postNote"
 import "../controls/panel"
 import "../controls/notification"
 import "../controls/icon"
 import "../pages/progress"
+import "../pages/growth"
 
-import { html, LitElement, TemplateResult } from "lit"
+import { css, html, LitElement, TemplateResult } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
 
 import { DateDay, SkillWeek, UiRecord } from "../../../bridge/pkg/qqself_client_web_bridge"
@@ -58,6 +60,12 @@ export class DevcardsPage extends LitElement {
 
   @state()
   cards: TemplateResult | null = null
+
+  static styles = css`
+    .devcards {
+      height: 100%;
+    }
+  `
 
   async connectedCallback() {
     super.connectedCallback()
@@ -176,12 +184,22 @@ export class DevcardsPage extends LitElement {
         <q-status-bar status="pending" currentOp="Fetching data..."> </q-status-bar>
       </q-card>
 
+      <q-card name="Post Note">
+        <q-post-note
+          text="This is a text, about something very important. It should be rather long as very likely there would be much of text"
+        ></q-post-note>
+      </q-card>
+
       <!-- Pages -->
       <q-card name="Progress page">
         <q-progress-page
           .store="${this.store}"
           .currentDay=${DateDay.fromDate(new Date(2022, 10, 10))}
         ></q-progress-page>
+      </q-card>
+
+      <q-card name="Growth page">
+        <q-growth-page .store="${this.store}"></q-growth-page>
       </q-card>
     </div>`
   }

@@ -2,6 +2,7 @@ import "./ui/pages/loading"
 import "./ui/pages/register"
 import "./ui/pages/login"
 import "./ui/pages/progress"
+import "./ui/pages/growth"
 
 import { css, html, LitElement } from "lit"
 import { customElement, state } from "lit/decorators.js"
@@ -11,7 +12,7 @@ import { ServerApi } from "./app/api"
 import { Store } from "./app/store"
 import { colors } from "./ui/styles"
 
-type Page = "loading" | "login" | "register" | "progress" | "devcards"
+type Page = "loading" | "login" | "register" | "progress" | "growth" | "devcards"
 
 @customElement("q-main")
 export class Main extends LitElement {
@@ -35,6 +36,10 @@ export class Main extends LitElement {
       if (page.startsWith("devcards")) {
         await import("./ui/pages/devcards")
         this.page = "devcards"
+        return
+      } else if (page.startsWith("growth")) {
+        // TODO Temporary for testing new `growth` page
+        this.page = "growth"
         return
       }
     }
@@ -63,6 +68,8 @@ export class Main extends LitElement {
         />`
       case "register":
         return html`<q-register-page .store=${this.store} />`
+      case "growth":
+        return html`<q-growth-page .store=${this.store} />`
     }
   }
 

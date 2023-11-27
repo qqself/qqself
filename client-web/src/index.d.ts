@@ -10,6 +10,10 @@ declare module "*.svg" {
   const value: string
   export = value
 }
+declare module "*.ttf" {
+  const value: string
+  export = value
+}
 interface ImportMeta {
   readonly env: {
     DEV: boolean
