@@ -51,7 +51,9 @@ impl WeekView {
                 from: Record::Entry(from),
                 to: Record::Entry(to),
             } => {
-                self.delete_entry(from, on_view_update);
+                if from.date_range.start().date() >= week_start {
+                    self.delete_entry(from, on_view_update);
+                }
                 to
             }
             _ => return, // TODO Handle conflicts
@@ -179,5 +181,49 @@ mod tests {
         // Adding en entry from outside of this week should have no effect
         view.add(now, "2000-01-01 00:00 01:00 run");
         view.check_progress(vec![("Running", 60)]);
+    }
+
+    #[test]
+    fn delete_too_old() {
+        // We can't use TestView and helpers in here, so a bit verbose to reproduce the bug
+        // with overflow error when we delete replaced entries even in case they are out
+        // of current week
+        let now = DateDay::new(2023, 11, 27);
+        let mut view = WeekView::default();
+        let mut all = BTreeMap::default();
+
+        // First init it with some skill
+        let record = Record::Entry(
+            Entry::parse("2023-11-01 00:00 00:00 run. skill kind=physical perfect=10. Running")
+                .unwrap(),
+        );
+        all.insert(*record.date_range(), record.clone());
+        view.update(all.iter(), &ChangeEvent::Added(record.clone()), now, &None);
+
+        // Not add a too old record
+        let record = Record::Entry(Entry::parse("2023-11-01 00:00 01:00 run. Comment1").unwrap());
+        all.insert(*record.date_range(), record.clone());
+        view.update(all.iter(), &ChangeEvent::Added(record.clone()), now, &None);
+
+        // And not replace it with another one
+        let record_new = Record::Entry(
+            Entry::parse("2023-11-01 00:00 01:00 run. entry revision=2. Comment2").unwrap(),
+        );
+        all.insert(*record_new.date_range(), record_new.clone());
+        view.update(
+            all.iter(),
+            &ChangeEvent::Replaced {
+                from: record.clone(),
+                to: record_new,
+            },
+            now,
+            &None,
+        );
+        let got: Vec<_> = view
+            .data
+            .values()
+            .map(|v| (v.skill.title(), v.progress))
+            .collect();
+        assert_eq!(got, vec![("Running", 0)]);
     }
 }
