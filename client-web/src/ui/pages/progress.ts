@@ -9,7 +9,7 @@ import "../components/statusBar"
 import { css, html, LitElement } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
 
-import { DateDay, SkillData, SkillWeek, UiRecord } from "../../../bridge/pkg"
+import { DateDay, SkillData, SkillWeek, UiRecord } from "../../../qqself_core"
 import { Store } from "../../app/store"
 import { QueryUpdatedEvent } from "../components/queryResults"
 import { RecordSaveEvent } from "../components/recordInput"

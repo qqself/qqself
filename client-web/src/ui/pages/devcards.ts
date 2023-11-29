@@ -13,7 +13,7 @@ import "../pages/growth"
 import { css, html, LitElement, TemplateResult } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
 
-import { DateDay, SkillWeek, UiRecord } from "../../../bridge/pkg/qqself_client_web_bridge"
+import { DateDay, SkillWeek, UiRecord } from "../../../qqself_core"
 import { trace } from "../../logger"
 import { OfflineApi, TestStore } from "../../utilsTests"
 import { RecordSaveEvent } from "../components/recordInput"

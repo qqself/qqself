@@ -1,8 +1,8 @@
 target
 node_modules
-.rsw
 dist
 journal.txt
 yarn-error.log
 qqself_keys.txt
 *.local
+client-web/qqself_core/

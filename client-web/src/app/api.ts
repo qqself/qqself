@@ -1,4 +1,4 @@
-import { API, Keys, Request } from "../../bridge/pkg/qqself_client_web_bridge"
+import { API, Keys, Request } from "../../qqself_core"
 
 export interface APIProvider {
   set: (encryptedPayload: string) => Promise<string>

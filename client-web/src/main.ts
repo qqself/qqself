@@ -7,7 +7,7 @@ import "./ui/pages/growth"
 import { css, html, LitElement } from "lit"
 import { customElement, state } from "lit/decorators.js"
 
-import { DateDay } from "../bridge/pkg/qqself_client_web_bridge"
+import { DateDay } from "../qqself_core"
 import { ServerApi } from "./app/api"
 import { Store } from "./app/store"
 import { colors } from "./ui/styles"

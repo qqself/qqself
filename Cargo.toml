@@ -3,7 +3,8 @@ resolver = "2"
 
 members = [
     "core",
-    "api-sync",
+    "core-bindings-wasm",
+    "core-bindings-c",
     "client-cli",
-    "client-web/bridge"
+    "api-sync",
 ]

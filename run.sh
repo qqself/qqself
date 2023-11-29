@@ -12,9 +12,9 @@ log() { echo "[$(date)] $1"; }
 
 usage() {
   echo "Usage:
-    ./run.sh build [ client-web | api-sync | www ]
+    ./run.sh build 
     ./run.sh test   
-    ./run.sh deploy 
+    ./run.sh deploy [ client-web | api-sync | www ]
     ./run.sh lint   
     ./run.sh deps"
   exit 1
