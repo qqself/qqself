@@ -15,6 +15,3 @@ js-sys = { version = "0.3.65" }
 
 [build-dependencies]
 vergen = { version = "8.2.6", features = ["build", "cargo", "git", "git2", "rustc"] }
-
-[profile.release]
-overflow-checks = true

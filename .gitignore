@@ -1,8 +1,25 @@
+# Rust
 target
+
+# Node
 node_modules
 dist
-journal.txt
 yarn-error.log
+client-web/qqself_core/
+
+# Data
+journal.txt
 qqself_keys.txt
 *.local
-client-web/qqself_core/
+
+# iOS
+*.xcworkspace
+*.xcuserstate
+project.xcworkspace/
+xcuserdata/
+qqselfCoreFFI.h
+client-ios/qqself/qqselfCore.swift
+
+# Binaries
+client-ios/qqselfCore.xcframework/ios-arm64/qqselfCore.framework/qqselfCore
+client-ios/qqselfCore.xcframework/ios-arm64_x86_64-simulator/qqselfCore.framework/qqselfCore
