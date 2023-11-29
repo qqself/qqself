@@ -4,7 +4,7 @@ import "../controls/icon"
 import { css, html, LitElement } from "lit"
 import { customElement, property } from "lit/decorators.js"
 
-import { SkillData } from "../../../bridge/pkg"
+import { SkillData } from "../../../qqself_core"
 import { IconName } from "../controls/icon"
 
 declare global {

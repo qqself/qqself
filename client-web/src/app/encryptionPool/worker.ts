@@ -1,4 +1,4 @@
-import { Keys } from "../../../bridge/pkg/qqself_client_web_bridge"
+import { Keys } from "../../../qqself_core"
 import { EncryptedEntry } from "../api"
 import { DecryptedEntry } from "./pool"
 

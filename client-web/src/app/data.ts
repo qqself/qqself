@@ -1,4 +1,4 @@
-import { DateDay, stringHash, UiRecord } from "../../bridge/pkg"
+import { DateDay, stringHash, UiRecord } from "../../qqself_core"
 import { APIProvider } from "../app/api"
 import { trace } from "../logger"
 import { isBrowser } from "../utils"

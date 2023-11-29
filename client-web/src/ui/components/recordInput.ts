@@ -3,7 +3,7 @@ import "../controls/logo"
 import { css, html, LitElement } from "lit"
 import { customElement, property } from "lit/decorators.js"
 
-import { UiRecord } from "../../../bridge/pkg"
+import { UiRecord } from "../../../qqself_core"
 
 export type RecordSaveEvent = CustomEvent<{ record: UiRecord }>
 export type RecordUpdateEvent = CustomEvent<{ input: string }>

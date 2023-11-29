@@ -1,0 +1,19 @@
+[package]
+name = "qqself-core-bindings-c"
+version = "0.0.0"
+edition = "2021"
+
+[lib]
+crate-type = [ "staticlib" ]
+name = "qqself_core"
+
+[[bin]]
+name = "uniffi-bindgen"
+path = "src/uniffi-bindgen.rs"
+
+[dependencies]
+uniffi = { version = "0.25.2", features = ["cli"] }
+qqself-core = { path = "../core" }
+
+[build-dependencies]
+uniffi = { version = "0.25.2", features = ["build"] }

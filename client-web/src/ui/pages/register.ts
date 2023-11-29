@@ -4,7 +4,7 @@ import "../controls/button"
 import { css, html, LitElement } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
 
-import { Keys } from "../../../bridge/pkg/qqself_client_web_bridge"
+import { Keys } from "../../../qqself_core"
 import * as Auth from "../../app/auth"
 import { Store } from "../../app/store"
 

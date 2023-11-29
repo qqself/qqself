@@ -2,10 +2,9 @@
   "private": true,
   "scripts": {
     "start": "vite",
-    "watch": "rsw watch",
-    "build:bridge": "wasm-pack build bridge --out-dir pkg --target web --release",
+    "build:bridge": "wasm-pack build ../core-bindings-wasm --out-dir $PWD/qqself_core --out-name qqself_core --target web --release",
     "build": "yarn build:bridge && tsc --noEmit && vite build",
-    "test": "wasm-pack build bridge --out-dir pkg --target nodejs --release && VITE_API_HOST=https://api.qqself.com vitest --run --test-timeout 10000",
+    "test": "wasm-pack build ../core-bindings-wasm --out-dir $PWD/qqself_core --out-name qqself_core --target nodejs --release && VITE_API_HOST=https://api.qqself.com vitest --run --test-timeout 10000",
     "lint:fix": "yarn build:bridge && eslint 'src/**/*.ts' --fix && prettier --write 'src/**/*.ts' && lit-analyzer --strict src",
     "lint:check": "yarn build:bridge && eslint 'src/**/*.ts' && prettier --check 'src/**/*.ts' && lit-analyzer --strict src"
   },
@@ -24,7 +23,6 @@
     "lit-analyzer": "2.0.1",
     "prettier": "3.1.0",
     "typescript": "5.3.2",
-    "vite-plugin-rsw": "2.0.11",
     "vite": "5.0.2",
     "vitest": "0.34.6",
     "wasm-pack": "0.12.1"

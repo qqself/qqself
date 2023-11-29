@@ -1,4 +1,4 @@
-import { Keys } from "../../../bridge/pkg/qqself_client_web_bridge"
+import { Keys } from "../../../qqself_core"
 import { InputType, OutputType, processMessage, WorkerResult } from "./worker"
 
 // Right way is to go with node:worker_threads, but unfortunately

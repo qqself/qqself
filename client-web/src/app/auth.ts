@@ -1,4 +1,4 @@
-import { Keys, Views } from "../../bridge/pkg/qqself_client_web_bridge"
+import { Keys, Views } from "../../qqself_core"
 import { EncryptionPool } from "./encryptionPool/pool"
 import * as Storage from "./storage/storage"
 import { Store, ViewNotification, ViewUpdate } from "./store"

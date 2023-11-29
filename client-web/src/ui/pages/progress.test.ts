@@ -3,7 +3,7 @@ import "./progress"
 import { html, render } from "lit"
 import { describe, expect, test } from "vitest"
 
-import { DateDay } from "../../../bridge/pkg"
+import { DateDay } from "../../../qqself_core"
 import { OfflineApi, TestStore } from "../../utilsTests"
 
 describe("progress", () => {

@@ -4,7 +4,7 @@ import "../controls/icon"
 import { css, html, LitElement } from "lit"
 import { customElement, property } from "lit/decorators.js"
 
-import { SkillWeek } from "../../../bridge/pkg/qqself_client_web_bridge"
+import { SkillWeek } from "../../../qqself_core"
 
 declare global {
   interface HTMLElementTagNameMap {

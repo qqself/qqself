@@ -5,7 +5,7 @@ import "./recordInput"
 import { css, html, LitElement, PropertyValues } from "lit"
 import { customElement, property, query, state } from "lit/decorators.js"
 
-import { UiRecord, validateQuery } from "../../../bridge/pkg"
+import { UiRecord, validateQuery } from "../../../qqself_core"
 import { colors } from "../styles"
 import { RecordSaveEvent, RecordUpdateEvent } from "./recordInput"
 
