@@ -1,4 +1,4 @@
-namespace qqself {
+namespace qqselfCore {
   u32 add(u32 a, u32 b);
   string hello();
   string string_hash(string input);

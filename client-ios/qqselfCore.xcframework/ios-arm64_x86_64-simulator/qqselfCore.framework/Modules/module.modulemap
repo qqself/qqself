@@ -1,0 +1,6 @@
+framework module qqselfCore {
+  umbrella header "Export.h"
+
+  export *
+  module * { export * }
+}
