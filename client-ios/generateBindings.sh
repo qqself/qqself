@@ -19,10 +19,10 @@ lipo -create \
     -output "/tmp/qqselfCore/libqqself_core_universal.a"
 
 # Move binaries and headers to the xcframework
-cp "../target/aarch64-apple-ios/release/libqqself_core.a" "qqselfCore.xcframework/ios-arm64/qqselfCore.framework/qqselfCore"
-cp "/tmp/qqselfCore/libqqself_core_universal.a" "qqselfCore.xcframework/ios-arm64_x86_64-simulator/qqselfCore.framework/qqselfCore"
-cp "/tmp/qqselfCore/qqselfCoreFFI.h" "qqselfCore.xcframework/ios-arm64/qqselfCore.framework/Headers/qqselfCoreFFI.h"
-cp "/tmp/qqselfCore/qqselfCoreFFI.h" "qqselfCore.xcframework/ios-arm64_x86_64-simulator/qqselfCore.framework/Headers/qqselfCoreFFI.h"
+cp "../target/aarch64-apple-ios/release/libqqself_core.a" "qqselfCoreLib/artifacts/qqselfCore.xcframework/ios-arm64/qqselfCore.framework/qqselfCore"
+cp "/tmp/qqselfCore/libqqself_core_universal.a" "qqselfCoreLib/artifacts/qqselfCore.xcframework/ios-arm64_x86_64-simulator/qqselfCore.framework/qqselfCore"
+cp "/tmp/qqselfCore/qqselfCoreFFI.h" "qqselfCoreLib/artifacts/qqselfCore.xcframework/ios-arm64/qqselfCore.framework/Headers/qqselfCoreFFI.h"
+cp "/tmp/qqselfCore/qqselfCoreFFI.h" "qqselfCoreLib/artifacts/qqselfCore.xcframework/ios-arm64_x86_64-simulator/qqselfCore.framework/Headers/qqselfCoreFFI.h"
 
 # Move swift interface and fix imports to reflect the framework name
-sed "s/qqselfCoreFFI/qqselfCore/g" "/tmp/qqselfCore/qqselfCore.swift" > "qqself/qqselfCore.swift"
+sed "s/qqselfCoreFFI/qqselfCore/g" "/tmp/qqselfCore/qqselfCore.swift" > "qqselfCoreLib/Sources/qqselfCoreLib/qqselfCoreLib.swift"
