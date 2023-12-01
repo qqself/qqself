@@ -311,8 +311,12 @@ impl Checkpoint {
         let hours_now = self.duration / 60;
         // TODO If we've added a new Skill then total hours notifications will be missed because this new skill
         //      already has all the hours in self.duration, so we cannot calculate how much new hours this skill added
-        let hours_before =
-            (self.duration - entry_duration.map_or(0, |v| v.duration().minutes() as usize)) / 60;
+        let entry_duration = entry_duration.map_or(0, |v| v.duration().minutes() as usize);
+        let hours_before = if self.duration >= entry_duration {
+            (self.duration - entry_duration) / 60
+        } else {
+            0 // It may happen if we adding an entry to the period before than a current one, otherwise overflow happens
+        };
 
         if hours_before != hours_now {
             for checkpoint in self.checkpoints_start {
@@ -691,5 +695,15 @@ mod tests {
             )]
         );
         view.check_skills(vec![("Running", 90)]);
+    }
+
+    #[test]
+    fn add_to_previous_month() {
+        let mut view = TestSkillView::default();
+        view.add("2023-07-13 00:00 00:00 read. skill kind=intelligent. Reading");
+        view.check_notification(
+            ChangeEvent::Added(Record::parse("2023-11-30 17:00 20:00 read").unwrap()),
+            Some(DateDay::new(2023, 12, 1)),
+        );
     }
 }
