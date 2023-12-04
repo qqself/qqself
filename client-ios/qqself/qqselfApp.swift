@@ -4,7 +4,7 @@ import SwiftUI
 struct qqselfApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainView()
         }
     }
 }
