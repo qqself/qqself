@@ -23,5 +23,8 @@ A Rust command-line client works with plain text journal files and allows you to
 ## client-web
 A TypeScript/LitElement/WebAssembly web version of the journal app is served on [app.qqself.com](https://app.qqself.com). It supports most of the interactive features and handles synchronization with the cloud automatically.
 
+## book
+Includes working draft of `On The Path To Mastery`, which serves as the basis for all the features in the journaling apps.
+
 ## www
-This contains [www.qqself.com](https://www.qqself.com) landing page and also includes a working draft of `On The Path To Mastery`, which serves as the basis for all the features in the journaling apps.
+This contains [www.qqself.com](https://www.qqself.com) landing page and latest rendered snapshot of `On The Path To Mastery` book.
