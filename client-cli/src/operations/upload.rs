@@ -7,7 +7,7 @@ use std::{
 };
 
 use clap::Parser;
-use qqself_core::{api::ApiRequest, record::Entry};
+use qqself_core::{api::{Request, ApiRequests}, record::Entry, encryption::cryptor::Cryptor};
 use rayon::prelude::{ParallelBridge, ParallelIterator};
 use tokio::sync::mpsc;
 use tracing::{error, info};
@@ -31,14 +31,14 @@ pub struct UploadOpts {
 #[tracing::instrument(level = "trace", skip_all)]
 pub fn upload(opts: UploadOpts) {
     info!("Uploading. Reading key file at {:?}", opts.keys_path);
-    let keys = KeyFile::load(Path::new(&opts.keys_path));
+    let keys = KeyFile::load_from_file(Path::new(&opts.keys_path));
     let journal_path = Path::new(&opts.journal_path);
     if !journal_path.exists() {
         error!("Journal file does not exists at {:?}", journal_path);
         exit(1);
     }
     info!("Uploading. Reading journal file at {:?}", journal_path);
-    upload_journal(journal_path, keys);
+    upload_journal(journal_path, keys.cryptor());
     info!("Uploading finished")
 }
 
@@ -46,10 +46,11 @@ pub fn upload(opts: UploadOpts) {
 // it with Rayon, but HTTP is async and runs on Tokio. We create N mpsc send channels to send HTTP requests in
 // parallel to the backend. tokio::sync::broadcast looked like a better fit, but concept of Lagging caused issues
 #[tracing::instrument(level = "trace", skip_all)]
-fn upload_journal(journal_path: &Path, keys: KeyFile) {
+fn upload_journal(journal_path: &Path, cryptor: Cryptor) {
     let file = File::open(journal_path).expect("Cannot open journal file");
     let reader = BufReader::new(file);
     let (sending_runtime, send_channels) = start_sender();
+    let api = ApiRequests::default();
 
     // Process all the lines in parallel using Rayon and distribute encrypted values across sending channels
     reader
@@ -68,7 +69,8 @@ fn upload_journal(journal_path: &Path, keys: KeyFile) {
             if let Err(err) = Entry::parse(&line) {
                 panic!("Error {} parsing line: {}", err, &line);
             }
-            let req = ApiRequest::new_set_request(keys.keys(), line).unwrap();
+            let payload = cryptor.encrypt(&line).expect("Failure to encrypt");
+            let req = api.create_set_request(payload);
             let tx = &send_channels[idx % send_channels.len()];
             tx.blocking_send(req).unwrap();
         });
@@ -78,12 +80,12 @@ fn upload_journal(journal_path: &Path, keys: KeyFile) {
     sending_runtime.join().unwrap()
 }
 
-fn start_sender() -> (JoinHandle<()>, Vec<mpsc::Sender<ApiRequest>>) {
+fn start_sender() -> (JoinHandle<()>, Vec<mpsc::Sender<Request>>) {
     let send_count = 20; // how many simultaneous requests we could have
     let mut receivers = Vec::with_capacity(send_count);
     let mut senders = Vec::with_capacity(send_count);
     for _ in 0..send_count {
-        let (tx, rs) = mpsc::channel::<ApiRequest>(1);
+        let (tx, rs) = mpsc::channel::<Request>(1);
         senders.push(tx);
         receivers.push(rs);
     }

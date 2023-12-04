@@ -6,11 +6,10 @@ use std::{
 
 use clap::Parser;
 use qqself_core::{
-    api::ApiRequest,
-    binary_text::BinaryToText,
+    api::ApiRequests,
     date_time::datetime::DateDay,
     db::Record,
-    encryption::{keys::PrivateKey, payload::PayloadBytes},
+    encryption::cryptor::Cryptor,
 };
 use rayon::prelude::*;
 use rayon::str::ParallelString;
@@ -34,18 +33,18 @@ pub struct DownloadOpts {
 #[tracing::instrument(level = "trace", skip_all)]
 pub fn download(opts: DownloadOpts) -> PathBuf {
     info!("Downloading. Reading key file at {:?}", opts.keys_path);
-    let keys = KeyFile::load(Path::new(&opts.keys_path));
+    let keys = KeyFile::load_from_file(Path::new(&opts.keys_path));
     let journal_path = Path::new(&opts.output_folder);
     let journal_path = journal_path.join(format!("qqself_journal_{}.txt", DateDay::today()));
-    let wrote = download_journal(&journal_path, keys);
+    let wrote = download_journal(&journal_path, keys.cryptor());
     info!("Downloading finished");
     wrote
 }
 
 #[tracing::instrument(level = "trace", skip_all)]
-fn download_journal(journal_path: &Path, keys: KeyFile) -> PathBuf {
+fn download_journal(journal_path: &Path, cryptor: Cryptor) -> PathBuf {
     info!("Downloading entries...");
-    let entries = download_entries(&keys).expect("Error downloading entries");
+    let entries = download_entries(cryptor.clone()).expect("Error downloading entries");
 
     info!("Decrypting entries...");
     let entries = entries
@@ -54,8 +53,10 @@ fn download_journal(journal_path: &Path, keys: KeyFile) -> PathBuf {
             if line.is_empty() || line.starts_with('#') {
                 return None;
             }
-            let plain_text =
-                decrypt(line.to_string(), &keys.keys().private_key).expect("Failure decrypting");
+            let (_, payload) = line.split_once(':').expect("Expected [id]:[entry] format");
+            let plain_text = cryptor
+                .decrypt(payload.to_string())
+                .expect("Failure decrypting");
             Some(
                 Record::parse(&plain_text)
                     .unwrap_or_else(|_| panic!("entry should be valid: {line}")),
@@ -78,9 +79,8 @@ fn download_journal(journal_path: &Path, keys: KeyFile) -> PathBuf {
     journal_path.to_owned()
 }
 
-fn download_entries(keys: &KeyFile) -> Result<String, String> {
+fn download_entries(cryptor: Cryptor) -> Result<String, String> {
     let (sender, mut receiver) = mpsc::channel(1);
-    let keys = keys.keys().clone();
     let handle = thread::spawn(move || {
         tokio::runtime::Builder::new_multi_thread()
             .enable_all()
@@ -88,10 +88,14 @@ fn download_entries(keys: &KeyFile) -> Result<String, String> {
             .unwrap()
             .block_on(async {
                 let http = Http::new();
+                let api = ApiRequests::default();
                 let body = http
                     .send(
-                        ApiRequest::new_find_request(&keys, None)
-                            .expect("Failed to create find API request"),
+                        api.create_find_request(
+                            cryptor
+                                .sign_find_token(None)
+                                .expect("Failed to create find API request"),
+                        ),
                     )
                     .await;
                 match body {
@@ -111,26 +115,14 @@ fn download_entries(keys: &KeyFile) -> Result<String, String> {
     }
 }
 
-pub fn decrypt(data: String, private_key: &PrivateKey) -> Result<String, String> {
-    let (_, payload) = data.split_once(':').expect("Expected [id]:[entry] format");
-    let binary = BinaryToText::new_from_encoded(payload.to_string())
-        .ok_or_else(|| "Bad data encoding".to_string())?;
-    let payload = PayloadBytes::new_from_encrypted(binary).map_err(|v| v.to_string())?;
-    let payload = payload.validated(None).map_err(|v| v.to_string())?;
-    let decrypted = payload.decrypt(private_key).map_err(|v| v.to_string())?;
-    Ok(decrypted)
-}
-
 #[cfg(test)]
 mod tests {
-    use qqself_core::encryption::keys::Keys;
-
     use super::*;
 
     #[test]
     fn download_operation() {
-        let keys = KeyFile::new(Keys::generate_new());
-        keys.save(Path::new("/tmp/keys.txt"));
+        let keys = KeyFile::generate_new();
+        keys.save_to_file(Path::new("/tmp/keys.txt"));
 
         // Generate few entries, we need tokio runtime for async calls
         let handle = thread::spawn(move || {
@@ -140,17 +132,20 @@ mod tests {
                 .unwrap()
                 .block_on(async {
                     let http = Http::new();
+                    let api = ApiRequests::default();
+                    let cryptor = keys.cryptor();
                     for idx in &[1, 2, 3, 4, 5] {
                         let date = if idx > &3 { "2022-10-04" } else { "2022-10-03" };
                         let msg = format!("{date} 00:00 0{idx}:00 foo{idx}");
-                        let req =
-                            ApiRequest::new_set_request(keys.keys(), msg.to_string()).unwrap();
+                        let payload = cryptor.encrypt(&msg).unwrap();
+                        let req = api.create_set_request(payload);
                         let resp = http.send(req).await.unwrap();
                         assert_eq!(resp.status(), 200);
                     }
                     // Overwrite last message to ensure both previous and new record are preserved
                     let msg = "2022-10-04 00:00 05:00 updated. entry revision=2";
-                    let req = ApiRequest::new_set_request(keys.keys(), msg.to_string()).unwrap();
+                    let payload = cryptor.encrypt(msg).unwrap();
+                    let req = api.create_set_request(payload);
                     let resp = http.send(req).await.unwrap();
                     assert_eq!(resp.status(), 200);
                 })
