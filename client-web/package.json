@@ -9,7 +9,7 @@
     "lint:check": "yarn build:bridge && eslint 'src/**/*.ts' && prettier --check 'src/**/*.ts' && lit-analyzer --strict src"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "6.4.2",
+    "@fortawesome/fontawesome-free": "6.5.1",
     "lit": "3.1.0",
     "localforage": "1.10.0"
   },
