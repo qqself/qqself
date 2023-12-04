@@ -10,7 +10,7 @@ bs58 = "0.5.0"
 getrandom = { version = "0.2.11", features = ["js"] }
 lazy_static = "1.4.0"
 regex = "1.10.2"
-rsa = "0.9.4"
+rsa = "0.9.6"
 serde = { version = "1.0.193", optional = true, features = ["derive"] }
 thiserror = "1.0.50"
 time = { version = "0.3.30", features = ["wasm-bindgen", "local-offset"] }
