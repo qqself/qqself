@@ -1,9 +1,8 @@
 use std::{path::Path, process::exit};
 
-use crate::key_file::KeyFile;
 use clap::Parser;
-use qqself_core::encryption::keys::Keys;
 use tracing::{error, info};
+use crate::key_file::KeyFile;
 
 #[derive(Parser, Debug)]
 #[command(about = "Creates new key file")]
@@ -28,6 +27,6 @@ pub fn init(opts: InitOpts) {
         "Initializing. Generating new keys and storing it at {:?}",
         keys_path
     );
-    let keys = KeyFile::new(Keys::generate_new());
-    keys.save(keys_path);
+    let keys = KeyFile::generate_new();
+    keys.save_to_file(keys_path);
 }

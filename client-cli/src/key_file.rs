@@ -1,26 +1,26 @@
 use std::{fs, path::Path};
 
-use qqself_core::encryption::keys::Keys;
+use qqself_core::encryption::cryptor::Cryptor;
 
-pub struct KeyFile(Keys);
+pub struct KeyFile(Cryptor);
 
 impl KeyFile {
-    pub fn new(keys: Keys) -> Self {
-        Self(keys)
+    pub fn generate_new() -> Self {
+        let cryptor = Cryptor::generate_new();
+        Self(cryptor)
     }
 
-    pub fn load(path: &Path) -> Self {
+    pub fn load_from_file(path: &Path) -> KeyFile {
         let data = fs::read_to_string(path).expect("key file should be available");
-        let keys = Keys::deserialize(data).expect("key file should contain key information");
-        Self(keys)
+        Self(Cryptor::deserialize(data).expect("key file should contain key information"))
     }
 
-    pub fn save(&self, config_path: &Path) {
+    pub fn save_to_file(&self, path: &Path) {
         let data = self.0.serialize();
-        fs::write(config_path, data).unwrap();
+        fs::write(path, data).unwrap();
     }
 
-    pub fn keys(&self) -> &Keys {
-        &self.0
+    pub fn cryptor(self) -> Cryptor {
+        self.0
     }
 }
