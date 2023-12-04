@@ -7,7 +7,6 @@ Few hard learned rules to follow when writing bridge functions:
 - panics/unreachable/todo should not be used as it breaks WebAssembly context and bridge stops. Return Result<T, String> instead
 - Never pass structs by value as then WebAssembly will nullify this object on JS side
 - Use crate::util::log for debugging
-- For returning arrays use mix of js_sys::Array, JsValue::from, `extern "C"` and JsCast::unchecked_into
 - Careful with recursion - if Rust calls passed JS function (e.g. callback) which in turn calls Rust again it may create a
   situation where struct is borrowed as `&mut self` and `&self` which causes a crash with cryptic error message and bad stacktrace.
   To break recursion use `setTimeout(logic, 0)` on JS side
@@ -31,7 +30,7 @@ use qqself_core::{
         tokens::{DeleteToken, SearchToken},
     },
 };
-use wasm_bindgen::{prelude::wasm_bindgen, JsCast, JsValue};
+use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
 use crate::util::error;
 
@@ -247,19 +246,6 @@ pub struct SkillWeek {
 }
 
 #[wasm_bindgen]
-extern "C" {
-    // TODO We will get rid of all of those once new wasm-pack got release with array support
-    #[wasm_bindgen(typescript_type = "Array<UiRecord>")]
-    pub type QueryResultsRecordArray;
-
-    #[wasm_bindgen(typescript_type = "Array<SkillData>")]
-    pub type SkillDataArray;
-
-    #[wasm_bindgen(typescript_type = "Array<SkillWeek>")]
-    pub type SkillWeekArray;
-}
-
-#[wasm_bindgen]
 impl Views {
     pub fn new(keys: &Keys, onUpdate: js_sys::Function, onNotification: js_sys::Function) -> Self {
         let mut db = DB::default();
@@ -315,50 +301,50 @@ impl Views {
         Ok(())
     }
 
-    pub fn query_results(&self) -> QueryResultsRecordArray {
-        let records = js_sys::Array::default();
+    pub fn query_results(&self) -> Vec<UiRecord> {
+        let mut records = Vec::new();
         for record in self.db.borrow().query_results().iter() {
             let record = UiRecord {
                 record: record.clone(),
             };
-            records.push(&JsValue::from(record));
+            records.push(record);
         }
-        records.unchecked_into::<QueryResultsRecordArray>()
+        records
     }
 
     pub fn entry_count(&self) -> usize {
         self.db.borrow().count()
     }
 
-    pub fn view_skills(&self) -> SkillDataArray {
+    pub fn view_skills(&self) -> Vec<SkillData> {
         let db = self.db.borrow();
         let mut skills = db.skills().iter().map(|(_, v)| v).collect::<Vec<_>>();
         skills.sort();
 
-        let output = js_sys::Array::new();
+        let mut output = Vec::new();
         for skill in skills {
             let skill_data = SkillData {
                 title: skill.title().to_string(),
                 kind: skill.kind().to_string(),
                 level: skill.progress().level,
             };
-            output.push(&JsValue::from(skill_data));
+            output.push(skill_data);
         }
-        output.unchecked_into::<SkillDataArray>()
+        output
     }
 
-    pub fn view_week(&self) -> SkillWeekArray {
+    pub fn view_week(&self) -> Vec<SkillWeek> {
         let db = self.db.borrow();
-        let output = js_sys::Array::new();
+        let mut output = Vec::new();
         for data in db.week().values() {
             let data = SkillWeek {
                 name: data.skill().to_string(),
                 progress: data.progress() as usize,
                 target: data.target() as usize,
             };
-            output.push(&JsValue::from(data));
+            output.push(data);
         }
-        output.unchecked_into::<SkillWeekArray>()
+        output
     }
 }
 
