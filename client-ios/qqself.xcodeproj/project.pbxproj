@@ -8,12 +8,20 @@
 
 /* Begin PBXBuildFile section */
 		964788D12B1790AF009BAA78 /* qqselfApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 964788D02B1790AF009BAA78 /* qqselfApp.swift */; };
-		964788D32B1790AF009BAA78 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 964788D22B1790AF009BAA78 /* ContentView.swift */; };
 		964788D52B1790B0009BAA78 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 964788D42B1790B0009BAA78 /* Assets.xcassets */; };
 		964788D82B1790B0009BAA78 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 964788D72B1790B0009BAA78 /* Preview Assets.xcassets */; };
 		964788E22B1790B1009BAA78 /* qqselfTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 964788E12B1790B1009BAA78 /* qqselfTests.swift */; };
 		964788EC2B1790B1009BAA78 /* qqselfUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 964788EB2B1790B1009BAA78 /* qqselfUITests.swift */; };
 		964788EE2B1790B1009BAA78 /* qqselfUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 964788ED2B1790B1009BAA78 /* qqselfUITestsLaunchTests.swift */; };
+		966CB2D02B1DC0660011DF2D /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966CB2CF2B1DC0660011DF2D /* MainView.swift */; };
+		966CB2D62B1DC09F0011DF2D /* icon_week.svg in Resources */ = {isa = PBXBuildFile; fileRef = 966CB2D22B1DC09F0011DF2D /* icon_week.svg */; };
+		966CB2D72B1DC09F0011DF2D /* icon_id.svg in Resources */ = {isa = PBXBuildFile; fileRef = 966CB2D32B1DC09F0011DF2D /* icon_id.svg */; };
+		966CB2D82B1DC09F0011DF2D /* icon_journal.svg in Resources */ = {isa = PBXBuildFile; fileRef = 966CB2D42B1DC09F0011DF2D /* icon_journal.svg */; };
+		966CB2D92B1DC09F0011DF2D /* icon_rejection.svg in Resources */ = {isa = PBXBuildFile; fileRef = 966CB2D52B1DC09F0011DF2D /* icon_rejection.svg */; };
+		966CB2DB2B1DC5860011DF2D /* WeekView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966CB2DA2B1DC5860011DF2D /* WeekView.swift */; };
+		966CB2DD2B1DC5DC0011DF2D /* JournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966CB2DC2B1DC5DC0011DF2D /* JournalView.swift */; };
+		966CB2DF2B1DC60D0011DF2D /* SkillsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966CB2DE2B1DC60D0011DF2D /* SkillsView.swift */; };
+		966CB2E12B1DC62D0011DF2D /* RejectionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966CB2E02B1DC62D0011DF2D /* RejectionsView.swift */; };
 		96C948D32B17911200D3D969 /* qqselfCoreLib in Frameworks */ = {isa = PBXBuildFile; productRef = 96C948D22B17911200D3D969 /* qqselfCoreLib */; };
 /* End PBXBuildFile section */
 
@@ -37,7 +45,6 @@
 /* Begin PBXFileReference section */
 		964788CD2B1790AF009BAA78 /* qqself.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = qqself.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		964788D02B1790AF009BAA78 /* qqselfApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = qqselfApp.swift; sourceTree = "<group>"; };
-		964788D22B1790AF009BAA78 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		964788D42B1790B0009BAA78 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		964788D72B1790B0009BAA78 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		964788DD2B1790B1009BAA78 /* qqselfTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = qqselfTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -45,6 +52,15 @@
 		964788E72B1790B1009BAA78 /* qqselfUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = qqselfUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		964788EB2B1790B1009BAA78 /* qqselfUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = qqselfUITests.swift; sourceTree = "<group>"; };
 		964788ED2B1790B1009BAA78 /* qqselfUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = qqselfUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		966CB2CF2B1DC0660011DF2D /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
+		966CB2D22B1DC09F0011DF2D /* icon_week.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = icon_week.svg; sourceTree = "<group>"; };
+		966CB2D32B1DC09F0011DF2D /* icon_id.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = icon_id.svg; sourceTree = "<group>"; };
+		966CB2D42B1DC09F0011DF2D /* icon_journal.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = icon_journal.svg; sourceTree = "<group>"; };
+		966CB2D52B1DC09F0011DF2D /* icon_rejection.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = icon_rejection.svg; sourceTree = "<group>"; };
+		966CB2DA2B1DC5860011DF2D /* WeekView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WeekView.swift; path = qqself/UI/WeekView.swift; sourceTree = SOURCE_ROOT; };
+		966CB2DC2B1DC5DC0011DF2D /* JournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalView.swift; sourceTree = "<group>"; };
+		966CB2DE2B1DC60D0011DF2D /* SkillsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillsView.swift; sourceTree = "<group>"; };
+		966CB2E02B1DC62D0011DF2D /* RejectionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RejectionsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -96,8 +112,9 @@
 		964788CF2B1790AF009BAA78 /* qqself */ = {
 			isa = PBXGroup;
 			children = (
+				966CB2E22B1DC6710011DF2D /* App */,
+				966CB2CC2B1DC0140011DF2D /* UI */,
 				964788D02B1790AF009BAA78 /* qqselfApp.swift */,
-				964788D22B1790AF009BAA78 /* ContentView.swift */,
 				964788D42B1790B0009BAA78 /* Assets.xcassets */,
 				964788D62B1790B0009BAA78 /* Preview Content */,
 			);
@@ -127,6 +144,37 @@
 				964788ED2B1790B1009BAA78 /* qqselfUITestsLaunchTests.swift */,
 			);
 			path = qqselfUITests;
+			sourceTree = "<group>";
+		};
+		966CB2CC2B1DC0140011DF2D /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				966CB2CF2B1DC0660011DF2D /* MainView.swift */,
+				966CB2DA2B1DC5860011DF2D /* WeekView.swift */,
+				966CB2DC2B1DC5DC0011DF2D /* JournalView.swift */,
+				966CB2DE2B1DC60D0011DF2D /* SkillsView.swift */,
+				966CB2E02B1DC62D0011DF2D /* RejectionsView.swift */,
+				966CB2D12B1DC0810011DF2D /* Static */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		966CB2D12B1DC0810011DF2D /* Static */ = {
+			isa = PBXGroup;
+			children = (
+				966CB2D32B1DC09F0011DF2D /* icon_id.svg */,
+				966CB2D42B1DC09F0011DF2D /* icon_journal.svg */,
+				966CB2D52B1DC09F0011DF2D /* icon_rejection.svg */,
+				966CB2D22B1DC09F0011DF2D /* icon_week.svg */,
+			);
+			path = Static;
+			sourceTree = "<group>";
+		};
+		966CB2E22B1DC6710011DF2D /* App */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = App;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -240,6 +288,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				964788D82B1790B0009BAA78 /* Preview Assets.xcassets in Resources */,
+				966CB2D92B1DC09F0011DF2D /* icon_rejection.svg in Resources */,
+				966CB2D82B1DC09F0011DF2D /* icon_journal.svg in Resources */,
+				966CB2D62B1DC09F0011DF2D /* icon_week.svg in Resources */,
+				966CB2D72B1DC09F0011DF2D /* icon_id.svg in Resources */,
 				964788D52B1790B0009BAA78 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -265,7 +317,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				964788D32B1790AF009BAA78 /* ContentView.swift in Sources */,
+				966CB2E12B1DC62D0011DF2D /* RejectionsView.swift in Sources */,
+				966CB2DB2B1DC5860011DF2D /* WeekView.swift in Sources */,
+				966CB2DF2B1DC60D0011DF2D /* SkillsView.swift in Sources */,
+				966CB2D02B1DC0660011DF2D /* MainView.swift in Sources */,
+				966CB2DD2B1DC5DC0011DF2D /* JournalView.swift in Sources */,
 				964788D12B1790AF009BAA78 /* qqselfApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
