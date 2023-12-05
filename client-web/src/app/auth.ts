@@ -1,10 +1,12 @@
-import { Keys, Views } from "../../qqself_core"
-import { EncryptionPool } from "./encryptionPool/pool"
+import { Cryptor, Views } from "../../qqself_core"
+import { CryptorPool } from "./cryptorPool/pool"
+import { DataEvents } from "./data"
 import * as Storage from "./storage/storage"
 import { Store, ViewNotification, ViewUpdate } from "./store"
 
-export const loginSucceeded = async (store: Store, keys: Keys): Promise<void> => {
-  await saveCredentials(keys)
+export const loginSucceeded = async (store: Store, cryptor: Cryptor): Promise<void> => {
+  await saveCredentials(cryptor)
+
   const onViewUpdate = (data: Map<string, string>) => {
     const update = Object.fromEntries(data) as unknown as ViewUpdate
     if (update.view == "QueryResults") {
@@ -15,38 +17,41 @@ export const loginSucceeded = async (store: Store, keys: Keys): Promise<void> =>
       void store.dispatch("views.update.week", { update })
     }
   }
+
   const onViewNotification = (data: Map<string, string>) => {
     const update = Object.fromEntries(data) as unknown as ViewNotification
     void store.dispatch("views.notification.skills", { update })
   }
+
+  // WASM and Cryptor are ready and we can cache user state
   store.userState = {
-    encryptionPool: EncryptionPool.initWithKeys(keys),
-    storage: Storage.newStorage(keys.public_key_hash()),
+    encryptionPool: CryptorPool.initWithCryptor(cryptor),
+    storage: Storage.newStorage(cryptor.public_key_hash()),
     // HACK This callback is called from `Views.add_entry` which captured Views as
     //      `&mut self`. If any store subscribers for the following events will try
     //      to call Views functions with capturing &self then Rust/WS will break.
     //      setTimeout allows callback to complete, freeing `Views &mut self` and
     //      schedules actual callback logic for the next event loop cycle
     views: Views.new(
-      keys,
       (data: Map<string, string>) => setTimeout(() => onViewUpdate(data), 0),
       (data: Map<string, string>) => setTimeout(() => onViewNotification(data), 0),
     ),
+    dataEvents: new DataEvents(store, store.api),
   }
 }
 
-export const login = (store: Store, keyString: string): Promise<void> => {
+export const login = (store: Store, serializedKeys: string): Promise<void> => {
   try {
-    const keys = Keys.deserialize(keyString)
-    return store.dispatch("auth.login.succeeded", { keys })
+    const cryptor = Cryptor.from_deserialized_keys(serializedKeys)
+    return store.dispatch("auth.login.succeeded", { cryptor })
   } catch (e) {
     return store.dispatch("auth.login.errored", { error: new Error(String(e)) })
   }
 }
 
-export const newKeys = async (): Promise<Keys> => {
-  const pool = EncryptionPool.initKeyless()
-  return pool.generateNewKeys()
+export const generateCryptor = async (): Promise<Cryptor> => {
+  const pool = CryptorPool.initCryptorGenerator()
+  return pool.generateCryptor()
 }
 
 export const registrationStarted = async (
@@ -54,16 +59,16 @@ export const registrationStarted = async (
   mode: "interactive" | "automatic",
 ): Promise<void> => {
   if (mode == "automatic") {
-    const keys = await newKeys()
-    return store.dispatch("auth.registration.succeeded", { keys })
+    const cryptor = await generateCryptor()
+    return store.dispatch("auth.registration.succeeded", { cryptor })
   } else {
     // In interactive mode user has to create a keys and download it
     // which happens via interactive experience, do nothing here
   }
 }
 
-export const registrationSucceeded = async (store: Store, keys: Keys): Promise<void> => {
-  return store.dispatch("auth.login.succeeded", { keys })
+export const registrationSucceeded = async (store: Store, cryptor: Cryptor): Promise<void> => {
+  return store.dispatch("auth.login.succeeded", { cryptor })
 }
 
 export const logoutStarted = async (store: Store): Promise<void> => {
@@ -77,15 +82,15 @@ export const logoutSucceeded = async (store: Store): Promise<void> => {
 }
 
 const STORAGE_KEYS_KEY = "keys"
-export const getCredentials = async (): Promise<Keys | null> => {
+export const getCredentials = async (): Promise<Cryptor | null> => {
   const storage = Storage.newDefaultStorage()
   const cachedKeys = await storage.getItem(STORAGE_KEYS_KEY)
-  return cachedKeys ? Keys.deserialize(cachedKeys) : null
+  return cachedKeys ? Cryptor.from_deserialized_keys(cachedKeys) : null
 }
 
-export const saveCredentials = async (keys: Keys): Promise<void> => {
+export const saveCredentials = async (cryptor: Cryptor): Promise<void> => {
   const storage = Storage.newDefaultStorage()
-  return storage.setItem(STORAGE_KEYS_KEY, keys.serialize())
+  return storage.setItem(STORAGE_KEYS_KEY, cryptor.serialize_keys())
 }
 
 export const deleteCredentials = async (): Promise<void> => {

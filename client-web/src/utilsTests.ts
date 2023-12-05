@@ -8,7 +8,7 @@ export class TestStore extends Store {
   expect?: ExpectStatic
 
   constructor(expect?: ExpectStatic, api?: APIProvider) {
-    super(api ?? new ServerApi())
+    super(api ?? new ServerApi(import.meta.env.VITE_API_HOST))
     this.expect = expect
   }
 

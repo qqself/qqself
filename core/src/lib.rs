@@ -10,7 +10,7 @@ pub mod record;
 
 /// Returns compile time build info
 pub fn build_info() -> String {
-[
+    [
         ("Build", env!("VERGEN_BUILD_TIMESTAMP")),
         ("Commit", env!("VERGEN_GIT_COMMIT_MESSAGE")),
         ("Hash", env!("VERGEN_GIT_SHA")),

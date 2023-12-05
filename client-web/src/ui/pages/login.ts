@@ -4,7 +4,6 @@ import "../controls/button"
 import { css, html, LitElement } from "lit"
 import { customElement, property, query, state } from "lit/decorators.js"
 
-import { Keys } from "../../../qqself_core"
 import { Store } from "../../app/store"
 
 declare global {
@@ -12,8 +11,6 @@ declare global {
     "q-login-page": LoginPage
   }
 }
-
-export type LoggedInEvent = CustomEvent<{ keys: Keys }>
 
 // TODO Failed to support password managers for saving keys because of shadow root incompatibilities
 //      Looks like one way would be put the login form out of the shadow root, see litElement.createRenderRoot
@@ -39,7 +36,7 @@ export class LoginPage extends LitElement {
         if (typeof e.target?.result != "string") {
           throw new Error("Failed to read a file")
         }
-        await this.store.dispatch("auth.login.started", { keysString: e.target.result })
+        await this.store.dispatch("auth.login.started", { serializedKeys: e.target.result })
       } catch (ex) {
         this.error = String(ex)
       }

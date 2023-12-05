@@ -19,7 +19,7 @@ export class Main extends LitElement {
   @state()
   page: Page = "loading"
 
-  store = new Store(new ServerApi())
+  store = new Store(new ServerApi(import.meta.env.VITE_API_HOST))
 
   static styles = css`
     .root {

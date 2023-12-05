@@ -2195,7 +2195,6 @@ dependencies = [
  "serde",
  "thiserror",
  "tokio",
- "vergen",
 ]
 
 [[package]]

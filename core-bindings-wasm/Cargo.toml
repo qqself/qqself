@@ -2,7 +2,6 @@
 name = "qqself-core-bindings-wasm"
 version = "0.0.0"
 edition = "2021"
-build = "build.rs"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -12,6 +11,3 @@ wasm-bindgen = "0.2.88"
 qqself-core = { path = "../core", features = ["wasm"] }
 console_error_panic_hook = "0.1.7"
 js-sys = { version = "0.3.66" }
-
-[build-dependencies]
-vergen = { version = "8.2.6", features = ["build", "cargo", "git", "git2", "rustc"] }

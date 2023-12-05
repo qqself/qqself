@@ -1,9 +1,9 @@
-import { Keys, Views } from "../../qqself_core"
+import { Cryptor, Views } from "../../qqself_core"
 import { debug, info } from "../logger"
 import { APIProvider } from "./api"
 import * as Auth from "./auth"
+import { CryptorPool } from "./cryptorPool/pool"
 import { DataEvents } from "./data"
-import { EncryptionPool } from "./encryptionPool/pool"
 import * as Init from "./init"
 import { Storage } from "./storage/storage"
 
@@ -28,15 +28,15 @@ export type ViewNotification = SkillsViewNotification
 export interface Events {
   // Init
   "init.started": null
-  "init.succeeded": { cachedKeys: Keys | null }
+  "init.succeeded": { cryptor: Cryptor | null }
   "init.errored": { error: Error }
   // Auth
-  "auth.login.started": { keysString: string }
+  "auth.login.started": { serializedKeys: string }
   "auth.login.notAuthenticated": null
-  "auth.login.succeeded": { keys: Keys }
+  "auth.login.succeeded": { cryptor: Cryptor }
   "auth.login.errored": { error: Error }
   "auth.registration.started": { mode: "interactive" | "automatic" }
-  "auth.registration.succeeded": { keys: Keys }
+  "auth.registration.succeeded": { cryptor: Cryptor }
   "auth.logout.started": null
   "auth.logout.succeeded": null
   // Data
@@ -60,17 +60,19 @@ export interface Events {
 
 export class Store {
   private eventTarget = new EventTarget()
-  private dataEvents: DataEvents
+
+  api: APIProvider
 
   constructor(api: APIProvider) {
     debug("Store created")
-    this.dataEvents = new DataEvents(this, api)
+    this.api = api
   }
 
   userState!: {
-    encryptionPool: EncryptionPool
+    encryptionPool: CryptorPool
     storage: Storage
     views: Views
+    dataEvents: DataEvents
   }
 
   async dispatch<T extends keyof Events>(event: T, eventArgs: Events[T]): Promise<void> {
@@ -82,33 +84,33 @@ export class Store {
     if (event == "init.started") {
       await Init.started(this)
     } else if (event == "init.succeeded") {
-      await Init.succeeded(this, (eventArgs as Events["init.succeeded"]).cachedKeys)
+      await Init.succeeded(this, (eventArgs as Events["init.succeeded"]).cryptor)
     } else if (event == "auth.login.started") {
-      await Auth.login(this, (eventArgs as Events["auth.login.started"]).keysString)
+      await Auth.login(this, (eventArgs as Events["auth.login.started"]).serializedKeys)
     } else if (event == "auth.login.succeeded") {
-      await Auth.loginSucceeded(this, (eventArgs as Events["auth.login.succeeded"]).keys)
+      await Auth.loginSucceeded(this, (eventArgs as Events["auth.login.succeeded"]).cryptor)
     } else if (event == "auth.registration.started") {
       await Auth.registrationStarted(this, (eventArgs as Events["auth.registration.started"]).mode)
     } else if (event == "auth.registration.succeeded") {
       await Auth.registrationSucceeded(
         this,
-        (eventArgs as Events["auth.registration.succeeded"]).keys,
+        (eventArgs as Events["auth.registration.succeeded"]).cryptor,
       )
     } else if (event == "auth.logout.started") {
       await Auth.logoutStarted(this)
     } else if (event == "auth.logout.succeeded") {
       await Auth.logoutSucceeded(this)
     } else if (event == "data.sync.becomeOnline") {
-      await this.dataEvents.onBecomeOnline()
+      await this.userState.dataEvents.onBecomeOnline()
     } else if (event == "data.sync.outdated") {
-      await this.dataEvents.onSyncOutdated()
+      await this.userState.dataEvents.onSyncOutdated()
     } else if (event == "data.sync.started") {
-      await this.dataEvents.onSyncStarted()
+      await this.userState.dataEvents.onSyncStarted()
     } else if (event == "data.sync.init") {
-      await this.dataEvents.onSyncInit()
+      await this.userState.dataEvents.onSyncInit()
     } else if (event == "data.entry.added") {
       const args = eventArgs as Events["data.entry.added"]
-      await this.dataEvents.onEntryAdded(args.entry, args.callSyncAfter)
+      await this.userState.dataEvents.onEntryAdded(args.entry, args.callSyncAfter)
     } else if (event == "views.queryResults.queryUpdated") {
       const args = eventArgs as Events["views.queryResults.queryUpdated"]
       this.userState.views.update_query(args.query)

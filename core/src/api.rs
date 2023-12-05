@@ -4,8 +4,10 @@ pub struct ApiRequests {
 }
 
 impl ApiRequests {
-    pub fn new(base_path: String) -> Self {
-        Self { base_path }
+    pub fn new(base_path: Option<String>) -> Self {
+        Self {
+            base_path: base_path.unwrap_or("https://api.qqself.com".to_string()),
+        }
     }
 
     /// Create new Find request for sync API given already encrypted payload
@@ -13,7 +15,6 @@ impl ApiRequests {
         Request {
             url: format!("{}/find", self.base_path),
             payload,
-            content_type: "text/plain",
         }
     }
 
@@ -22,7 +23,6 @@ impl ApiRequests {
         Request {
             url: format!("{}/set", self.base_path),
             payload,
-            content_type: "text/plain",
         }
     }
 
@@ -31,20 +31,22 @@ impl ApiRequests {
         Request {
             url: format!("{}/delete", self.base_path),
             payload,
-            content_type: "text/plain",
         }
     }
 }
 
 impl Default for ApiRequests {
     fn default() -> Self {
-        ApiRequests::new("https://api.qqself.com".to_string())
+        ApiRequests::new(None)
     }
 }
 
 #[derive(Debug)]
+#[cfg_attr(
+    feature = "wasm",
+    wasm_bindgen::prelude::wasm_bindgen(getter_with_clone)
+)]
 pub struct Request {
     pub url: String,
     pub payload: String,
-    pub content_type: &'static str,
 }

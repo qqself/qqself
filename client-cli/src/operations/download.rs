@@ -6,10 +6,7 @@ use std::{
 
 use clap::Parser;
 use qqself_core::{
-    api::ApiRequests,
-    date_time::datetime::DateDay,
-    db::Record,
-    encryption::cryptor::Cryptor,
+    api::ApiRequests, date_time::datetime::DateDay, db::Record, encryption::cryptor::Cryptor,
 };
 use rayon::prelude::*;
 use rayon::str::ParallelString;

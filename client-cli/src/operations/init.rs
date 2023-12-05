@@ -1,8 +1,8 @@
 use std::{path::Path, process::exit};
 
+use crate::key_file::KeyFile;
 use clap::Parser;
 use tracing::{error, info};
-use crate::key_file::KeyFile;
 
 #[derive(Parser, Debug)]
 #[command(about = "Creates new key file")]
