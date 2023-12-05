@@ -1,4 +1,4 @@
-import { Keys } from "../../../qqself_core"
+import { Cryptor } from "../../../qqself_core"
 import { EncryptedEntry } from "../api"
 import { DecryptedEntry } from "./pool"
 
@@ -7,13 +7,13 @@ export type InputType =
   | { kind: "Init"; taskId: number; workerId: number; keys: string | null }
   | { kind: "Encrypt"; taskId: number; text: string }
   | { kind: "Decrypt"; taskId: number; payload: EncryptedEntry }
-  | { kind: "GenerateKeys"; taskId: number }
+  | { kind: "GenerateCryptor"; taskId: number }
   | { kind: "Sign"; taskId: number; data: SignInput }
 
 export type OutputType =
   | { kind: "Initialized" }
   | { kind: "Error"; error: Error }
-  | { kind: "Keys"; keys: string }
+  | { kind: "Cryptor"; keys: string }
   | { kind: "Decrypted"; decrypted: DecryptedEntry }
   | { kind: "Encrypted"; encrypted: EncryptedPayload }
   | { kind: "Signed"; payload: string }
@@ -27,42 +27,42 @@ export interface WorkerResult {
 }
 
 const generateKeys = () => {
-  return Keys.createNewKeys().serialize()
+  return Cryptor.generate_new().serialize_keys()
 }
 
-const decrypt = (entry: EncryptedEntry, keys: Keys | null): DecryptedEntry => {
-  if (!keys) throw new Error("Worker has to be initialized first")
-  const plaintext = keys.decrypt(entry.payload)
+const decrypt = (entry: EncryptedEntry, cryptor: Cryptor | null): DecryptedEntry => {
+  if (!cryptor) throw new Error("Worker has to be initialized first")
+  const plaintext = cryptor.decrypt(entry.payload)
   return { id: entry.id, text: plaintext }
 }
 
-const encrypt = (text: string, keys: Keys | null): EncryptedPayload => {
-  if (!keys) throw new Error("Worker has to be initialized first")
-  const payload = keys.encrypt(text)
+const encrypt = (text: string, cryptor: Cryptor | null): EncryptedPayload => {
+  if (!cryptor) throw new Error("Worker has to be initialized first")
+  const payload = cryptor.encrypt(text)
   return { payload }
 }
 
-const sign = (keys: Keys | null, data: SignInput): string => {
-  if (!keys) throw new Error("Worker has to be initialized first")
+const sign = (cryptor: Cryptor | null, data: SignInput): string => {
+  if (!cryptor) throw new Error("Worker has to be initialized first")
   if (data.kind == "delete") {
-    return keys.sign_delete_token()
+    return cryptor.sign_delete_token()
   } else {
-    return keys.sign_find_token(data.lastSyncId ?? undefined)
+    return cryptor.sign_find_token(data.lastSyncId ?? undefined)
   }
 }
 
 export const processMessage = (
   input: InputType,
-  keys: Keys | null,
+  cryptor: Cryptor | null,
   callback: (result: OutputType, taskId: number) => void,
 ) => {
   switch (input.kind) {
-    case "GenerateKeys":
-      callback({ kind: "Keys", keys: generateKeys() }, input.taskId)
+    case "GenerateCryptor":
+      callback({ kind: "Cryptor", keys: generateKeys() }, input.taskId)
       break
     case "Decrypt":
       try {
-        const decrypted = decrypt(input.payload, keys)
+        const decrypted = decrypt(input.payload, cryptor)
         callback({ kind: "Decrypted", decrypted }, input.taskId)
       } catch (error) {
         callback({ kind: "Error", error: error as Error }, input.taskId)
@@ -70,7 +70,7 @@ export const processMessage = (
       break
     case "Encrypt":
       try {
-        const encrypted = encrypt(input.text, keys)
+        const encrypted = encrypt(input.text, cryptor)
         callback({ kind: "Encrypted", encrypted }, input.taskId)
       } catch (error) {
         callback({ kind: "Error", error: error as Error }, input.taskId)
@@ -78,7 +78,7 @@ export const processMessage = (
       break
     case "Sign":
       try {
-        const payload = sign(keys, input.data)
+        const payload = sign(cryptor, input.data)
         callback({ kind: "Signed", payload }, input.taskId)
       } catch (error) {
         callback({ kind: "Error", error: error as Error }, input.taskId)

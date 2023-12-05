@@ -1,7 +1,7 @@
-import init, { initialize, Keys } from "../../../qqself_core"
+import init, { Cryptor, initialize } from "../../../qqself_core"
 import { InputType, OutputType, processMessage } from "./worker"
 
-let cachedKeys: Keys | null = null
+let cryptor: Cryptor | null = null
 let id: number | null = null
 
 const send = (output: OutputType, taskId: number) => {
@@ -29,7 +29,7 @@ self.onmessage = (event: MessageEvent<InputType>) => {
         initialize()
         id = input.workerId
         if (input.keys) {
-          cachedKeys = Keys.deserialize(input.keys)
+          cryptor = Cryptor.from_deserialized_keys(input.keys)
         }
         send({ kind: "Initialized" }, input.taskId)
         resolve()
@@ -38,7 +38,7 @@ self.onmessage = (event: MessageEvent<InputType>) => {
   } else if (initCompleted) {
     // We need to initialize WebAssembly before we would be able to do anything
     // ensure here that it's completed
-    void initCompleted.then(() => processMessage(event.data, cachedKeys, send))
+    void initCompleted.then(() => processMessage(event.data, cryptor, send))
   } else {
     throw new Error("Init call missing")
   }

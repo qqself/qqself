@@ -1,24 +1,24 @@
-import { Keys } from "../../../qqself_core"
+import { Cryptor } from "../../../qqself_core"
 import { InputType, OutputType, processMessage, WorkerResult } from "./worker"
 
 // Right way is to go with node:worker_threads, but unfortunately
 // building it is challenging in Vite: https://github.com/vitejs/vite/pull/3932
 // For now create a dummy worker with similar API to Web Workers
 export class ThreadWorker extends EventTarget {
-  cachedKeys: Keys | null = null
+  cryptor: Cryptor | null = null
   id: number | null = null
 
   postMessage(input: InputType) {
     if (input.kind == "Init") {
       this.id = input.workerId
       if (input.keys) {
-        this.cachedKeys = Keys.deserialize(input.keys)
+        this.cryptor = Cryptor.from_deserialized_keys(input.keys)
       }
       this.send({ kind: "Initialized" }, input.taskId)
       return
     }
 
-    return processMessage(input, this.cachedKeys, this.send.bind(this))
+    return processMessage(input, this.cryptor, this.send.bind(this))
   }
 
   send(output: OutputType, taskId: number) {

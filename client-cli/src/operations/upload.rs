@@ -7,7 +7,11 @@ use std::{
 };
 
 use clap::Parser;
-use qqself_core::{api::{Request, ApiRequests}, record::Entry, encryption::cryptor::Cryptor};
+use qqself_core::{
+    api::{ApiRequests, Request},
+    encryption::cryptor::Cryptor,
+    record::Entry,
+};
 use rayon::prelude::{ParallelBridge, ParallelIterator};
 use tokio::sync::mpsc;
 use tracing::{error, info};

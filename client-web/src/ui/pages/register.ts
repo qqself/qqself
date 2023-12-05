@@ -4,7 +4,7 @@ import "../controls/button"
 import { css, html, LitElement } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
 
-import { Keys } from "../../../qqself_core"
+import { Cryptor } from "../../../qqself_core"
 import * as Auth from "../../app/auth"
 import { Store } from "../../app/store"
 
@@ -20,7 +20,7 @@ export class RegisterPage extends LitElement {
   store!: Store
 
   @state()
-  generatedKeys: Keys | null = null
+  cryptor: Cryptor | null = null
 
   @state()
   generating = false
@@ -43,19 +43,19 @@ export class RegisterPage extends LitElement {
 
   async createNewKeys() {
     this.generating = true
-    this.generatedKeys = await Auth.newKeys()
+    this.cryptor = await Auth.generateCryptor()
     this.generating = false
   }
 
   createDownloadLink() {
-    if (!this.generatedKeys) throw new Error("Keys should be existed by now")
-    const blob = new Blob([this.generatedKeys.serialize()], { type: "text/plain" })
+    if (!this.cryptor) throw new Error("Keys should be existed by now")
+    const blob = new Blob([this.cryptor.serialize_keys()], { type: "text/plain" })
     return window.URL.createObjectURL(blob)
   }
 
   onLogin() {
-    if (!this.generatedKeys) throw new Error("Keys should be existed by now")
-    return this.store.dispatch("auth.registration.succeeded", { keys: this.generatedKeys })
+    if (!this.cryptor) throw new Error("Keys should be existed by now")
+    return this.store.dispatch("auth.registration.succeeded", { cryptor: this.cryptor })
   }
 
   renderRegister() {
@@ -94,7 +94,7 @@ export class RegisterPage extends LitElement {
   }
 
   render() {
-    if (this.generatedKeys == null && !this.generating) {
+    if (this.cryptor == null && !this.generating) {
       return this.renderRegister()
     } else if (this.generating) {
       return this.renderGenerating()

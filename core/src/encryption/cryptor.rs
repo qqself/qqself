@@ -1,21 +1,25 @@
 use crate::{binary_text::BinaryToText, date_time::timestamp::Timestamp};
 
-use super::{keys::Keys, payload::{PayloadBytes, PayloadId}, tokens::{DeleteToken, SearchToken}};
+use super::{
+    keys::Keys,
+    payload::{PayloadBytes, PayloadId},
+    tokens::{DeleteToken, SearchToken},
+};
 
 /// Handles everything related to encryption, decryption, signing and keys generation
 /// Every operation related to encryption is CPU heavy operation and it's better to run
 /// those outside of the main event loop if exists
+#[derive(Debug, Clone)]
 pub struct Cryptor(Keys);
 
 impl Cryptor {
-    
     /// Creates a new Cryptor with new generated pair of keys
     pub fn generate_new() -> Self {
         Self(Keys::generate_new())
     }
 
     /// Creates Cryptor by deserializing `Keys` from the given string
-    pub fn deserialize(data: String) -> Result<Self, String> {
+    pub fn from_deserialized_keys(data: String) -> Result<Self, String> {
         match Keys::deserialize(data) {
             Some(keys) => Ok(Self(keys)),
             None => Err("Failed to deserialize the key file".to_string()),
@@ -23,7 +27,7 @@ impl Cryptor {
     }
 
     /// Serializes Cryptor's `Keys` to string
-    pub fn serialize(&self) -> String {
+    pub fn serialize_keys(&self) -> String {
         self.0.serialize()
     }
 
@@ -40,12 +44,12 @@ impl Cryptor {
     }
 
     /// Encrypt the plaintext
-    pub fn encrypt(&self, plaintext: String) -> Result<String, String> {
+    pub fn encrypt(&self, plaintext: &str) -> Result<String, String> {
         let payload = PayloadBytes::encrypt(
             &self.0.public_key,
             &self.0.private_key,
             Timestamp::now(),
-            &plaintext,
+            plaintext,
         )
         .map_err(|err| err.to_string())?;
         Ok(payload.data())

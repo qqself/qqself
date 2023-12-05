@@ -1,11 +1,11 @@
-import init, { initialize, Keys } from "../../qqself_core"
+import init, { Cryptor, initialize } from "../../qqself_core"
 import { info } from "../logger"
 import { isBrowser } from "../utils"
 import { getCredentials } from "./auth"
 import { Store } from "./store"
 
 export const started = async (store: Store): Promise<void> => {
-  const apiCheckError = checkMissingAPI()
+  const apiCheckError = checkBrowserAPI()
   if (apiCheckError) {
     return store.dispatch("init.errored", { error: new Error(apiCheckError) })
   }
@@ -14,20 +14,20 @@ export const started = async (store: Store): Promise<void> => {
     await init()
   }
   info(initialize())
-  const keys = await getCredentials()
-  return store.dispatch("init.succeeded", { cachedKeys: keys })
+  const cryptor = await getCredentials()
+  return store.dispatch("init.succeeded", { cryptor })
 }
 
-export const succeeded = (store: Store, cachedKeys: Keys | null): Promise<void> => {
-  // There are cached keys, automatically login
-  if (cachedKeys) {
-    return store.dispatch("auth.login.succeeded", { keys: cachedKeys })
+export const succeeded = (store: Store, cryptor: Cryptor | null): Promise<void> => {
+  // There is cached Cryptor from previous session, automatically login
+  if (cryptor) {
+    return store.dispatch("auth.login.succeeded", { cryptor })
   } else {
     return store.dispatch("auth.login.notAuthenticated", null)
   }
 }
 
-const checkMissingAPI = () => {
+const checkBrowserAPI = () => {
   // WebAssembly loading may fail, do some extensive checks to ensure it works
   // Based on https://stackoverflow.com/a/47880734
   try {

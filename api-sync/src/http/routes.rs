@@ -15,6 +15,7 @@ use futures::{StreamExt, TryStreamExt};
 use log::{info, warn};
 use qqself_core::{
     binary_text::BinaryToText,
+    build_info,
     date_time::{datetime::Duration, timestamp::Timestamp},
     encryption::{
         keys::PublicKey,
@@ -22,31 +23,11 @@ use qqself_core::{
         tokens::{DeleteToken, SearchToken},
     },
 };
-use serde::{Deserialize, Serialize};
 
 const MAX_PAYLOAD_AGE: Duration = Duration::new(1, 0);
 
-#[derive(Serialize, Deserialize)]
-struct InfoResp {
-    pub build: &'static str,
-    pub commit: &'static str,
-    pub hash: &'static str,
-    pub host: &'static str,
-    pub profile: &'static str,
-    pub rust: &'static str,
-    pub target: &'static str,
-}
-
 async fn health() -> impl Responder {
-    web::Json(InfoResp {
-        build: env!("VERGEN_BUILD_TIMESTAMP"),
-        commit: env!("VERGEN_GIT_COMMIT_MESSAGE"),
-        hash: env!("VERGEN_GIT_SHA"),
-        host: env!("VERGEN_RUSTC_HOST_TRIPLE"),
-        profile: env!("VERGEN_CARGO_OPT_LEVEL"),
-        rust: env!("VERGEN_RUSTC_SEMVER"),
-        target: env!("VERGEN_CARGO_TARGET_TRIPLE"),
-    })
+    build_info()
 }
 
 async fn set(

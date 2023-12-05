@@ -1,4 +1,4 @@
-import { Keys } from "../../../qqself_core"
+import { Cryptor } from "../../../qqself_core/qqself_core"
 import { info } from "../../logger"
 import { isBrowser } from "../../utils"
 import { EncryptedEntry } from "../api"
@@ -34,23 +34,23 @@ interface PoolWorker {
   status: "free" | "busy"
 }
 
-interface KeylessEncryptionPool {
-  generateNewKeys(): Promise<Keys>
+interface CryptorGeneratorPool {
+  generateCryptor(): Promise<Cryptor>
 }
 
 // Encrypting, decrypting and generating keys are very CPU intensive operations
 // and in the world of JavaScript may block event loop for the very long time.
 // To avoid it we run multiple Worker processes that handles those operation in
 // background, kinda like a dedicated ThreadPool
-export class EncryptionPool {
+export class CryptorPool {
   private workers = new Map<number, PoolWorker>()
   private tasks = new Map<number, PoolTask>()
   private lastTaskId = 0 // Counter to assign each task a unique identifier
 
-  private constructor(keys: Keys | null) {
-    // Keyless pool can only generate keys and 1 worker should be enough
-    const workersCount = keys ? getCpuCount() : 1
-    const serializedKeys = keys ? keys.serialize() : null
+  private constructor(cryptor: Cryptor | null) {
+    // CryptorGeneratorPool can only generate keys and 1 worker should be enough
+    const workersCount = cryptor ? getCpuCount() : 1
+    const serializedKeys = cryptor ? cryptor.serialize_keys() : null
     for (let i = 0; i < workersCount; i++) {
       const worker = isBrowser
         ? new Worker(new URL("./web-worker.ts", import.meta.url), { type: "module" })
@@ -67,12 +67,12 @@ export class EncryptionPool {
     info(`EncryptionPool started ${workersCount} workers`)
   }
 
-  static initWithKeys(keys: Keys) {
-    return new EncryptionPool(keys)
+  static initWithCryptor(cryptor: Cryptor) {
+    return new CryptorPool(cryptor)
   }
 
-  static initKeyless(): KeylessEncryptionPool {
-    return new EncryptionPool(null)
+  static initCryptorGenerator(): CryptorGeneratorPool {
+    return new CryptorPool(null)
   }
 
   workersCount() {
@@ -115,21 +115,21 @@ export class EncryptionPool {
     }
   }
 
-  async generateNewKeys(): Promise<Keys> {
+  async generateCryptor(): Promise<Cryptor> {
     const task = new Promise((resolve, reject) => {
       const taskId = this.lastTaskId++
       const task: PoolTask = {
-        input: { kind: "GenerateKeys", taskId },
+        input: { kind: "GenerateCryptor", taskId },
         status: "pending",
         onCompleted: (output: { keys: string }) => {
-          resolve(Keys.deserialize(output.keys))
+          resolve(Cryptor.from_deserialized_keys(output.keys))
         },
         onError: reject,
       }
       this.tasks.set(taskId, task)
       this.allocateWork()
     })
-    return task as Promise<Keys>
+    return task as Promise<Cryptor>
   }
 
   async encrypt(text: string): Promise<EncryptedPayload> {
@@ -191,20 +191,20 @@ export class EncryptionPool {
 if (import.meta.vitest) {
   const { describe, test, expect } = import.meta.vitest
 
-  const keys = Keys.createNewKeys()
-  const pool = EncryptionPool.initWithKeys(keys)
+  const cryptor = Cryptor.generate_new()
+  const pool = CryptorPool.initWithCryptor(cryptor)
 
-  describe("encryptionPool", () => {
-    test("generateKeys", async () => {
-      const keys = await pool.generateNewKeys()
-      const keysHash = keys.public_key_hash()
+  describe("CryptorPool", () => {
+    test("generateCryptor", async () => {
+      const cryptor = await pool.generateCryptor()
+      const keysHash = cryptor.public_key_hash()
       expect(keysHash.length).toBeTruthy()
     })
 
-    test("generateKeys keyless pool", async () => {
-      const pool = EncryptionPool.initKeyless()
-      const keys = await pool.generateNewKeys()
-      const keysHash = keys.public_key_hash()
+    test("CryptorGeneratorPool", async () => {
+      const pool = CryptorPool.initCryptorGenerator()
+      const cryptor = await pool.generateCryptor()
+      const keysHash = cryptor.public_key_hash()
       expect(keysHash.length).toBeTruthy()
     })
 
@@ -240,10 +240,10 @@ if (import.meta.vitest) {
     })
 
     test("error handling", async () => {
-      const keys1 = await pool.generateNewKeys()
-      const keys2 = await pool.generateNewKeys()
-      const pool1 = EncryptionPool.initWithKeys(keys1)
-      const pool2 = EncryptionPool.initWithKeys(keys2)
+      const cryptor1 = await pool.generateCryptor()
+      const cryptor2 = await pool.generateCryptor()
+      const pool1 = CryptorPool.initWithCryptor(cryptor1)
+      const pool2 = CryptorPool.initWithCryptor(cryptor2)
       const payload = await pool1.encrypt("foo")
       return expect(pool2.decrypt({ payload: payload.payload, id: "1" })).rejects.toBe(
         "Failed to decrypt AES key",

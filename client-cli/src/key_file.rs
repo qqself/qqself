@@ -12,11 +12,13 @@ impl KeyFile {
 
     pub fn load_from_file(path: &Path) -> KeyFile {
         let data = fs::read_to_string(path).expect("key file should be available");
-        Self(Cryptor::deserialize(data).expect("key file should contain key information"))
+        Self(
+            Cryptor::from_deserialized_keys(data).expect("key file should contain key information"),
+        )
     }
 
     pub fn save_to_file(&self, path: &Path) {
-        let data = self.0.serialize();
+        let data = self.0.serialize_keys();
         fs::write(path, data).unwrap();
     }
 

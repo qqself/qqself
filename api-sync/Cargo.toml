@@ -2,7 +2,6 @@
 name = "qqself-api-sync"
 version = "0.0.0"
 edition = "2021"
-build = "build.rs"
 
 [dependencies]
 actix-web = "4.4.0"
@@ -22,6 +21,3 @@ aws-sdk-dynamodb = { version = "0.34.0", optional = true }
 [features]
 default = []
 storage-dynamodb = ["dep:aws-config", "dep:aws-sdk-dynamodb"]
-
-[build-dependencies]
-vergen = { version = "8.2.6", features = ["build", "cargo", "git", "git2", "rustc"] }

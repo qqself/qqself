@@ -15,17 +15,13 @@ impl Http {
     }
 
     pub fn send(&self, req: Request) -> impl Future<Output = Result<Response, Error>> {
-        self.client
-            .post(req.url)
-            .body(req.payload)
-            .header("Content-Type", req.content_type)
-            .send()
+        self.client.post(req.url).body(req.payload).send()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use qqself_core::{encryption::cryptor::Cryptor, api::ApiRequests};
+    use qqself_core::{api::ApiRequests, encryption::cryptor::Cryptor};
 
     use super::*;
 
