@@ -246,7 +246,7 @@ if (import.meta.vitest) {
       const pool2 = CryptorPool.initWithCryptor(cryptor2)
       const payload = await pool1.encrypt("foo")
       return expect(pool2.decrypt({ payload: payload.payload, id: "1" })).rejects.toBe(
-        "Failed to decrypt AES key",
+        "CryptorError: Failed to decrypt AES key",
       )
     })
   })

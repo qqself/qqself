@@ -1,10 +1,13 @@
 import SwiftUI
+import qqselfCoreLib
 
 @main
 struct qqselfApp: App {
     var body: some Scene {
         WindowGroup {
-            MainView()
+            MainView().onAppear {
+                info(buildInfo())
+            }
         }
     }
 }
