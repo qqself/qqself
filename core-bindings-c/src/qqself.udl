@@ -1,5 +1,39 @@
 namespace qqselfCore {
-  u32 add(u32 a, u32 b);
-  string hello();
   string string_hash(string input);
+  string build_info();
+
+  // Static functions
+  Cryptor cryptor_generate_new();
+  [Throws=CryptorError]
+  Cryptor cryptor_from_deserialized_keys(string data);
+};
+
+dictionary Request {
+    string url;
+    string payload;
+};
+
+interface Api {
+    constructor(string? base_path);
+    Request create_set_request(string payload);
+    Request create_find_request(string payload);
+    Request create_delete_request(string payload);
+};
+
+[Error]
+interface CryptorError {
+  Error(string err);
+};
+
+interface Cryptor {
+  string serialize_keys();
+  string public_key_hash();
+  [Throws=CryptorError]
+  string decrypt(string data);
+  [Throws=CryptorError]
+  string encrypt([ByRef] string data);
+  [Throws=CryptorError]
+  string sign_delete_token();
+  [Throws=CryptorError]
+  string sign_find_token(string? last_id);
 };
