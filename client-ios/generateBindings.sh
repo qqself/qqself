@@ -5,6 +5,9 @@ set -e
 # Cleanup
 rm -rf /tmp/qqselfCore
 
+# Ensure all targets are installed
+rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
+
 # Compile the bindings for all needed plaoforms. Using release as in debug encryption is very slow
 cargo build --package qqself-core-bindings-c --release --target aarch64-apple-ios \
                                                        --target aarch64-apple-ios-sim \
@@ -25,4 +28,5 @@ cp "/tmp/qqselfCore/qqselfCoreFFI.h" "qqselfCoreLib/artifacts/qqselfCore.xcframe
 cp "/tmp/qqselfCore/qqselfCoreFFI.h" "qqselfCoreLib/artifacts/qqselfCore.xcframework/ios-arm64_x86_64-simulator/qqselfCore.framework/Headers/qqselfCoreFFI.h"
 
 # Move swift interface and fix imports to reflect the framework name
+mkdir -p "qqselfCoreLib/Sources/qqselfCoreLib"
 sed "s/qqselfCoreFFI/qqselfCore/g" "/tmp/qqselfCore/qqselfCore.swift" > "qqselfCoreLib/Sources/qqselfCoreLib/qqselfCoreLib.swift"
