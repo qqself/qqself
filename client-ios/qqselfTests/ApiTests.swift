@@ -1,7 +1,7 @@
 import XCTest
 import qqselfCoreLib
 
-class YourTests: XCTestCase {
+class ApiTests: XCTestCase {
     let api = ServerApi(basePath: nil)
     
     func wait(seconds: TimeInterval) async throws {

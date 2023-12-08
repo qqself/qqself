@@ -40,17 +40,6 @@
                ReferencedContainer = "container:qqself.xcodeproj">
             </BuildableReference>
          </TestableReference>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "964788E62B1790B1009BAA78"
-               BuildableName = "qqselfUITests.xctest"
-               BlueprintName = "qqselfUITests"
-               ReferencedContainer = "container:qqself.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction
