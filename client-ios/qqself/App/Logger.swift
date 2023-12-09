@@ -2,6 +2,7 @@
 // logging workflows across whole code base
 
 import Foundation
+import qqselfCoreLib
 
 enum LogLevel: String {
     case trace = "trace"
@@ -36,3 +37,13 @@ let warn = { log(logLevel: .warn, msg: $0) }
 let info = { log(logLevel: .info, msg: $0) }
 let debug = { log(logLevel: .debug, msg: $0) }
 let trace = { log(logLevel: .trace, msg: $0) } 
+
+class OnPanic: PanicHook {
+    func onPanic(msg: String) {
+        error(msg)
+    }
+}
+
+func setPanicHook() {
+    setPanicHook(hook: OnPanic())
+}
