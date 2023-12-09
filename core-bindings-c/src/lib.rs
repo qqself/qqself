@@ -1,3 +1,4 @@
+use std::panic;
 use std::sync::Arc;
 
 use qqself_core::encryption::cryptor::CryptorError;
@@ -8,6 +9,9 @@ uniffi::include_scaffolding!("qqself");
 pub use qqself_core::api::{ApiRequests as Api, Request};
 pub use qqself_core::build_info;
 pub use qqself_core::encryption::cryptor::Cryptor;
+
+pub mod panic_hook;
+pub use panic_hook::{set_panic_hook, PanicHook};
 
 pub fn string_hash(input: String) -> String {
     StableHash::hash_string(&input).to_string()

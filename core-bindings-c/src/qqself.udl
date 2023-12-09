@@ -1,6 +1,7 @@
 namespace qqselfCore {
   string string_hash(string input);
   string build_info();
+  void set_panic_hook(PanicHook hook);
 
   // Static functions
   Cryptor cryptor_generate_new();
@@ -36,4 +37,8 @@ interface Cryptor {
   string sign_delete_token();
   [Throws=CryptorError]
   string sign_find_token(string? last_id);
+};
+
+callback interface PanicHook {
+    void on_panic(string msg);
 };
