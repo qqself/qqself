@@ -13,7 +13,7 @@
 		964788D12B1790AF009BAA78 /* qqselfApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 964788D02B1790AF009BAA78 /* qqselfApp.swift */; };
 		964788D52B1790B0009BAA78 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 964788D42B1790B0009BAA78 /* Assets.xcassets */; };
 		964788D82B1790B0009BAA78 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 964788D72B1790B0009BAA78 /* Preview Assets.xcassets */; };
-		966CB2D02B1DC0660011DF2D /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966CB2CF2B1DC0660011DF2D /* MainView.swift */; };
+		966CB2D02B1DC0660011DF2D /* MainPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966CB2CF2B1DC0660011DF2D /* MainPage.swift */; };
 		966CB2D62B1DC09F0011DF2D /* icon_week.svg in Resources */ = {isa = PBXBuildFile; fileRef = 966CB2D22B1DC09F0011DF2D /* icon_week.svg */; };
 		966CB2D72B1DC09F0011DF2D /* icon_id.svg in Resources */ = {isa = PBXBuildFile; fileRef = 966CB2D32B1DC09F0011DF2D /* icon_id.svg */; };
 		966CB2D82B1DC09F0011DF2D /* icon_journal.svg in Resources */ = {isa = PBXBuildFile; fileRef = 966CB2D42B1DC09F0011DF2D /* icon_journal.svg */; };
@@ -31,6 +31,10 @@
 		96C948D32B17911200D3D969 /* qqselfCoreLib in Frameworks */ = {isa = PBXBuildFile; productRef = 96C948D22B17911200D3D969 /* qqselfCoreLib */; };
 		96D5BFEF2B22FE47005881B4 /* SqliteStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D5BFEE2B22FE47005881B4 /* SqliteStorage.swift */; };
 		96D5BFF12B22FE55005881B4 /* MemoryStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D5BFF02B22FE55005881B4 /* MemoryStorage.swift */; };
+		96F6CCA62B2D644D008F4A97 /* LoginPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F6CCA52B2D644D008F4A97 /* LoginPage.swift */; };
+		96F6CCA82B2D64CF008F4A97 /* LogoBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F6CCA72B2D64CF008F4A97 /* LogoBlock.swift */; };
+		96F6CCAA2B2D655B008F4A97 /* logo_512.png in Resources */ = {isa = PBXBuildFile; fileRef = 96F6CCA92B2D655B008F4A97 /* logo_512.png */; };
+		96F6CCAC2B2D6A0E008F4A97 /* Button.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F6CCAB2B2D6A0E008F4A97 /* Button.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -53,18 +57,22 @@
 		964788D42B1790B0009BAA78 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		964788D72B1790B0009BAA78 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		964788DD2B1790B1009BAA78 /* qqselfTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = qqselfTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		966CB2CF2B1DC0660011DF2D /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
+		966CB2CF2B1DC0660011DF2D /* MainPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainPage.swift; sourceTree = "<group>"; };
 		966CB2D22B1DC09F0011DF2D /* icon_week.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = icon_week.svg; sourceTree = "<group>"; };
 		966CB2D32B1DC09F0011DF2D /* icon_id.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = icon_id.svg; sourceTree = "<group>"; };
 		966CB2D42B1DC09F0011DF2D /* icon_journal.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = icon_journal.svg; sourceTree = "<group>"; };
 		966CB2D52B1DC09F0011DF2D /* icon_rejection.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = icon_rejection.svg; sourceTree = "<group>"; };
-		966CB2DA2B1DC5860011DF2D /* WeekView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WeekView.swift; path = qqself/UI/WeekView.swift; sourceTree = SOURCE_ROOT; };
+		966CB2DA2B1DC5860011DF2D /* WeekView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WeekView.swift; path = qqself/UI/Components/WeekView.swift; sourceTree = SOURCE_ROOT; };
 		966CB2DC2B1DC5DC0011DF2D /* JournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalView.swift; sourceTree = "<group>"; };
 		966CB2DE2B1DC60D0011DF2D /* SkillsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillsView.swift; sourceTree = "<group>"; };
 		966CB2E02B1DC62D0011DF2D /* RejectionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RejectionsView.swift; sourceTree = "<group>"; };
 		96D5BFEB2B22FC65005881B4 /* StorageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageTests.swift; sourceTree = "<group>"; };
 		96D5BFEE2B22FE47005881B4 /* SqliteStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SqliteStorage.swift; sourceTree = "<group>"; };
 		96D5BFF02B22FE55005881B4 /* MemoryStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryStorage.swift; sourceTree = "<group>"; };
+		96F6CCA52B2D644D008F4A97 /* LoginPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginPage.swift; sourceTree = "<group>"; };
+		96F6CCA72B2D64CF008F4A97 /* LogoBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogoBlock.swift; sourceTree = "<group>"; };
+		96F6CCA92B2D655B008F4A97 /* logo_512.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = logo_512.png; sourceTree = "<group>"; };
+		96F6CCAB2B2D6A0E008F4A97 /* Button.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Button.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -135,11 +143,9 @@
 		966CB2CC2B1DC0140011DF2D /* UI */ = {
 			isa = PBXGroup;
 			children = (
-				966CB2CF2B1DC0660011DF2D /* MainView.swift */,
-				966CB2DA2B1DC5860011DF2D /* WeekView.swift */,
-				966CB2DC2B1DC5DC0011DF2D /* JournalView.swift */,
-				966CB2DE2B1DC60D0011DF2D /* SkillsView.swift */,
-				966CB2E02B1DC62D0011DF2D /* RejectionsView.swift */,
+				96F6CCA32B2D63F0008F4A97 /* Controls */,
+				96F6CCA42B2D6404008F4A97 /* Components */,
+				96F6CCA22B2D63EA008F4A97 /* Pages */,
 				966CB2D12B1DC0810011DF2D /* Static */,
 			);
 			path = UI;
@@ -148,6 +154,7 @@
 		966CB2D12B1DC0810011DF2D /* Static */ = {
 			isa = PBXGroup;
 			children = (
+				96F6CCA92B2D655B008F4A97 /* logo_512.png */,
 				966CB2D32B1DC09F0011DF2D /* icon_id.svg */,
 				966CB2D42B1DC09F0011DF2D /* icon_journal.svg */,
 				966CB2D52B1DC09F0011DF2D /* icon_rejection.svg */,
@@ -175,6 +182,35 @@
 				96D5BFF02B22FE55005881B4 /* MemoryStorage.swift */,
 			);
 			path = Storage;
+			sourceTree = "<group>";
+		};
+		96F6CCA22B2D63EA008F4A97 /* Pages */ = {
+			isa = PBXGroup;
+			children = (
+				966CB2CF2B1DC0660011DF2D /* MainPage.swift */,
+				96F6CCA52B2D644D008F4A97 /* LoginPage.swift */,
+			);
+			path = Pages;
+			sourceTree = "<group>";
+		};
+		96F6CCA32B2D63F0008F4A97 /* Controls */ = {
+			isa = PBXGroup;
+			children = (
+				96F6CCAB2B2D6A0E008F4A97 /* Button.swift */,
+			);
+			path = Controls;
+			sourceTree = "<group>";
+		};
+		96F6CCA42B2D6404008F4A97 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				966CB2DA2B1DC5860011DF2D /* WeekView.swift */,
+				966CB2DC2B1DC5DC0011DF2D /* JournalView.swift */,
+				966CB2DE2B1DC60D0011DF2D /* SkillsView.swift */,
+				966CB2E02B1DC62D0011DF2D /* RejectionsView.swift */,
+				96F6CCA72B2D64CF008F4A97 /* LogoBlock.swift */,
+			);
+			path = Components;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -264,6 +300,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				96F6CCAA2B2D655B008F4A97 /* logo_512.png in Resources */,
 				964788D82B1790B0009BAA78 /* Preview Assets.xcassets in Resources */,
 				966CB2D92B1DC09F0011DF2D /* icon_rejection.svg in Resources */,
 				966CB2D82B1DC09F0011DF2D /* icon_journal.svg in Resources */,
@@ -288,10 +325,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				96D5BFF12B22FE55005881B4 /* MemoryStorage.swift in Sources */,
+				96F6CCA82B2D64CF008F4A97 /* LogoBlock.swift in Sources */,
 				966CB2E12B1DC62D0011DF2D /* RejectionsView.swift in Sources */,
 				966CB2DB2B1DC5860011DF2D /* WeekView.swift in Sources */,
 				966CB2DF2B1DC60D0011DF2D /* SkillsView.swift in Sources */,
-				966CB2D02B1DC0660011DF2D /* MainView.swift in Sources */,
+				96F6CCA62B2D644D008F4A97 /* LoginPage.swift in Sources */,
+				966CB2D02B1DC0660011DF2D /* MainPage.swift in Sources */,
+				96F6CCAC2B2D6A0E008F4A97 /* Button.swift in Sources */,
 				966CB2DD2B1DC5DC0011DF2D /* JournalView.swift in Sources */,
 				961BB4E62B21A72D0032BD98 /* ServerApi.swift in Sources */,
 				96D5BFEF2B22FE47005881B4 /* SqliteStorage.swift in Sources */,

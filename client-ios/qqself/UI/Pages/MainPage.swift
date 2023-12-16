@@ -1,7 +1,7 @@
 import SwiftUI
 import qqselfCoreLib
 
-struct MainView: View {
+struct MainPage: View {
     let hash = stringHash(input: "Hello")
     var body: some View {
         TabView(selection: .constant(1),
@@ -34,5 +34,5 @@ struct Tab: View {
 }
 
 #Preview {
-    MainView()
+    MainPage()
 }
