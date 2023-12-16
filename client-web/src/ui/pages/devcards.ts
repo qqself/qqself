@@ -9,6 +9,8 @@ import "../controls/notification"
 import "../controls/icon"
 import "../pages/progress"
 import "../pages/growth"
+import "../pages/login"
+import "../pages/register"
 
 import { css, html, LitElement, TemplateResult } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
@@ -200,6 +202,14 @@ export class DevcardsPage extends LitElement {
 
       <q-card name="Growth page">
         <q-growth-page .store="${this.store}"></q-growth-page>
+      </q-card>
+
+      <q-card name="Login page">
+        <q-login-page .store="${this.store}"></q-login-page>
+      </q-card>
+
+      <q-card name="Register page">
+        <q-register-page .store="${this.store}"></q-register-page>
       </q-card>
     </div>`
   }
