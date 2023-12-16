@@ -249,5 +249,14 @@ if (import.meta.vitest) {
         "CryptorError: Failed to decrypt AES key",
       )
     })
+
+    test("sign", async () => {
+      const findSync = await pool.sign({ kind: "find", lastSyncId: "foo" })
+      expect(findSync.length).toBeTruthy()
+      const findNoSync = await pool.sign({ kind: "find", lastSyncId: null })
+      expect(findNoSync.length).toBeTruthy()
+      const deletePayload = await pool.sign({ kind: "delete" })
+      expect(deletePayload.length).toBeTruthy()
+    })
   })
 }

@@ -17,20 +17,21 @@ struct LoginPage: View {
     }
 
     func onRegisterTapped() {
-        let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let filePath = documentDirectory.appendingPathComponent("qqself-keys.txt")
-
-        do {
-            let newKeys = cryptorGenerateNew()
-            let text = newKeys.serializeKeys()
-            try text.write(to: filePath, atomically: true, encoding: .utf8)
-            info("Generated new key \(newKeys.publicKeyHash()) to \(filePath)")
-        } catch {
-            errorMsg = "Error while generating new key: \(error)"
-            return
+        Task {
+            let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+            let filePath = documentDirectory.appendingPathComponent("qqself-keys.txt")
+            
+            do {
+                let newKeys = await CryptorPool.generateKeys()
+                try newKeys.write(to: filePath, atomically: true, encoding: .utf8)
+                info("Generated new keys to \(filePath)")
+            } catch {
+                errorMsg = "Error while generating new key: \(error)"
+                return
+            }
+            newGeneratedKeyFile = filePath
+            showDocumentPickerWriter = true
         }
-        newGeneratedKeyFile = filePath
-        showDocumentPickerWriter = true
     }
 
     var body: some View {
