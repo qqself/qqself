@@ -35,6 +35,9 @@
 		96F6CCA82B2D64CF008F4A97 /* LogoBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F6CCA72B2D64CF008F4A97 /* LogoBlock.swift */; };
 		96F6CCAA2B2D655B008F4A97 /* logo_512.png in Resources */ = {isa = PBXBuildFile; fileRef = 96F6CCA92B2D655B008F4A97 /* logo_512.png */; };
 		96F6CCAC2B2D6A0E008F4A97 /* Button.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F6CCAB2B2D6A0E008F4A97 /* Button.swift */; };
+		96F6CCAF2B2DD203008F4A97 /* CryptorPool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F6CCAE2B2DD203008F4A97 /* CryptorPool.swift */; };
+		96F6CCB02B2DD203008F4A97 /* CryptorPool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F6CCAE2B2DD203008F4A97 /* CryptorPool.swift */; };
+		96F6CCB32B2E0D85008F4A97 /* CryptorPoolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F6CCB12B2E0D85008F4A97 /* CryptorPoolTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -73,6 +76,8 @@
 		96F6CCA72B2D64CF008F4A97 /* LogoBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogoBlock.swift; sourceTree = "<group>"; };
 		96F6CCA92B2D655B008F4A97 /* logo_512.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = logo_512.png; sourceTree = "<group>"; };
 		96F6CCAB2B2D6A0E008F4A97 /* Button.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Button.swift; sourceTree = "<group>"; };
+		96F6CCAE2B2DD203008F4A97 /* CryptorPool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptorPool.swift; sourceTree = "<group>"; };
+		96F6CCB12B2E0D85008F4A97 /* CryptorPoolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptorPoolTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -136,6 +141,7 @@
 			children = (
 				961BB4E82B21A9E90032BD98 /* ApiTests.swift */,
 				96D5BFEB2B22FC65005881B4 /* StorageTests.swift */,
+				96F6CCB12B2E0D85008F4A97 /* CryptorPoolTests.swift */,
 			);
 			path = qqselfTests;
 			sourceTree = "<group>";
@@ -170,6 +176,7 @@
 				964788D02B1790AF009BAA78 /* qqselfApp.swift */,
 				961BB4E52B21A72D0032BD98 /* ServerApi.swift */,
 				961BB4EA2B21B48F0032BD98 /* Logger.swift */,
+				96F6CCAE2B2DD203008F4A97 /* CryptorPool.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -338,6 +345,7 @@
 				964788D12B1790AF009BAA78 /* qqselfApp.swift in Sources */,
 				961BB4EB2B21B48F0032BD98 /* Logger.swift in Sources */,
 				961271CA2B22FB9F006318F6 /* Storage.swift in Sources */,
+				96F6CCAF2B2DD203008F4A97 /* CryptorPool.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -346,8 +354,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				9670BD402B23368300ED6AF0 /* MemoryStorage.swift in Sources */,
+				96F6CCB32B2E0D85008F4A97 /* CryptorPoolTests.swift in Sources */,
 				9670BD3F2B23368000ED6AF0 /* SqliteStorage.swift in Sources */,
 				9670BD3D2B23366500ED6AF0 /* ServerApi.swift in Sources */,
+				96F6CCB02B2DD203008F4A97 /* CryptorPool.swift in Sources */,
 				9670BD3E2B23367500ED6AF0 /* Storage.swift in Sources */,
 				9670BD3B2B23361900ED6AF0 /* ApiTests.swift in Sources */,
 				9670BD3C2B23361B00ED6AF0 /* StorageTests.swift in Sources */,

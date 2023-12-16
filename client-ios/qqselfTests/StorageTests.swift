@@ -1,84 +1,99 @@
 import XCTest
 import qqselfCoreLib
 
-func storages(clear: Bool = true, dbName: String = "test") -> [Storage] {
+// HACK: XCTAssertEqual(try await storage.getItem("foo")) cannot be compiled and cannot separated variables has to be created
+
+func storages(clear: Bool = true, dbName: String = "test") async -> [Storage] {
     // Return both implementation of a storage to ensure both works
     let storage1 = try! newStorage(dbName: dbName, persistant: false)
     let storage2 = try! newStorage(dbName: dbName, persistant: true)
     if (clear) {
-        try! storage1.clear()
-        try! storage2.clear()
+        try! await storage1.clear()
+        try! await storage2.clear()
     }
     return [storage1, storage2]
 }
 
 class StorageTests: XCTestCase {
 
-    func testGetItemSetItem() throws {
-        for storage in storages() {
-            XCTAssertNil(try storage.getItem("foo"))
-            try storage.setItem(key: "foo", value: "bar")
-            XCTAssertEqual(try storage.getItem("foo"), "bar")
+    func testGetItemSetItem() async throws {
+        for storage in await storages() {
+            var val = try await storage.getItem("foo")
+            XCTAssertNil(val)
+            try await storage.setItem(key: "foo", value: "bar")
+            val = try await storage.getItem("foo")
+            XCTAssertEqual(val, "bar")
         }
     }
 
-    func testValues() throws {
-        for storage in storages() {
-            XCTAssertEqual(try storage.values(keyPrefix: ""), [:])
+    func testValues() async throws {
+        for storage in await storages() {
+            var val = try await storage.values(keyPrefix: "")
+            XCTAssertEqual(val, [:])
             let data = [
                 "foo.1": "bar1",
                 "foo.2": "bar3",
                 "zzz.1": "bar2",
             ]
             for (key, value) in data {
-                try storage.setItem(key: key, value: value)
+                try await storage.setItem(key: key, value: value)
             }
             // Values are sorted by the key
             let sortedData = Dictionary(uniqueKeysWithValues: data.sorted { $0.key < $1.key })
-            XCTAssertEqual(try storage.values(keyPrefix: ""), sortedData)
+            val = try await storage.values(keyPrefix: "")
+            XCTAssertEqual(val, sortedData)
             // Values are sorted and filterd by the prefix
             let filteredData = Dictionary(uniqueKeysWithValues: data.filter { $0.key.hasPrefix("foo")}.sorted { $0.key < $1.key })
-            XCTAssertEqual(try storage.values(keyPrefix: "foo"), filteredData)
+            val = try await storage.values(keyPrefix: "foo")
+            XCTAssertEqual(val, filteredData)
         }
     }
 
-    func testCount() throws {
-        for storage in storages() {
-            XCTAssertEqual(try storage.itemCount(), 0)
-            try storage.setItem(key: "foo", value: "bar")
-            XCTAssertEqual(try storage.itemCount(), 1)
-            try storage.setItem(key: "bar", value: "foo")
-            XCTAssertEqual(try storage.itemCount(), 2)
+    func testCount() async throws {
+        for storage in await storages() {
+            var count = try await storage.itemCount()
+            XCTAssertEqual(count, 0)
+            try await storage.setItem(key: "foo", value: "bar")
+            count = try await storage.itemCount()
+            XCTAssertEqual(count, 1)
+            try await storage.setItem(key: "bar", value: "foo")
+            count = try await storage.itemCount()
+            XCTAssertEqual(count, 2)
         }
     }
 
-    func testClear() throws {
-        for storage in storages() {
-            XCTAssertEqual(try storage.itemCount(), 0)
-            try storage.setItem(key: "foo", value: "bar")
-            XCTAssertEqual(try storage.itemCount(), 1)
-            try storage.clear()
-            XCTAssertEqual(try storage.itemCount(), 0)
+    func testClear() async throws {
+        for storage in await storages() {
+            var count = try await storage.itemCount()
+            XCTAssertEqual(count, 0)
+            try await storage.setItem(key: "foo", value: "bar")
+            count = try await storage.itemCount()
+            XCTAssertEqual(count, 1)
+            try await storage.clear()
+            count = try await storage.itemCount()
+            XCTAssertEqual(count, 0)
         }
     }
 
-    func testSessionPersistence() throws {
+    func testSessionPersistence() async throws {
         // Both storages should persist data during the same session. If we recreated storages data should remain available
-        for storage in storages(clear: true) {
-            try storage.setItem(key: "foo", value: "bar")
+        for storage in await storages(clear: true) {
+            try await storage.setItem(key: "foo", value: "bar")
         }
-        for storage in storages(clear: false) {
-            XCTAssertEqual(try storage.getItem("foo"), "bar")
+        for storage in await storages(clear: false) {
+            let val = try await storage.getItem("foo")
+            XCTAssertEqual(val, "bar")
         }
     }
     
-    func testDBName() throws {
+    func testDBName() async throws {
         // Both storages store data separately for each dbName
-        for storage in storages(clear: true, dbName: "test1") {
-            try storage.setItem(key: "foo", value: "bar")
+        for storage in await storages(clear: true, dbName: "test1") {
+            try await storage.setItem(key: "foo", value: "bar")
         }
-        for storage in storages(clear: false, dbName: "test2") {
-            XCTAssertEqual(try storage.getItem("foo"), nil)
+        for storage in await storages(clear: false, dbName: "test2") {
+            let val = try await storage.getItem("foo")
+            XCTAssertEqual(val, nil)
         }
     }
 }
