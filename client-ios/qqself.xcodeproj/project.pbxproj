@@ -38,6 +38,10 @@
 		96F6CCAF2B2DD203008F4A97 /* CryptorPool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F6CCAE2B2DD203008F4A97 /* CryptorPool.swift */; };
 		96F6CCB02B2DD203008F4A97 /* CryptorPool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F6CCAE2B2DD203008F4A97 /* CryptorPool.swift */; };
 		96F6CCB32B2E0D85008F4A97 /* CryptorPoolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F6CCB12B2E0D85008F4A97 /* CryptorPoolTests.swift */; };
+		96F6CCB52B2EAF0A008F4A97 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F6CCB42B2EAF0A008F4A97 /* Store.swift */; };
+		96F6CCB62B2EAF0A008F4A97 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F6CCB42B2EAF0A008F4A97 /* Store.swift */; };
+		96F6CCB82B2EB442008F4A97 /* StoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F6CCB72B2EB442008F4A97 /* StoreTests.swift */; };
+		96F6CCB92B2EC282008F4A97 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 961BB4EA2B21B48F0032BD98 /* Logger.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -78,6 +82,8 @@
 		96F6CCAB2B2D6A0E008F4A97 /* Button.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Button.swift; sourceTree = "<group>"; };
 		96F6CCAE2B2DD203008F4A97 /* CryptorPool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptorPool.swift; sourceTree = "<group>"; };
 		96F6CCB12B2E0D85008F4A97 /* CryptorPoolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptorPoolTests.swift; sourceTree = "<group>"; };
+		96F6CCB42B2EAF0A008F4A97 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
+		96F6CCB72B2EB442008F4A97 /* StoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -142,6 +148,7 @@
 				961BB4E82B21A9E90032BD98 /* ApiTests.swift */,
 				96D5BFEB2B22FC65005881B4 /* StorageTests.swift */,
 				96F6CCB12B2E0D85008F4A97 /* CryptorPoolTests.swift */,
+				96F6CCB72B2EB442008F4A97 /* StoreTests.swift */,
 			);
 			path = qqselfTests;
 			sourceTree = "<group>";
@@ -177,6 +184,7 @@
 				961BB4E52B21A72D0032BD98 /* ServerApi.swift */,
 				961BB4EA2B21B48F0032BD98 /* Logger.swift */,
 				96F6CCAE2B2DD203008F4A97 /* CryptorPool.swift */,
+				96F6CCB42B2EAF0A008F4A97 /* Store.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -334,6 +342,7 @@
 				96D5BFF12B22FE55005881B4 /* MemoryStorage.swift in Sources */,
 				96F6CCA82B2D64CF008F4A97 /* LogoBlock.swift in Sources */,
 				966CB2E12B1DC62D0011DF2D /* RejectionsView.swift in Sources */,
+				96F6CCB52B2EAF0A008F4A97 /* Store.swift in Sources */,
 				966CB2DB2B1DC5860011DF2D /* WeekView.swift in Sources */,
 				966CB2DF2B1DC60D0011DF2D /* SkillsView.swift in Sources */,
 				96F6CCA62B2D644D008F4A97 /* LoginPage.swift in Sources */,
@@ -354,8 +363,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				9670BD402B23368300ED6AF0 /* MemoryStorage.swift in Sources */,
+				96F6CCB92B2EC282008F4A97 /* Logger.swift in Sources */,
 				96F6CCB32B2E0D85008F4A97 /* CryptorPoolTests.swift in Sources */,
 				9670BD3F2B23368000ED6AF0 /* SqliteStorage.swift in Sources */,
+				96F6CCB82B2EB442008F4A97 /* StoreTests.swift in Sources */,
+				96F6CCB62B2EAF0A008F4A97 /* Store.swift in Sources */,
 				9670BD3D2B23366500ED6AF0 /* ServerApi.swift in Sources */,
 				96F6CCB02B2DD203008F4A97 /* CryptorPool.swift in Sources */,
 				9670BD3E2B23367500ED6AF0 /* Storage.swift in Sources */,

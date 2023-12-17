@@ -44,13 +44,13 @@ class SQLiteDatabase: Storage {
     }
 
     func clear() async throws {
-        Task {
+        try await Task {
             let clearQuery = "DELETE FROM Items;"
             if sqlite3_exec(db, clearQuery, nil, nil, nil) != SQLITE_OK {
                 let errorMessage = String(cString: sqlite3_errmsg(db))
                 throw DatabaseError.error(message: errorMessage)
             }
-        }
+        }.value
     }
 
     func itemCount() async throws -> Int {
@@ -111,7 +111,7 @@ class SQLiteDatabase: Storage {
     }
 
     func removeItem(_ key: String) async throws {
-        Task {
+        try await Task {
             let removeQuery = "DELETE FROM Items WHERE Key = ?;"
             var statement: OpaquePointer?
             if sqlite3_prepare_v2(db, removeQuery, -1, &statement, nil) == SQLITE_OK {
@@ -125,7 +125,7 @@ class SQLiteDatabase: Storage {
                 let errorMessage = String(cString: sqlite3_errmsg(db))
                 throw DatabaseError.error(message: errorMessage)
             }
-        }
+        }.value
     }
 
     func values(keyPrefix: String) async throws -> [String: String] {
