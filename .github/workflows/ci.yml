@@ -42,6 +42,9 @@ jobs:
     runs-on: macos-13
     env:
       DEVELOPER_DIR: /Applications/Xcode_15.0.1.app/Contents/Developer
+    defaults:
+      run:
+        working-directory: client-ios
     steps:
     - uses: actions/checkout@v4
       with:
@@ -57,8 +60,6 @@ jobs:
           target/
         key: cargo-macos-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: cargo-macos
-    - name: Build core
-      run: cd client-ios && ./generateBindings.sh
     # XCode 15 has an issue https://github.com/actions/runner-images/issues/7971
     # Following workaround taken from https://github.com/actions/runner-images/discussions/8651#discussioncomment-7393444
     - name: XCode 15 Fix
@@ -66,10 +67,11 @@ jobs:
           wget https://github.com/biscuitehh/yeetd/releases/download/1.0/yeetd-normal.pkg
           sudo installer -pkg yeetd-normal.pkg -target /
           yeetd &
-    - name: Build client-ios
-      run: xcodebuild build -project client-ios/qqself.xcodeproj -scheme qqself -destination "platform=iOS Simulator,OS=17.0.1,name=iPhone 15 Pro" CODE_SIGNING_REQUIRED=NO
-    - name: Test client-ios
-      run: xcodebuild test  -project client-ios/qqself.xcodeproj -scheme qqself -destination "platform=iOS Simulator,OS=17.0.1,name=iPhone 15 Pro" CODE_SIGNING_REQUIRED=NO
+    - run: make deps
+    - run: make bindings
+    - run: make build
+    - run: make test
+    - run: make format-check
 
   deploy-api:
     if: github.ref == 'refs/heads/main'
