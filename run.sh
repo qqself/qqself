@@ -32,6 +32,9 @@ build() {
   cargo build --release --all-features
   log "Building client-web - core"
   (cd client-web && yarn build)
+  if [[ "$(uname -s)" == "Darwin" ]]; then 
+    (cd client-ios && make build)
+  fi
 }
 
 # Run all the tests
@@ -45,6 +48,8 @@ test() {
 
   log "Testing all Typescript projects"
   (cd client-web && yarn test)
+
+  # Skipping client-ios as for some reason Simulator is crashing on my local machine
 }
 
 # Run linters and other static checkers
@@ -54,6 +59,9 @@ lint() {
   cargo clippy --workspace --all-targets --all-features -- -D warnings
   log "Linting all TypeScript projects"
   (cd client-web && yarn lint:check)
+  if [[ "$(uname -s)" == "Darwin" ]]; then 
+    (cd client-ios && make format-check)
+  fi
 }
 
 # Build a new Docker container and push to the registry
