@@ -5,45 +5,45 @@ import Foundation
 import qqselfCoreLib
 
 enum LogLevel: String {
-    case trace = "trace"
-    case debug = "debug"
-    case info = "info"
-    case warn = "warn"
-    case error = "error"
+  case trace = "trace"
+  case debug = "debug"
+  case info = "info"
+  case warn = "warn"
+  case error = "error"
 }
 
 let logLevels: [LogLevel: Int] = [
-    .trace: 1,
-    .debug: 2,
-    .info: 3,
-    .warn: 4,
-    .error: 5
+  .trace: 1,
+  .debug: 2,
+  .info: 3,
+  .warn: 4,
+  .error: 5,
 ]
 
-// TODO Get level from the environment
+// TODO Get level from the environment
 let logLevelMinimum = logLevels[.info]!
 
 func log(logLevel: LogLevel, msg: String) {
-    guard let levelValue = logLevels[logLevel], levelValue >= logLevelMinimum else {
-        return
-    }
-    let level = logLevel.rawValue.uppercased().padding(toLength: 5, withPad: " ", startingAt: 0)
-    let timestamp = DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .medium)
-    print("[\(timestamp) \(level)] \(msg)")
+  guard let levelValue = logLevels[logLevel], levelValue >= logLevelMinimum else {
+    return
+  }
+  let level = logLevel.rawValue.uppercased().padding(toLength: 5, withPad: " ", startingAt: 0)
+  let timestamp = DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .medium)
+  print("[\(timestamp) \(level)] \(msg)")
 }
 
 let error = { log(logLevel: .error, msg: $0) }
 let warn = { log(logLevel: .warn, msg: $0) }
 let info = { log(logLevel: .info, msg: $0) }
 let debug = { log(logLevel: .debug, msg: $0) }
-let trace = { log(logLevel: .trace, msg: $0) } 
+let trace = { log(logLevel: .trace, msg: $0) }
 
 class OnPanic: PanicHook {
-    func onPanic(msg: String) {
-        error(msg)
-    }
+  func onPanic(msg: String) {
+    error(msg)
+  }
 }
 
 func setPanicHook() {
-    setPanicHook(hook: OnPanic())
+  setPanicHook(hook: OnPanic())
 }

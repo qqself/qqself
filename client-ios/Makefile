@@ -11,10 +11,10 @@ test:
 	xcodebuild test  -project qqself.xcodeproj -scheme qqself -destination "platform=iOS Simulator,OS=17.0.1,name=iPhone 15 Pro" CODE_SIGNING_REQUIRED=NO
 
 format-check:
-	swift-format lint --recursive --parallel --strict .
+	swift-format lint --recursive --parallel --strict qqself qqselfTests
 
 format-fix:
-	swift-format format --recursive --parallel --in-place .
+	swift-format format --recursive --parallel --in-place qqself qqselfTests
 
 bindings:
 	# Cleanup
