@@ -23,6 +23,9 @@ A Rust command-line client works with plain text journal files and allows you to
 ## client-web
 A TypeScript/LitElement/WebAssembly web version of the journal app is served on [app.qqself.com](https://app.qqself.com). It supports most of the interactive features and handles synchronization with the cloud automatically.
 
+## client-ios
+A Swift iOS iPhone/iPad (and potentially MacOS) version of the journal app. It's early in development and not available in App Store yet.
+
 ## book
 Includes working draft of `On The Path To Mastery`, which serves as the basis for all the features in the journaling apps.
 
