@@ -10,7 +10,7 @@
 		961271CA2B22FB9F006318F6 /* Storage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 961271C92B22FB9F006318F6 /* Storage.swift */; };
 		961BB4E62B21A72D0032BD98 /* ServerApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = 961BB4E52B21A72D0032BD98 /* ServerApi.swift */; };
 		961BB4EB2B21B48F0032BD98 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 961BB4EA2B21B48F0032BD98 /* Logger.swift */; };
-		964788D12B1790AF009BAA78 /* qqselfApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 964788D02B1790AF009BAA78 /* qqselfApp.swift */; };
+		964788D12B1790AF009BAA78 /* QqselfApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 964788D02B1790AF009BAA78 /* QqselfApp.swift */; };
 		964788D52B1790B0009BAA78 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 964788D42B1790B0009BAA78 /* Assets.xcassets */; };
 		964788D82B1790B0009BAA78 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 964788D72B1790B0009BAA78 /* Preview Assets.xcassets */; };
 		966CB2D02B1DC0660011DF2D /* MainPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966CB2CF2B1DC0660011DF2D /* MainPage.swift */; };
@@ -60,7 +60,7 @@
 		961BB4E82B21A9E90032BD98 /* ApiTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiTests.swift; sourceTree = "<group>"; };
 		961BB4EA2B21B48F0032BD98 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
 		964788CD2B1790AF009BAA78 /* qqself.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = qqself.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		964788D02B1790AF009BAA78 /* qqselfApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = qqselfApp.swift; sourceTree = "<group>"; };
+		964788D02B1790AF009BAA78 /* QqselfApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QqselfApp.swift; sourceTree = "<group>"; };
 		964788D42B1790B0009BAA78 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		964788D72B1790B0009BAA78 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		964788DD2B1790B1009BAA78 /* qqselfTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = qqselfTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -180,7 +180,7 @@
 			isa = PBXGroup;
 			children = (
 				96D5BFED2B22FE28005881B4 /* Storage */,
-				964788D02B1790AF009BAA78 /* qqselfApp.swift */,
+				964788D02B1790AF009BAA78 /* QqselfApp.swift */,
 				961BB4E52B21A72D0032BD98 /* ServerApi.swift */,
 				961BB4EA2B21B48F0032BD98 /* Logger.swift */,
 				96F6CCAE2B2DD203008F4A97 /* CryptorPool.swift */,
@@ -351,7 +351,7 @@
 				966CB2DD2B1DC5DC0011DF2D /* JournalView.swift in Sources */,
 				961BB4E62B21A72D0032BD98 /* ServerApi.swift in Sources */,
 				96D5BFEF2B22FE47005881B4 /* SqliteStorage.swift in Sources */,
-				964788D12B1790AF009BAA78 /* qqselfApp.swift in Sources */,
+				964788D12B1790AF009BAA78 /* QqselfApp.swift in Sources */,
 				961BB4EB2B21B48F0032BD98 /* Logger.swift in Sources */,
 				961271CA2B22FB9F006318F6 /* Storage.swift in Sources */,
 				96F6CCAF2B2DD203008F4A97 /* CryptorPool.swift in Sources */,
