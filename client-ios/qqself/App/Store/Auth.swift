@@ -1,6 +1,6 @@
 import qqselfCoreLib
 
-let STORAGE_KEYS_KEY = "keys"  // Global key to store current user cached auth keys
+let storageKeysKey = "keys"  // Global key to store current user cached auth keys
 
 struct Auth {
 
@@ -30,7 +30,7 @@ struct Auth {
 
 private func getCredentials(persistent: Bool) async throws -> CryptorPool? {
   let storage = try newDefaultStorage(persistent: persistent)
-  let cachedKeys = try await storage.getItem(STORAGE_KEYS_KEY)
+  let cachedKeys = try await storage.getItem(storageKeysKey)
   if let cachedKeys {
     return try CryptorPool.fromKeys(cachedKeys)
   }
@@ -39,10 +39,10 @@ private func getCredentials(persistent: Bool) async throws -> CryptorPool? {
 
 private func saveCredentials(persistent: Bool, pool: CryptorPool) async throws {
   let storage = try newDefaultStorage(persistent: persistent)
-  return try await storage.setItem(key: STORAGE_KEYS_KEY, value: pool.serialiseKeys())
+  return try await storage.setItem(key: storageKeysKey, value: pool.serialiseKeys())
 }
 
 private func deleteCredentials(persistent: Bool) async throws {
   let storage = try newDefaultStorage(persistent: persistent)
-  return try await storage.removeItem(STORAGE_KEYS_KEY)
+  return try await storage.removeItem(storageKeysKey)
 }

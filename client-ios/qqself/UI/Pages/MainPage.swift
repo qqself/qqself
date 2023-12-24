@@ -2,17 +2,17 @@ import SwiftUI
 import qqselfCoreLib
 
 enum RenderMode {
-  case Loading
-  case Login
-  case Progress
-  case Register
+  case loading
+  case login
+  case progress
+  case register
 }
 
 @Observable class Model {
   let store: Store
   var subs: [() -> Void] = []
 
-  var renderMode: RenderMode = .Loading
+  var renderMode: RenderMode = .loading
   var errorMsg: String?
 
   init() {
@@ -32,13 +32,13 @@ enum RenderMode {
       store.subscribe(
         EventType.AuthLoginNotAuthenticated.self,
         handler: { _ in
-          self.renderMode = .Login
+          self.renderMode = .login
         }))
     await store.dispatch(EventType.InitStarted())
   }
 
   deinit {
-    subs.forEach { $0() }
+    for v in subs { v() }
   }
 }
 
@@ -48,7 +48,7 @@ struct MainPage: View {
   var body: some View {
     if model.errorMsg == nil {
       HStack {
-        if model.renderMode == .Loading {
+        if model.renderMode == .loading {
           Text("Loading...")
         } else {
           Text("Please login!")

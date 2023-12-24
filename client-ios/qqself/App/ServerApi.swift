@@ -66,7 +66,7 @@ class ServerApi: APIProvider {
   func find(payload: String) async throws -> [EncryptedEntry] {
     let req = api.createFindRequest(payload: payload)
     let resp = try await http(req: req)
-    let body: String! = String(data: resp.data, encoding: .utf8)  // Data should be always valid UTF8 text by now
+    let body: String! = String(data: resp.data, encoding: .utf8)
     let lines = body.components(separatedBy: "\n").filter { !$0.isEmpty }
     return lines.map { entry in
       let components = entry.components(separatedBy: ":")
