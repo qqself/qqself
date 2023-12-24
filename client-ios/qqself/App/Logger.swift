@@ -12,7 +12,7 @@ enum LogLevel: String {
   case error = "error"
 }
 
-let logLevels: [LogLevel: Int] = [
+private let logLevels: [LogLevel: Int] = [
   .trace: 1,
   .debug: 2,
   .info: 3,
@@ -20,10 +20,9 @@ let logLevels: [LogLevel: Int] = [
   .error: 5,
 ]
 
-// TODO Get level from the environment
-let logLevelMinimum = logLevels[.info]!
+private let logLevelMinimum = logLevels[config.logLevel]!
 
-func log(logLevel: LogLevel, msg: String) {
+private func log(logLevel: LogLevel, msg: String) {
   guard let levelValue = logLevels[logLevel], levelValue >= logLevelMinimum else {
     return
   }
@@ -32,18 +31,20 @@ func log(logLevel: LogLevel, msg: String) {
   print("[\(timestamp) \(level)] \(msg)")
 }
 
-let error = { log(logLevel: .error, msg: $0) }
-let warn = { log(logLevel: .warn, msg: $0) }
-let info = { log(logLevel: .info, msg: $0) }
-let debug = { log(logLevel: .debug, msg: $0) }
-let trace = { log(logLevel: .trace, msg: $0) }
-
-class OnPanic: PanicHook {
+private class OnPanic: PanicHook {
   func onPanic(msg: String) {
-    error(msg)
+    Log.error(msg)
   }
 }
 
 func setPanicHook() {
   setPanicHook(hook: OnPanic())
+}
+
+struct Log {
+  static func error(_ msg: String) { log(logLevel: .error, msg: msg) }
+  static func warn(_ msg: String) { log(logLevel: .warn, msg: msg) }
+  static func info(_ msg: String) { log(logLevel: .info, msg: msg) }
+  static func debug(_ msg: String) { log(logLevel: .debug, msg: msg) }
+  static func trace(_ msg: String) { log(logLevel: .trace, msg: msg) }
 }

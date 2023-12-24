@@ -28,6 +28,10 @@ struct CryptorPool {
     }.value
   }
 
+  func serialiseKeys() -> String {
+    return cryptor.serializeKeys()
+  }
+
   func sign(data: SignData) async throws -> String {
     try await Task {
       switch data {

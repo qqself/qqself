@@ -1,35 +1,68 @@
 import SwiftUI
 import qqselfCoreLib
 
-struct MainPage: View {
-  let hash = stringHash(input: "Hello")
-  var body: some View {
-    TabView(
-      selection: .constant(1),
-      content: {
-        WeekView().tabItem {
-          Tab(image: "icon_week", text: "Week")
-        }.tag(1)
-        JournalView().tabItem {
-          Tab(image: "icon_journal", text: "Journal")
-        }.tag(2)
-        SkillsView().tabItem {
-          Tab(image: "icon_id", text: "Identities")
-        }.tag(3)
-        RejectionsView().tabItem {
-          Tab(image: "icon_rejection", text: "Rejections")
-        }.tag(4)
-      })
+enum RenderMode {
+  case Loading
+  case Login
+  case Progress
+  case Register
+}
+
+@Observable class Model {
+  let store: Store
+  var subs: [() -> Void] = []
+
+  var renderMode: RenderMode = .Loading
+  var errorMsg: String?
+
+  init() {
+    store = Store(api: ServerApi(basePath: config.apiBasePath))
+  }
+
+  func onAppear() async {
+    guard subs.isEmpty else { return }
+
+    subs.append(
+      store.subscribe(
+        EventType.InitErrored.self,
+        handler: { event in
+          self.errorMsg = event.error.localizedDescription
+        }))
+    subs.append(
+      store.subscribe(
+        EventType.AuthLoginNotAuthenticated.self,
+        handler: { _ in
+          self.renderMode = .Login
+        }))
+    await store.dispatch(EventType.InitStarted())
+  }
+
+  deinit {
+    subs.forEach { $0() }
   }
 }
 
-struct Tab: View {
-  let image: String
-  let text: String
+struct MainPage: View {
+  @State var model = Model()
+
   var body: some View {
-    VStack {
-      Image(self.image)
-      Text(self.text)
+    if model.errorMsg == nil {
+      HStack {
+        if model.renderMode == .Loading {
+          Text("Loading...")
+        } else {
+          Text("Please login!")
+        }
+      }
+      .onAppear(perform: onAppear)
+    } else {
+      Text("Error: \(model.errorMsg!)")
+    }
+  }
+
+  func onAppear() {
+    Task {
+      await model.onAppear()
     }
   }
 }

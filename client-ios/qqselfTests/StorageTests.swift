@@ -1,7 +1,8 @@
 import XCTest
 import qqselfCoreLib
 
-// HACK: XCTAssertEqual(try await storage.getItem("foo")) cannot be compiled and cannot separated variables has to be created
+// HACK: XCTAssertEqual(try await storage.getItem("foo")) doesn't compile.
+//       Prior binding to variable is needed
 
 func storages(clear: Bool = true, dbName: String = "test") async -> [Storage] {
   // Return both implementation of a storage to ensure both works
