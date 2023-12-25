@@ -7,7 +7,7 @@ edition = "2021"
 actix-web = "4.4.0"
 async-trait = "0.1.74"
 env_logger = "0.10.1"
-futures = "0.3.29"
+futures = "0.3.30"
 lazy_static = "1.4.0"
 log = "0.4.20"
 qqself-core = { path = "../core", features = ["serde"] }
