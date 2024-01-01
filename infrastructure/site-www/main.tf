@@ -1,18 +1,13 @@
 locals {
   origin = "s3-origin"
-  tags = {
-    owner = "site-www"
-  }
 }
 
 resource "aws_s3_bucket" "sources" {
-  bucket = "qqself-${var.name-suffix}-site-www"
-  tags   = local.tags
+  bucket = "qqself-site-www"
 }
 
 resource "aws_s3_bucket_website_configuration" "sources" {
   bucket = aws_s3_bucket.sources.id
-
   index_document {
     suffix = "index.html"
   }
@@ -47,7 +42,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   enabled             = true
   http_version        = "http3"
   is_ipv6_enabled     = true
-  tags                = local.tags
+  aliases             = ["www.qqself.com", "qqself.com"]
 
   origin {
     domain_name = aws_s3_bucket.sources.bucket_regional_domain_name
@@ -83,10 +78,15 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    acm_certificate_arn = var.certificate-arn
+    ssl_support_method  = "sni-only"
   }
 }
 
 output "cloudfront_domain" {
   value = aws_cloudfront_distribution.s3_distribution.domain_name
+}
+
+output "cloudfron_zone_id" {
+  value = aws_cloudfront_distribution.s3_distribution.hosted_zone_id
 }
