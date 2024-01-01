@@ -1,7 +1,11 @@
 {% extends "base.html" %} 
 
 {% block title %} {{ section.title }} {% endblock title %} 
-{% block css %}<link rel="stylesheet" href="/index.css" />{% endblock css %} 
+{% block head %}
+<link rel="stylesheet" href="/index.css" />
+<link rel="canonical" href="https://www.qqself.com" />
+<script src="/redirect.js"></script>
+{% endblock head %} 
 
 {% block content %}
 <div class="index">
