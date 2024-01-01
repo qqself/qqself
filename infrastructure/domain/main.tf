@@ -24,6 +24,18 @@ resource "aws_route53_record" "www" {
   }
 }
 
+resource "aws_route53_record" "app" {
+  zone_id = aws_route53_zone.qqself.zone_id
+  name    = "app.qqself.com"
+  type    = "A"
+
+  alias {
+    name                   = var.app-destination-name
+    zone_id                = var.app-destination-hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
 resource "aws_route53_record" "naked" {
   zone_id = aws_route53_zone.qqself.zone_id
   name    = "qqself.com"
