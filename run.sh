@@ -60,7 +60,7 @@ lint() {
   log "Linting all TypeScript projects"
   (cd client-web && yarn lint:check)
   if [[ "$(uname -s)" == "Darwin" ]]; then 
-    (cd client-ios && make format-check)
+    (cd client-ios && make lint-check)
   fi
 }
 

@@ -1,18 +1,32 @@
 import XCTest
 import qqselfCoreLib
 
+class OfflineApi: APIProvider {
+  func set(payload: String) async throws -> String {
+    throw ApiError.networkError
+  }
+
+  func find(payload: String) async throws -> [EncryptedEntry] {
+    throw ApiError.networkError
+  }
+
+  func deleteAccount(payload: String) async throws {
+    throw ApiError.networkError
+  }
+}
+
 class StoreTests: XCTestCase {
 
   func testDispatchSubscribe() async {
-    let store = Store()
-    var cryptor: Cryptor? = nil
+    let store = Store(api: OfflineApi())
+    var initialized = false
     let unsubscribe = store.subscribe(
       EventType.InitSucceeded.self,
       handler: { event in
-        cryptor = event.cryptor
+        initialized = true
       })
-    await store.dispatch(EventType.InitSucceeded(cryptor: cryptorGenerateNew()))
-    XCTAssertNotNil(cryptor)
+    await store.dispatch(EventType.InitStarted())
+    XCTAssert(initialized)
     unsubscribe()
   }
 

@@ -25,7 +25,7 @@ struct LoginPage: View {
       do {
         let newKeys = await CryptorPool.generateKeys()
         try newKeys.write(to: filePath, atomically: true, encoding: .utf8)
-        info("Generated new keys to \(filePath)")
+        Log.info("Generated new keys to \(filePath)")
       } catch {
         errorMsg = "Error while generating new key: \(error)"
         return

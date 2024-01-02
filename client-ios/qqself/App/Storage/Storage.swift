@@ -16,3 +16,9 @@ func newStorage(dbName: String, persistent: Bool) throws -> Storage {
     return MemoryStorage(dbName: dbName)
   }
 }
+
+// Returns "DEFAULT" database. Used as a global persistent storage for
+// storing information about other accounts and databases
+func newDefaultStorage(persistent: Bool) throws -> Storage {
+  return try newStorage(dbName: "DEFAULT", persistent: persistent)
+}

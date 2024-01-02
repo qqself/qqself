@@ -42,6 +42,11 @@
 		96F6CCB62B2EAF0A008F4A97 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F6CCB42B2EAF0A008F4A97 /* Store.swift */; };
 		96F6CCB82B2EB442008F4A97 /* StoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F6CCB72B2EB442008F4A97 /* StoreTests.swift */; };
 		96F6CCB92B2EC282008F4A97 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 961BB4EA2B21B48F0032BD98 /* Logger.swift */; };
+		96F6CCBC2B36A8F5008F4A97 /* Auth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F6CCBB2B36A8F5008F4A97 /* Auth.swift */; };
+		96F6CCBD2B36A8F5008F4A97 /* Auth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F6CCBB2B36A8F5008F4A97 /* Auth.swift */; };
+		96F6CCBF2B36AE62008F4A97 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F6CCBE2B36AE62008F4A97 /* Config.swift */; };
+		96F6CCC02B36AE62008F4A97 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F6CCBE2B36AE62008F4A97 /* Config.swift */; };
+		96F6CCC22B36B5FC008F4A97 /* Progress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F6CCC12B36B5FC008F4A97 /* Progress.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -84,6 +89,9 @@
 		96F6CCB12B2E0D85008F4A97 /* CryptorPoolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptorPoolTests.swift; sourceTree = "<group>"; };
 		96F6CCB42B2EAF0A008F4A97 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
 		96F6CCB72B2EB442008F4A97 /* StoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreTests.swift; sourceTree = "<group>"; };
+		96F6CCBB2B36A8F5008F4A97 /* Auth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Auth.swift; sourceTree = "<group>"; };
+		96F6CCBE2B36AE62008F4A97 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
+		96F6CCC12B36B5FC008F4A97 /* Progress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Progress.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -179,12 +187,13 @@
 		966CB2E22B1DC6710011DF2D /* App */ = {
 			isa = PBXGroup;
 			children = (
+				96F6CCBA2B36A8E4008F4A97 /* Store */,
 				96D5BFED2B22FE28005881B4 /* Storage */,
 				964788D02B1790AF009BAA78 /* QqselfApp.swift */,
 				961BB4E52B21A72D0032BD98 /* ServerApi.swift */,
 				961BB4EA2B21B48F0032BD98 /* Logger.swift */,
 				96F6CCAE2B2DD203008F4A97 /* CryptorPool.swift */,
-				96F6CCB42B2EAF0A008F4A97 /* Store.swift */,
+				96F6CCBE2B36AE62008F4A97 /* Config.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -204,6 +213,7 @@
 			children = (
 				966CB2CF2B1DC0660011DF2D /* MainPage.swift */,
 				96F6CCA52B2D644D008F4A97 /* LoginPage.swift */,
+				96F6CCC12B36B5FC008F4A97 /* Progress.swift */,
 			);
 			path = Pages;
 			sourceTree = "<group>";
@@ -226,6 +236,15 @@
 				96F6CCA72B2D64CF008F4A97 /* LogoBlock.swift */,
 			);
 			path = Components;
+			sourceTree = "<group>";
+		};
+		96F6CCBA2B36A8E4008F4A97 /* Store */ = {
+			isa = PBXGroup;
+			children = (
+				96F6CCB42B2EAF0A008F4A97 /* Store.swift */,
+				96F6CCBB2B36A8F5008F4A97 /* Auth.swift */,
+			);
+			path = Store;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -344,11 +363,14 @@
 				966CB2E12B1DC62D0011DF2D /* RejectionsView.swift in Sources */,
 				96F6CCB52B2EAF0A008F4A97 /* Store.swift in Sources */,
 				966CB2DB2B1DC5860011DF2D /* WeekView.swift in Sources */,
+				96F6CCC22B36B5FC008F4A97 /* Progress.swift in Sources */,
 				966CB2DF2B1DC60D0011DF2D /* SkillsView.swift in Sources */,
 				96F6CCA62B2D644D008F4A97 /* LoginPage.swift in Sources */,
+				96F6CCBC2B36A8F5008F4A97 /* Auth.swift in Sources */,
 				966CB2D02B1DC0660011DF2D /* MainPage.swift in Sources */,
 				96F6CCAC2B2D6A0E008F4A97 /* Button.swift in Sources */,
 				966CB2DD2B1DC5DC0011DF2D /* JournalView.swift in Sources */,
+				96F6CCBF2B36AE62008F4A97 /* Config.swift in Sources */,
 				961BB4E62B21A72D0032BD98 /* ServerApi.swift in Sources */,
 				96D5BFEF2B22FE47005881B4 /* SqliteStorage.swift in Sources */,
 				964788D12B1790AF009BAA78 /* QqselfApp.swift in Sources */,
@@ -368,11 +390,13 @@
 				9670BD3F2B23368000ED6AF0 /* SqliteStorage.swift in Sources */,
 				96F6CCB82B2EB442008F4A97 /* StoreTests.swift in Sources */,
 				96F6CCB62B2EAF0A008F4A97 /* Store.swift in Sources */,
+				96F6CCC02B36AE62008F4A97 /* Config.swift in Sources */,
 				9670BD3D2B23366500ED6AF0 /* ServerApi.swift in Sources */,
 				96F6CCB02B2DD203008F4A97 /* CryptorPool.swift in Sources */,
 				9670BD3E2B23367500ED6AF0 /* Storage.swift in Sources */,
 				9670BD3B2B23361900ED6AF0 /* ApiTests.swift in Sources */,
 				9670BD3C2B23361B00ED6AF0 /* StorageTests.swift in Sources */,
+				96F6CCBD2B36A8F5008F4A97 /* Auth.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
