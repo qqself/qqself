@@ -1,17 +1,26 @@
 provider "aws" {
-  region = var.aws_region
+  region = "us-east-1"
   default_tags {
     tags = {
-      environment = "qqself-${var.name-suffix}"
+      owner = "qqself"
     }
   }
 }
 
 module "site-www" {
-  source      = "./site-www"
-  name-suffix = var.name-suffix
+  source          = "./site-www"
+  certificate-arn = module.domain.certificate_arn
 }
 
-output "cloudfront_domain" {
-  value = module.site-www.cloudfront_domain
+module "site-app" {
+  source          = "./site-app"
+  certificate-arn = module.domain.certificate_arn
+}
+
+module "domain" {
+  source                         = "./domain"
+  www-destination-name           = module.site-www.cloudfront_domain
+  www-destination-hosted_zone_id = module.site-www.cloudfron_zone_id
+  app-destination-name           = module.site-app.cloudfront_domain
+  app-destination-hosted_zone_id = module.site-app.cloudfron_zone_id
 }
