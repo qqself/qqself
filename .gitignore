@@ -24,8 +24,12 @@ client-ios/qqself/qqselfCore.swift
 client-ios/qqselfCoreLib/Sources/qqselfCoreLib/qqselfCoreLib.swift
 client-ios/qqselfCoreLib/artifacts/qqselfCore.xcframework/ios-arm64/qqselfCore.framework/qqselfCore
 client-ios/qqselfCoreLib/artifacts/qqselfCore.xcframework/ios-arm64_x86_64-simulator/qqselfCore.framework/qqselfCore
+www/public
 
 # Terraform
 **/.terraform/*
 *.tfstate
 *.tfvars
+
+# Book
+user.lock

@@ -76,6 +76,16 @@ docker_push() {
   docker push "$tag"
 }
 
+s3_site_sync() {
+  local files=$1
+  local bucket=$2
+  if [ ! -f "$files/index.html" ]; then
+    echo "Error: No index.html file found in $files"
+    exit 1
+  fi
+  aws s3 sync "$files" "$bucket" --delete
+}
+
 apprunner_update() {
   local service="$1"
   local tag="$2"
@@ -95,15 +105,10 @@ deploy() {
     apprunner_update "qqself-api-sync" "$repo/$name"
   elif [[ "$service" == "client-web" ]]; then 
     (cd client-web && yarn build)
-    repo="public.ecr.aws/m5h4l2c6"
-    name="qqself-app:$VERSION"
-    docker_push "$repo" "$name" "client-web/Dockerfile"
-    apprunner_update "qqself-client-web" "$repo/$name" 
+    s3_site_sync "client-web/dist" "s3://qqself-site-app" 
   elif [[ "$service" == "www" ]]; then 
-    repo="public.ecr.aws/q2c2s6b5"
-    name="qqself-www:$VERSION"
-    docker_push "$repo" "$name" "www/Dockerfile"
-    apprunner_update "qqself-www" "$repo/$name" 
+    (cd www && docker run -u "$(id -u):$(id -g)" -v $PWD:/app --workdir /app ghcr.io/getzola/zola:v0.17.1 build)
+    s3_site_sync "www/public" "s3://qqself-site-www"
   else 
     log "Specify what to deploy: api-sync | client-web | www"
   fi
