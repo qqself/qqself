@@ -3,7 +3,7 @@ locals {
 }
 
 resource "aws_s3_bucket" "sources" {
-  bucket = "qqself-site-www"
+  bucket = "qqself-site-app"
 }
 
 resource "aws_s3_bucket_website_configuration" "sources" {
@@ -13,7 +13,7 @@ resource "aws_s3_bucket_website_configuration" "sources" {
   }
 }
 
-resource "aws_cloudfront_origin_access_identity" "site-www" {}
+resource "aws_cloudfront_origin_access_identity" "site-app" {}
 
 resource "aws_s3_bucket_policy" "cloudfront_access" {
   bucket = aws_s3_bucket.sources.id
@@ -24,7 +24,7 @@ data "aws_iam_policy_document" "allow_access_cloudfront" {
   statement {
     principals {
       type        = "AWS"
-      identifiers = [aws_cloudfront_origin_access_identity.site-www.iam_arn]
+      identifiers = [aws_cloudfront_origin_access_identity.site-app.iam_arn]
     }
     actions = [
       "s3:GetObject",
@@ -42,13 +42,13 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   enabled             = true
   http_version        = "http3"
   is_ipv6_enabled     = true
-  aliases             = ["www.qqself.com", "qqself.com"]
+  aliases             = ["app.qqself.com"]
 
   origin {
     domain_name = aws_s3_bucket.sources.bucket_regional_domain_name
     origin_id   = local.origin
     s3_origin_config {
-      origin_access_identity = aws_cloudfront_origin_access_identity.site-www.cloudfront_access_identity_path
+      origin_access_identity = aws_cloudfront_origin_access_identity.site-app.cloudfront_access_identity_path
     }
   }
 
