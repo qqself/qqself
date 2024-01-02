@@ -60,53 +60,21 @@ jobs:
           target/
         key: cargo-macos-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: cargo-macos
-    # XCode 15 has an issue https://github.com/actions/runner-images/issues/7971
-    # Following workaround taken from https://github.com/actions/runner-images/discussions/8651#discussioncomment-7393444
-    - name: XCode 15 Fix
-      run: |
-          wget https://github.com/biscuitehh/yeetd/releases/download/1.0/yeetd-normal.pkg
-          sudo installer -pkg yeetd-normal.pkg -target /
-          yeetd &
     - run: make deps
     - run: make bindings
     - run: make build
     - run: echo "make test is disabled. Waiting for XCode 15 fix and new agent"
     - run: make lint-check
 
-  deploy-api:
+  deploy:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
     - uses: aws-actions/configure-aws-credentials@v4
       with:
-        aws-access-key-id: ${{ secrets.API_SYNC_REGISTRY_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.API_SYNC_REGISTRY_KEY_SECRET }}
-        aws-region: us-east-1
-    - run: ./run.sh deploy api-sync
-
-  deploy-client-web:
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.CLIENT_WEB_REGISTRY_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.CLIENT_WEB_REGISTRY_KEY_SECRET }}
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: us-east-1
     - run: ./run.sh deps
-    - run: ./run.sh deploy client-web
-  
-  deploy-www:
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.WWW_REGISTRY_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.WWW_REGISTRY_KEY_SECRET }}
-        aws-region: us-east-1
     - run: ./run.sh deploy www
-
