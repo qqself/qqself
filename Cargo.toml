@@ -3,10 +3,11 @@ resolver = "2"
 
 members = [
     "core",
-    "core-bindings-wasm",
     "core-bindings-c",
+    "core-bindings-wasm",
     "client-cli",
-    "api-sync",
+    "api-entries/services",
+    "api-entries/webservice",
 ]
 
 [profile.release]

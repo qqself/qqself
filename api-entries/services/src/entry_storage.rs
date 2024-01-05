@@ -1,7 +1,8 @@
-use std::pin::Pin;
+use std::{pin::Pin, sync::Mutex};
 
 use async_trait::async_trait;
-use futures::Stream;
+
+use futures::{stream, Stream};
 use qqself_core::{
     date_time::timestamp::Timestamp,
     encryption::{
@@ -20,9 +21,9 @@ pub enum StorageErr {
 type FindItem = Result<(PayloadId, PayloadBytes), StorageErr>;
 
 #[async_trait]
-pub trait PayloadStorage {
-    /// Perists the given payload
-    async fn set(&self, payload: Payload, payload_id: PayloadId) -> Result<(), StorageErr>;
+pub trait EntryStorage {
+    /// Persists the given payload
+    async fn set(&self, payload: Payload, payload_id: PayloadId) -> Result<PayloadId, StorageErr>;
 
     /// Find payloads for the given public key. If `after_timestamp` is set, then only payloads with creation timestamp equal or older are returned
     fn find(
@@ -32,12 +33,73 @@ pub trait PayloadStorage {
     ) -> Pin<Box<dyn Stream<Item = FindItem>>>;
 
     /// Delete all payloads for the given public key
-    async fn delete(&self, public_key: &PublicKey) -> Result<(), StorageErr>;
+    async fn delete(&self, public_key: &PublicKey) -> Result<usize, StorageErr>;
+}
+
+pub struct MemoryEntryStorage {
+    data: Mutex<Vec<(PublicKey, String, Option<Payload>)>>,
+}
+
+impl MemoryEntryStorage {
+    pub fn new() -> Self {
+        Self {
+            data: Mutex::from(Vec::new()),
+        }
+    }
+}
+
+impl Default for MemoryEntryStorage {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[async_trait]
+impl EntryStorage for MemoryEntryStorage {
+    async fn set(&self, payload: Payload, payload_id: PayloadId) -> Result<PayloadId, StorageErr> {
+        let mut data = self.data.lock().unwrap();
+        data.push((
+            payload.public_key().clone(),
+            payload_id.to_string(),
+            Some(payload),
+        ));
+        Ok(payload_id)
+    }
+
+    fn find(
+        &self,
+        public_key: &PublicKey,
+        last_known_id: Option<(Timestamp, StableHash)>,
+    ) -> Pin<Box<dyn Stream<Item = Result<(PayloadId, PayloadBytes), StorageErr>>>> {
+        let data = self.data.lock().unwrap();
+        let mut found = Vec::new();
+        for (key, id, val) in data.iter() {
+            if key != public_key {
+                continue;
+            }
+            if last_known_id.as_ref().map_or(false, |(timestamp, hash)| {
+                id < &timestamp.to_string()
+                    || id == &PayloadId::encode(*timestamp, hash.clone()).to_string()
+            }) {
+                continue;
+            }
+            if let Some(val) = val {
+                found.push(Ok((PayloadId::new_encoded(id.clone()), val.data())));
+            }
+        }
+        Box::pin(stream::iter(found))
+    }
+
+    async fn delete(&self, public_key: &PublicKey) -> Result<usize, StorageErr> {
+        let mut data = self.data.lock().unwrap();
+        let len_before = data.len();
+        data.retain(|(key, _, _)| key != public_key);
+        Ok(len_before - data.len())
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::storage::payload_storage_mem::PayloadStorageMemory;
 
     use super::*;
     use futures::StreamExt;
@@ -64,7 +126,7 @@ mod tests {
         Keys { public, private }
     }
 
-    async fn items_raw<S: PayloadStorage>(
+    async fn items_raw<S: EntryStorage>(
         keys: &Keys,
         s: &S,
         min_payload_id: Option<(Timestamp, StableHash)>,
@@ -76,7 +138,7 @@ mod tests {
             .await
     }
 
-    async fn items<S: PayloadStorage>(
+    async fn items<S: EntryStorage>(
         keys: &Keys,
         s: &S,
         min_payload_id: Option<u64>,
@@ -116,7 +178,7 @@ mod tests {
         )
     }
 
-    async fn test_storage<S: PayloadStorage>(storage: S) {
+    async fn test_storage<S: EntryStorage>(storage: S) {
         let keys1 = &keys(PUBLIC_KEY_1, PRIVATE_KEY_1);
         let keys2 = &keys(PUBLIC_KEY_2, PRIVATE_KEY_2);
 
@@ -155,7 +217,7 @@ mod tests {
 
     #[tokio::test]
     async fn memory_storage() {
-        test_storage(PayloadStorageMemory::new()).await;
+        test_storage(MemoryEntryStorage::new()).await;
     }
 
     /// To run test locally use appropriate environment variables e.g. AWS_PROFILE=test-dynamo
@@ -163,7 +225,10 @@ mod tests {
     #[cfg(feature = "storage-dynamodb")]
     #[tokio::test]
     async fn dynamo_storage() {
-        use crate::storage::payload_storage_dynamodb::PayloadStorageDynamoDB;
-        test_storage(PayloadStorageDynamoDB::new("qqself_entries").await).await;
+        env_logger::init();
+        test_storage(
+            crate::entry_storage_dynamodb::DynamoDBEntryStorage::new("qqself_entries").await,
+        )
+        .await;
     }
 }

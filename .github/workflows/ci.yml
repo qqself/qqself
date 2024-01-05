@@ -79,3 +79,4 @@ jobs:
     - run: ./run.sh deps
     - run: ./run.sh deploy www
     - run: ./run.sh deploy client-web
+    - run: ./run.sh deploy api-entries

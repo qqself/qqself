@@ -14,7 +14,7 @@ usage() {
   echo "Usage:
     ./run.sh build 
     ./run.sh test   
-    ./run.sh deploy [ client-web | api-sync | www ]
+    ./run.sh deploy [ client-web | api-entries | www ]
     ./run.sh lint   
     ./run.sh deps"
   exit 1
@@ -98,10 +98,10 @@ apprunner_update() {
 deploy() {
   local service="$1"
   log "Deploying $service"
-  if [[ "$service" == "api-sync" ]]; then
+  if [[ "$service" == "api-entries" ]]; then
     repo="public.ecr.aws/q1q1x2u3"
     name="qqself-api-sync:$VERSION"
-    docker_push "$repo" "$name" "api-sync/Dockerfile" 
+    docker_push "$repo" "$name" "api-entries/webservice/Dockerfile" 
     apprunner_update "qqself-api-sync" "$repo/$name"
   elif [[ "$service" == "client-web" ]]; then 
     (cd client-web && yarn build)
