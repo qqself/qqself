@@ -7,7 +7,7 @@ edition = "2021"
 qqself-core = {path = "../core", features = ["serde"] }
 reqwest = "0.11.23"
 serde = { version = "1.0", features = ["derive"] }
-tokio = { version = "1.35.0", features = ["full"] }
+tokio = { version = "1.35.1", features = ["full"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["local-time", "env-filter"] }
 rayon = "1.8.0"

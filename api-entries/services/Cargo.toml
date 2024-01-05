@@ -14,7 +14,7 @@ log = "0.4.20"
 qqself-core = { path = "../../core", features = ["serde"] }
 serde = { version="1.0.194", features = ["derive"] }
 thiserror = "1.0.51"
-tokio = { version = "1.35.0", features = ["rt", "macros", "time"] }
+tokio = { version = "1.35.1", features = ["rt", "macros", "time"] }
 
 [features]
 default = []
