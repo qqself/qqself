@@ -56,6 +56,20 @@ resource "aws_route53_record" "api" {
   records = ["nu2qwbtubz.us-east-1.awsapprunner.com"]
 }
 
+resource "aws_route53_record" "email" {
+  zone_id = aws_route53_zone.qqself.zone_id
+  name    = ""
+  type    = "MX"
+  ttl     = 300
+  records = [
+    "1 ASPMX.L.GOOGLE.COM.",
+    "5 ALT1.ASPMX.L.GOOGLE.COM.",
+    "5 ALT2.ASPMX.L.GOOGLE.COM.",
+    "10 ALT3.ASPMX.L.GOOGLE.COM.",
+    "10 ALT4.ASPMX.L.GOOGLE.COM.",
+  ]
+}
+
 resource "aws_acm_certificate" "certificate" {
   domain_name               = "*.qqself.com"
   validation_method         = "EMAIL"
