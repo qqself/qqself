@@ -1,0 +1,19 @@
+[package]
+name = "qqself-api-entries-webservice"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+actix-web = "4.4.1"
+env_logger = "0.10.1"
+futures = "0.3.30"
+lazy_static = "1.4.0"
+log = "0.4.20"
+qqself-api-entries-services = { path = "../services" }
+
+[dev-dependencies]
+qqself-core = { path = "../../core" }
+
+[features]
+default = []
+storage-dynamodb = ["qqself-api-entries-services/storage-dynamodb"]
