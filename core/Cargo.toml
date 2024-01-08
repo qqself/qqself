@@ -12,7 +12,7 @@ getrandom = { version = "0.2.11", features = ["js"] }
 lazy_static = "1.4.0"
 regex = "1.10.2"
 rsa = "0.9.6"
-serde = { version = "1.0.194", optional = true, features = ["derive"] }
+serde = { version = "1.0.195", optional = true, features = ["derive"] }
 thiserror = "1.0.56"
 time = { version = "0.3.31", features = ["wasm-bindgen", "local-offset"] }
 wasm-bindgen = { version = "0.2.88", optional = true }
