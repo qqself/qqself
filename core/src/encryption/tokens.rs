@@ -81,9 +81,9 @@ impl DeleteToken {
 
 #[derive(Error, Debug, PartialEq, Eq)]
 pub enum TokenErr {
-    #[error("Search token validation error. {0}")]
+    #[error("Token validation error. {0}")]
     ValidationError(&'static str),
-    #[error("Search token timestamp is too old")]
+    #[error("Token timestamp is too old")]
     TimestampIsTooOld,
 }
 

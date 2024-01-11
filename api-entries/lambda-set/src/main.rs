@@ -6,27 +6,24 @@ use qqself_api_entries_services::{
     time::TimeOs,
 };
 
-async fn delete_entries(
-    entries: &Entries,
-    req: Request,
-) -> Result<Response<String>, ServiceErrorType> {
+async fn set_entry(entries: &Entries, req: Request) -> Result<Response<String>, ServiceErrorType> {
     let req_body = match req.into_body() {
         lambda_http::Body::Text(s) => s,
         _ => return Err(ServiceErrorType::BadInput("Not a text body".to_string())),
     };
-    let deleted = entries
-        .delete(req_body.to_string())
+    let payload_id = entries
+        .save_payload(req_body)
         .await
         .map(|v| v.to_string())?;
     Response::builder()
         .status(200)
         .header("content-type", "text/plain")
-        .body(deleted)
+        .body(payload_id)
         .map_err(|err| ServiceErrorType::ResponseError(err.to_string()))
 }
 
 async fn handler(entries: &Entries, req: Request) -> Result<Response<String>, Error> {
-    match delete_entries(entries, req).await {
+    match set_entry(entries, req).await {
         Ok(v) => Ok(v),
         Err(err) => Ok::<Response<String>, Error>(
             Response::builder()
@@ -44,8 +41,8 @@ async fn handler(entries: &Entries, req: Request) -> Result<Response<String>, Er
 async fn main() -> Result<(), Error> {
     let dynamo = DynamoDBEntryStorage::new("qqself_entries").await;
     let entries = Entries::new(Box::new(dynamo), Box::<TimeOs>::default());
-    run(service_fn(|req: Request| async {
-        handler(&entries, req).await
+    run(service_fn(|event: Request| async {
+        handler(&entries, event).await
     }))
     .await
 }
@@ -84,7 +81,7 @@ mod tests {
         assert_eq!(resp.headers(), &headers);
         assert_eq!(
             resp.body().to_string(),
-            r#"{"error_code":400,"error":"BadInput. Error encoding delete token. Token validation error. Failed to read binary data"}"#
+            r#"{"error_code":400,"error":"BadInput. Payload validation failure. Cannot read binary data"}"#
         );
     }
 }

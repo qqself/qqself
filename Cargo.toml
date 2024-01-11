@@ -9,6 +9,9 @@ members = [
     "api-entries/services",
     "api-entries/webservice",
     "api-entries/lambda-health",
+    "api-entries/lambda-set",
+    "api-entries/lambda-delete",
+    "api-entries/lambda-find",
 ]
 
 [profile.release]

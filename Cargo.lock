@@ -2369,11 +2369,46 @@ dependencies = [
 ]
 
 [[package]]
+name = "qqself-lambda-entries-delete"
+version = "0.0.0"
+dependencies = [
+ "lambda_http",
+ "qqself-api-entries-services",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "qqself-lambda-entries-find"
+version = "0.0.0"
+dependencies = [
+ "futures",
+ "lambda_http",
+ "lambda_runtime",
+ "qqself-api-entries-services",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "qqself-lambda-entries-health"
 version = "0.0.0"
 dependencies = [
  "lambda_http",
  "qqself-api-entries-services",
+ "tokio",
+]
+
+[[package]]
+name = "qqself-lambda-entries-set"
+version = "0.0.0"
+dependencies = [
+ "lambda_http",
+ "qqself-api-entries-services",
+ "serde",
+ "serde_json",
  "tokio",
 ]
 
@@ -2775,9 +2810,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.96"
+version = "1.0.111"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "057d394a50403bcac12672b2b18fb387ab6d289d957dab67dd201875391e52f1"
+checksum = "176e46fa42316f18edd598015a5166857fc835ec732f5215eac6b7bdbf0a84f4"
 dependencies = [
  "itoa",
  "ryu",

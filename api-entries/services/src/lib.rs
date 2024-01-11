@@ -4,5 +4,5 @@ pub mod service_error;
 pub mod time;
 pub use qqself_core::build_info;
 
-#[cfg(feature = "storage-dynamodb")]
+#[cfg(feature = "dynamodb")]
 pub mod entry_storage_dynamodb;
