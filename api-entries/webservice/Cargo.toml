@@ -16,4 +16,4 @@ qqself-core = { path = "../../core" }
 
 [features]
 default = []
-storage-dynamodb = ["qqself-api-entries-services/storage-dynamodb"]
+dynamodb = ["qqself-api-entries-services/dynamodb"]

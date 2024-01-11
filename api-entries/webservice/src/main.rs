@@ -13,7 +13,7 @@ use qqself_api_entries_webservice::routes::http_config;
 const PORT: u16 = 8080;
 
 async fn entry_service() -> Data<Entries> {
-    #[cfg(feature = "storage-dynamodb")]
+    #[cfg(feature = "dynamodb")]
     {
         info!("Using DynamoDB as a storage");
         let dynamo =
@@ -23,7 +23,7 @@ async fn entry_service() -> Data<Entries> {
             .await;
         Data::new(Entries::new(Box::new(dynamo), Box::<TimeOs>::default()))
     }
-    #[cfg(not(feature = "storage-dynamodb"))]
+    #[cfg(not(feature = "dynamodb"))]
     {
         info!("Falling back to memory storage, no data will be persisted");
         Data::new(Entries::new(
