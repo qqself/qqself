@@ -82,7 +82,7 @@ impl EntryStorage for DynamoDBEntryStorage {
         &self,
         public_key: &PublicKey,
         last_known_id: Option<(Timestamp, StableHash)>,
-    ) -> Pin<Box<dyn Stream<Item = Result<(PayloadId, PayloadBytes), StorageErr>>>> {
+    ) -> Pin<Box<dyn Stream<Item = Result<(PayloadId, PayloadBytes), StorageErr>> + Send>> {
         let filter = if last_known_id.is_none() {
             "pk = :pk"
         } else {

@@ -2383,9 +2383,7 @@ dependencies = [
 name = "qqself-lambda-entries-find"
 version = "0.0.0"
 dependencies = [
- "futures",
  "lambda_http",
- "lambda_runtime",
  "qqself-api-entries-services",
  "serde",
  "serde_json",
