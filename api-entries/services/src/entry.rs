@@ -61,12 +61,12 @@ impl Entries {
         &self,
         token_data: String,
     ) -> Result<
-        Peekable<Pin<Box<dyn Stream<Item = Result<(PayloadId, PayloadBytes), ServiceErrorType>>>>>,
+        Peekable<Pin<Box<dyn Stream<Item = Result<(PayloadId, PayloadBytes), ServiceErrorType>> + Send>>>,
         ServiceErrorType,
     > {
         let now = self.time.now().await;
         let search_token = Entries::validate_search_token(token_data, now)?;
-        let stream: Pin<Box<dyn Stream<Item = StreamItem>>> = Box::pin(
+        let stream: Pin<Box<dyn Stream<Item = StreamItem> + Send>> = Box::pin(
             self.storage
                 .find(
                     search_token.public_key(),
@@ -82,6 +82,23 @@ impl Entries {
         );
 
         Ok(stream.peekable())
+    }
+
+    pub async fn find_batched(&self, token_data: String) -> Result<String, ServiceErrorType> {
+        // TODO Although it's batched memory usage is still twice as it could be as we store
+        //      collection of payloads and then serialized collection. Would be much better to
+        //      rely on streaming by mapping items and reduce memory pressure
+        let stream: Vec<_> = self.find(token_data).await?.collect().await;
+        let mut out = String::new();
+        for entry in stream {
+            match entry {
+                Ok((payload_id, payload_bytes)) => {
+                    out.push_str(&format!("{}:{}\n", payload_id, payload_bytes.data()))
+                }
+                Err(err) => return Err(err),
+            }
+        }
+        Ok(out)
     }
 
     async fn validate_payload(

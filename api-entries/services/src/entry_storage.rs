@@ -30,7 +30,7 @@ pub trait EntryStorage {
         &self,
         public_key: &PublicKey,
         last_known_id: Option<(Timestamp, StableHash)>,
-    ) -> Pin<Box<dyn Stream<Item = FindItem>>>;
+    ) -> Pin<Box<dyn Stream<Item = FindItem> + Send>>;
 
     /// Delete all payloads for the given public key
     async fn delete(&self, public_key: &PublicKey) -> Result<usize, StorageErr>;
@@ -70,7 +70,7 @@ impl EntryStorage for MemoryEntryStorage {
         &self,
         public_key: &PublicKey,
         last_known_id: Option<(Timestamp, StableHash)>,
-    ) -> Pin<Box<dyn Stream<Item = Result<(PayloadId, PayloadBytes), StorageErr>>>> {
+    ) -> Pin<Box<dyn Stream<Item = Result<(PayloadId, PayloadBytes), StorageErr>> + Send>> {
         let data = self.data.lock().unwrap();
         let mut found = Vec::new();
         for (key, id, val) in data.iter() {
