@@ -22,7 +22,7 @@ js-sys = {version = "0.3.66", optional = true }
 wasm-bindgen-test = "0.3.39"
 
 [build-dependencies]
-vergen = { version = "8.2.6", features = ["build", "cargo", "git", "git2", "rustc"] }
+vergen = { version = "8.2.9", features = ["build", "cargo", "git", "git2", "rustc"] }
 
 [features]
 default = []
