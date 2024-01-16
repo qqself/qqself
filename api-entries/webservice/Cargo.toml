@@ -13,6 +13,7 @@ qqself-api-entries-services = { path = "../services" }
 
 [dev-dependencies]
 qqself-core = { path = "../../core" }
+qqself-api-entries-services = { path = "../services", features=["test_helpers"] }
 
 [features]
 default = []

@@ -221,8 +221,8 @@ mod tests {
     }
 
     /// To run test locally use appropriate environment variables e.g. AWS_PROFILE=test-dynamo
-    /// To see AWS logs add `env_logger::init();` at the beggining of a test and set log env variable `RUST_LOG=trace`
-    #[cfg(feature = "dynamodb")]
+    /// To see AWS logs set log env variable `RUST_LOG=trace`
+    #[cfg(feature = "dynamodb-test")]
     #[tokio::test]
     async fn dynamo_storage() {
         env_logger::init();

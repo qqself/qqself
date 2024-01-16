@@ -61,7 +61,9 @@ impl Entries {
         &self,
         token_data: String,
     ) -> Result<
-        Peekable<Pin<Box<dyn Stream<Item = Result<(PayloadId, PayloadBytes), ServiceErrorType>> + Send>>>,
+        Peekable<
+            Pin<Box<dyn Stream<Item = Result<(PayloadId, PayloadBytes), ServiceErrorType>> + Send>>,
+        >,
         ServiceErrorType,
     > {
         let now = self.time.now().await;

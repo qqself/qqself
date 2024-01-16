@@ -14,8 +14,12 @@ log = "0.4.20"
 qqself-core = { path = "../../core", features = ["serde"] }
 serde = { version="1.0.195", features = ["derive"] }
 thiserror = "1.0.56"
+lazy_static = "1.4.0"
 tokio = { version = "1.35.1", features = ["rt", "macros", "time"] }
 
 [features]
 default = []
 dynamodb = ["dep:aws-config", "dep:aws-sdk-dynamodb"]
+# Separate feature for enabling dynamodb tests, otherwise cargo feature unification may unexpectedly run dynamodb tests
+dynamodb-test = ["dynamodb"]
+test_helpers = []
