@@ -1292,10 +1292,10 @@ lie@3.1.1:
   dependencies:
     immediate "~3.0.5"
 
-lit-analyzer@2.0.2:
-  version "2.0.2"
-  resolved "https://registry.yarnpkg.com/lit-analyzer/-/lit-analyzer-2.0.2.tgz#4dad66c3d2c2f617bb5531a7b877a4ba076a3fda"
-  integrity sha512-Is3cx8ypCVq5uNl8EKkPdlLuV3HDVntDVUeLNQlzTM2Je3uG5wHcn+06NB+yhCoa4rhwwXCjprU/7g21CSFqOA==
+lit-analyzer@2.0.3:
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/lit-analyzer/-/lit-analyzer-2.0.3.tgz#15560ccfb0e1b66fc5521330fc73502b1678621e"
+  integrity sha512-XiAjnwVipNrKav7r3CSEZpWt+mwYxrhPRVC7h8knDmn/HWTzzWJvPe+mwBcL2brn4xhItAMzZhFC8tzzqHKmiQ==
   dependencies:
     "@vscode/web-custom-data" "^0.4.2"
     chalk "^2.4.2"
