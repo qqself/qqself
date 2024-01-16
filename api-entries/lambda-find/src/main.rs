@@ -55,20 +55,28 @@ mod tests {
         Body,
     };
     use qqself_api_entries_services::{
-        entry::Entries, entry_storage::MemoryEntryStorage, time::TimeOs,
+        entry::Entries,
+        entry_storage::MemoryEntryStorage,
+        test_helpers::{test_payload, test_timepoint, TEST_KEYS_1, TEST_KEYS_2},
+    };
+    use qqself_core::{
+        binary_text::BinaryToText,
+        date_time::timestamp::Timestamp,
+        encryption::{
+            hash::StableHash,
+            payload::{PayloadBytes, PayloadId},
+            tokens::SearchToken,
+        },
     };
 
     use crate::handler;
 
     fn entries() -> Entries {
-        Entries::new(
-            Box::<MemoryEntryStorage>::default(),
-            Box::<TimeOs>::default(),
-        )
+        Entries::new(Box::<MemoryEntryStorage>::default(), test_timepoint())
     }
 
     fn req(body: &str) -> Request<Body> {
-        let fixture = r#"{"requestContext":{"http":{"method":"GET"}},"body":"[BODY]"}"#;
+        let fixture = r#"{"requestContext":{"http":{"method":"POST"}},"body":"[BODY]"}"#;
         let req = fixture.replace("[BODY]", body);
         lambda_http::request::from_str(&req).unwrap()
     }
@@ -84,5 +92,65 @@ mod tests {
             resp.body().to_string(),
             r#"{"error_code":400,"error":"BadInput. Error encoding search token. Token validation error. Failed to read binary data"}"#
         );
+    }
+
+    #[tokio::test]
+    async fn test_find() {
+        let entries = entries();
+        let keys = &*TEST_KEYS_1;
+        let time_start = entries.time().now().await;
+        for ts in [1, 2, 3] {
+            entries
+                .time()
+                .sleep(std::time::Duration::from_millis(ts))
+                .await;
+            let encrypted = test_payload(
+                &ts.to_string(),
+                Timestamp::from_u64(time_start.as_u64() + ts),
+                keys,
+            );
+            entries.save_payload(encrypted.data()).await.unwrap();
+        }
+        let (public_key, private_key) = keys;
+        let extract_plaintext = |data: String| {
+            let mut output = Vec::new();
+            for s in data.lines() {
+                let payload_start_pos = s.find(':').unwrap() + 1;
+                let binary_text =
+                    BinaryToText::new_from_encoded(s[payload_start_pos..].to_string()).unwrap();
+                let bytes = PayloadBytes::new_from_encrypted(binary_text).unwrap();
+                let valid = bytes.validated(None).unwrap();
+                let plaintext = valid.decrypt(private_key).unwrap();
+                output.push(plaintext);
+            }
+            output
+        };
+        // Return all
+        let body = SearchToken::encode(public_key, private_key, time_start, None).unwrap();
+        let resp = handler(&entries, req(&body)).await.unwrap();
+        assert_eq!(
+            extract_plaintext(resp.body().to_string()),
+            vec!["1", "2", "3"]
+        );
+
+        // Return after
+        let body = SearchToken::encode(
+            public_key,
+            private_key,
+            entries.time().now().await,
+            Some(PayloadId::encode(
+                Timestamp::from_u64(time_start.as_u64() + 2),
+                StableHash::hash_string("s"),
+            )),
+        )
+        .unwrap();
+        let resp = handler(&entries, req(&body)).await.unwrap();
+        assert_eq!(extract_plaintext(resp.body().to_string()), vec!["2", "3"]);
+
+        // Another key
+        let (public_key, private_key) = &*TEST_KEYS_2;
+        let body = SearchToken::encode(public_key, private_key, time_start, None).unwrap();
+        let resp = handler(&entries, req(&body)).await.unwrap();
+        assert!(extract_plaintext(resp.body().to_string()).is_empty());
     }
 }

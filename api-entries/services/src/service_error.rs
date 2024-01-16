@@ -43,7 +43,7 @@ impl ServiceError {
     pub fn new(service_error_type: ServiceErrorType) -> Self {
         Self {
             error_code: service_error_type.http_status_code(),
-            error: service_error_type.to_string()
+            error: service_error_type.to_string(),
         }
     }
 }

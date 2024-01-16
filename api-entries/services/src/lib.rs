@@ -6,3 +6,6 @@ pub use qqself_core::build_info;
 
 #[cfg(feature = "dynamodb")]
 pub mod entry_storage_dynamodb;
+
+#[cfg(feature = "test_helpers")]
+pub mod test_helpers;
