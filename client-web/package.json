@@ -20,7 +20,7 @@
     "eslint-plugin-unused-imports": "3.0.0",
     "eslint": "8.56.0",
     "jsdom": "23.2.0",
-    "lit-analyzer": "2.0.2",
+    "lit-analyzer": "2.0.3",
     "prettier": "3.2.2",
     "typescript": "5.3.3",
     "vite": "5.0.11",
