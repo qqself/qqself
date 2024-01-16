@@ -14,10 +14,10 @@ variable "app-destination-hosted_zone_id" {
   description = "app.qqself.com alias record destination zone id"
 }
 
-variable "api2-destination-name" {
-  description = "api2.qqself.com alias record destination domain_name"
+variable "api-destination-name" {
+  description = "api.qqself.com alias record destination domain_name"
 }
 
-variable "api2-destination-hosted_zone_id" {
-  description = "api2.qqself.com alias record destination zone id"
+variable "api-destination-hosted_zone_id" {
+  description = "api.qqself.com alias record destination zone id"
 }

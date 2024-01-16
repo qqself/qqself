@@ -36,14 +36,14 @@ resource "aws_route53_record" "app" {
   }
 }
 
-resource "aws_route53_record" "api2" {
+resource "aws_route53_record" "api" {
   zone_id = aws_route53_zone.qqself.zone_id
-  name    = "api2.qqself.com"
+  name    = "api.qqself.com"
   type    = "A"
 
   alias {
-    name                   = var.api2-destination-name
-    zone_id                = var.api2-destination-hosted_zone_id
+    name                   = var.api-destination-name
+    zone_id                = var.api-destination-hosted_zone_id
     evaluate_target_health = false
   }
 }
@@ -58,14 +58,6 @@ resource "aws_route53_record" "naked" {
     zone_id                = aws_route53_record.www.zone_id
     evaluate_target_health = false
   }
-}
-
-resource "aws_route53_record" "api" {
-  zone_id = aws_route53_zone.qqself.zone_id
-  name    = "api.qqself.com"
-  type    = "CNAME"
-  ttl     = 300
-  records = ["nu2qwbtubz.us-east-1.awsapprunner.com"]
 }
 
 resource "aws_route53_record" "email" {
