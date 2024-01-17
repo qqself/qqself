@@ -1,4 +1,4 @@
-use lambda_http::{run, service_fn, Error, Request, Response};
+use lambda_http::{run, service_fn, Body, Error, Request, Response};
 use qqself_api_entries_services::{
     entry::Entries,
     entry_storage_dynamodb::DynamoDBEntryStorage,
@@ -7,10 +7,15 @@ use qqself_api_entries_services::{
 };
 
 async fn set_entry(entries: &Entries, req: Request) -> Result<Response<String>, ServiceErrorType> {
-    let req_body = match req.into_body() {
-        lambda_http::Body::Text(s) => s,
-        _ => return Err(ServiceErrorType::BadInput("Not a text body".to_string())),
-    };
+    let req_body =
+        match req.into_body() {
+            Body::Text(s) => s,
+            Body::Binary(_) => return Err(ServiceErrorType::BadInput(
+                "Unexpected binary data - ensure request header 'Content-Type: text/plain' is set"
+                    .to_string(),
+            )),
+            Body::Empty => return Err(ServiceErrorType::BadInput("Empty body".to_string())),
+        };
     let payload_id = entries
         .save_payload(req_body)
         .await
@@ -98,6 +103,21 @@ mod tests {
         assert_eq!(
             resp.body().to_string(),
             r#"{"error_code":400,"error":"BadInput. Payload validation failure. Cannot read binary data"}"#
+        );
+    }
+
+    #[tokio::test]
+    async fn test_bad_binary_body() {
+        let req = r#"{"requestContext":{"http":{"method":"GET"}},"body":"SGVsbG8=", "isBase64Encoded": true}"#;
+        let req = lambda_http::request::from_str(req).unwrap();
+        let resp = handler(&entries(), req).await.unwrap();
+        assert_eq!(resp.status(), 400);
+        let mut headers = HeaderMap::new();
+        headers.insert("content-type", "text/json".parse().unwrap());
+        assert_eq!(resp.headers(), &headers);
+        assert_eq!(
+            resp.body().to_string(),
+            r#"{"error_code":400,"error":"BadInput. Unexpected binary data - ensure request header 'Content-Type: text/plain' is set"}"#
         );
     }
 

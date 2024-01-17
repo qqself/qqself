@@ -34,9 +34,14 @@ export class ServerApi implements APIProvider {
   }
 
   async http(req: Request): Promise<Response> {
+    const headers: Record<string, string> = {}
+    req.headers.forEach((header) => {
+      headers[header.name] = header.value
+    })
     const resp = await fetch(req.url, {
       method: "POST",
       body: req.payload,
+      headers,
     })
     if (resp.status != 200) {
       const err = (await resp.json()) as ApiError

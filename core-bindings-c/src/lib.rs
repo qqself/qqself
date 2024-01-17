@@ -6,7 +6,7 @@ use qqself_core::encryption::hash::StableHash;
 
 uniffi::include_scaffolding!("qqself");
 
-pub use qqself_core::api::{ApiRequests as Api, Request};
+pub use qqself_core::api::{ApiRequests as Api, Header, Request};
 pub use qqself_core::build_info;
 pub use qqself_core::encryption::cryptor::Cryptor;
 
