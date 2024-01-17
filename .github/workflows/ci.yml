@@ -17,7 +17,7 @@ jobs:
       with:
         node-version: 20
     - name: cache-cargo
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.cargo/bin/
@@ -28,7 +28,7 @@ jobs:
         key: cargo-linux-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: cargo-linux
     - name: cache-yarn
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: "client-web/node_modules"
         key: yarn-${{ hashFiles('client-web/yarn.lock') }}
@@ -50,7 +50,7 @@ jobs:
       with:
         fetch-depth: 0
     - name: cache-cargo
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.cargo/bin/
