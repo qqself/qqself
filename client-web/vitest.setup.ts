@@ -3,6 +3,5 @@
 // and fail immediately
 console.error = function (args) {
   const err = JSON.stringify(args).replaceAll("\\n", "\n")
-  process.stderr.write(err)
-  process.exit(1)
+  throw new Error(err)
 }
