@@ -9,9 +9,15 @@ namespace qqselfCore {
   Cryptor cryptor_from_deserialized_keys(string data);
 };
 
+dictionary Header {
+  string name;
+  string value;
+};
+
 dictionary Request {
     string url;
     string payload;
+    sequence<Header> headers;
 };
 
 interface Api {

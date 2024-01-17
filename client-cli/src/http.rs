@@ -1,7 +1,10 @@
-use std::future::Future;
+use std::{future::Future, str::FromStr};
 
 use qqself_core::api::Request;
-use reqwest::{Error, Response};
+use reqwest::{
+    header::{HeaderMap, HeaderName},
+    Error, Response,
+};
 
 pub struct Http {
     client: reqwest::Client,
@@ -15,7 +18,21 @@ impl Http {
     }
 
     pub fn send(&self, req: Request) -> impl Future<Output = Result<Response, Error>> {
-        self.client.post(req.url).body(req.payload).send()
+        let mut headers = HeaderMap::new();
+        for header in req.headers {
+            headers.insert(
+                HeaderName::from_str(&header.name).expect("Should be a valid header name"),
+                header
+                    .value
+                    .parse()
+                    .expect("Should be a valid header value"),
+            );
+        }
+        self.client
+            .post(req.url)
+            .body(req.payload)
+            .headers(headers)
+            .send()
     }
 }
 
