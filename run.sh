@@ -24,6 +24,8 @@ usage() {
 deps() {
   cargo fetch
   (cd client-web && yarn install) 
+  # cargo-lambda is needed for packaging and cross-compiling AWS Lambda for arm64
+  pip3 install cargo-lambda
 }
 
 # Builds everything
@@ -64,18 +66,6 @@ lint() {
   fi
 }
 
-# Build a new Docker container and push to the registry
-docker_push() {
-  local repo="$1"
-  local name="$2"
-  local dockerfile="$3"
-  tag="$repo/$name"
-  region="us-east-1"
-  docker build . --file "$dockerfile" --tag "$tag"
-  aws ecr-public get-login-password --region "$region" | docker login --username AWS --password-stdin "$repo"
-  docker push "$tag"
-}
-
 s3_site_sync() {
   local files=$1
   local bucket=$2
@@ -86,23 +76,23 @@ s3_site_sync() {
   aws s3 sync "$files" "$bucket" --delete
 }
 
-apprunner_update() {
-  local service="$1"
-  local tag="$2"
-  # Initiate deployment: Get ARN of AWS AppRunner service and update it's config to point to the new Docker image tag
-  arn=$(aws apprunner list-services --query "ServiceSummaryList[?ServiceName=='$service'].ServiceArn" --output text)   
-  config="{\"ImageRepository\":{\"ImageIdentifier\":\"$tag\",\"ImageRepositoryType\":\"ECR_PUBLIC\"}}"
-  aws apprunner update-service --service-arn "$arn" --source-configuration "$config" > /dev/null # Remove too noisy output
+deploy_lambdas() {
+  lambdas=("health" "delete" "find" "set")
+  log "Buidling all lambdas"
+  for lambda in "${lambdas[@]}"; do
+    (cd "api-entries/lambda-$lambda" && cargo lambda build --arm64 --release --output-format zip)
+  done
+  log "Deploying all lambdas"
+  for lambda in "${lambdas[@]}"; do
+    aws lambda update-function-code --function-name "entries-$lambda" --zip-file fileb://./target/lambda/qqself-lambda-entries-$lambda/bootstrap.zip
+  done
 }
 
 deploy() {
   local service="$1"
   log "Deploying $service"
   if [[ "$service" == "api-entries" ]]; then
-    repo="public.ecr.aws/q1q1x2u3"
-    name="qqself-api-sync:$VERSION"
-    docker_push "$repo" "$name" "api-entries/webservice/Dockerfile" 
-    apprunner_update "qqself-api-sync" "$repo/$name"
+    deploy_lambdas
   elif [[ "$service" == "client-web" ]]; then 
     (cd client-web && yarn build)
     s3_site_sync "client-web/dist" "s3://qqself-site-app" 
@@ -126,4 +116,4 @@ case "$ACTION" in
     test 
     ;;
   *) usage ;;
-esac    
+esac

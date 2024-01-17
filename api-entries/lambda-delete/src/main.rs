@@ -1,4 +1,4 @@
-use lambda_http::{run, service_fn, Error, Request, Response};
+use lambda_http::{run, service_fn, Body, Error, Request, Response};
 use qqself_api_entries_services::{
     entry::Entries,
     entry_storage_dynamodb::DynamoDBEntryStorage,
@@ -10,10 +10,15 @@ async fn delete_entries(
     entries: &Entries,
     req: Request,
 ) -> Result<Response<String>, ServiceErrorType> {
-    let req_body = match req.into_body() {
-        lambda_http::Body::Text(s) => s,
-        _ => return Err(ServiceErrorType::BadInput("Not a text body".to_string())),
-    };
+    let req_body =
+        match req.into_body() {
+            Body::Text(s) => s,
+            Body::Binary(_) => return Err(ServiceErrorType::BadInput(
+                "Unexpected binary data - ensure request header 'Content-Type: text/plain' is set"
+                    .to_string(),
+            )),
+            Body::Empty => return Err(ServiceErrorType::BadInput("Empty body".to_string())),
+        };
     let deleted = entries
         .delete(req_body.to_string())
         .await

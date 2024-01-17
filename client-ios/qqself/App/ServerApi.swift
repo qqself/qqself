@@ -6,9 +6,9 @@ struct Response {
   let urlResponse: HTTPURLResponse
 }
 
+// swift-format-ignore
 struct ServerError: Codable {
-  let timestamp: Int
-  let errorCode: String
+  let error_code: Int16
   let error: String
 }
 
@@ -48,6 +48,9 @@ class ServerApi: APIProvider {
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
     request.httpBody = req.payload.data(using: .utf8)
+    for header in req.headers {
+      request.setValue(header.value, forHTTPHeaderField: header.name)
+    }
 
     let (data, response) = try await makeHttpRequest(request)
     guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
