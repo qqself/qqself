@@ -16,7 +16,7 @@ serde = { version = "1.0.195", optional = true, features = ["derive"] }
 thiserror = "1.0.56"
 time = { version = "0.3.31", features = ["wasm-bindgen", "local-offset"] }
 wasm-bindgen = { version = "0.2.90", optional = true }
-js-sys = {version = "0.3.66", optional = true }
+js-sys = {version = "0.3.67", optional = true }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.39"

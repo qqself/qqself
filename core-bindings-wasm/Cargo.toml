@@ -10,4 +10,4 @@ crate-type = ["cdylib", "rlib"]
 wasm-bindgen = "0.2.90"
 qqself-core = { path = "../core", features = ["wasm"] }
 console_error_panic_hook = "0.1.7"
-js-sys = { version = "0.3.66" }
+js-sys = { version = "0.3.67" }
